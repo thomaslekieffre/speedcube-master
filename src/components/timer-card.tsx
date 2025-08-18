@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Play, Square, RotateCcw, Plus, X } from "lucide-react";
+import {
+  Play,
+  Square,
+  RotateCcw,
+  Plus,
+  X,
+  Download,
+  Trash2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SolveList } from "./solve-list";
-
-interface Solve {
-  id: string;
-  time: number;
-  penalty: "none" | "plus2" | "dnf";
-  date: Date;
-  scramble: string;
-  notes?: string;
-}
+import { useSolves, type Solve } from "@/hooks/use-solves";
+import { toast } from "sonner";
 
 export function TimerCard() {
   const [isRunning, setIsRunning] = useState(false);
@@ -23,7 +24,15 @@ export function TimerCard() {
   const [inspection, setInspection] = useState(0);
   const [isInspection, setIsInspection] = useState(false);
   const [currentScramble, setCurrentScramble] = useState("R U R' U'");
-  const [solves, setSolves] = useState<Solve[]>([]);
+
+  const {
+    solves,
+    addSolve,
+    updateSolve,
+    deleteSolve,
+    clearAllSolves,
+    exportSolves,
+  } = useSolves();
 
   // Générer un nouveau scramble (mock pour l'instant)
   const generateScramble = useCallback(() => {
@@ -60,7 +69,7 @@ export function TimerCard() {
 
   // Timer principal
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (isRunning && startTime) {
       // Commencer immédiatement
@@ -76,7 +85,7 @@ export function TimerCard() {
 
   // Inspection timer
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (isInspection) {
       interval = setInterval(() => {
@@ -129,27 +138,41 @@ export function TimerCard() {
     // Calculer le temps directement depuis startTime
     const currentTime = startTime ? Date.now() - startTime : 0;
 
-    const newSolve: Solve = {
-      id: Date.now().toString(),
+    const newSolve = addSolve({
       time: currentTime,
       penalty: "none",
       date: new Date(),
       scramble: currentScramble,
-    };
+    });
 
-    setSolves((prev) => [newSolve, ...prev]);
+    toast.success("Solve sauvegardé !", {
+      description: `Temps: ${formatTime(currentTime)}`,
+    });
+
     setTime(0);
     generateScramble();
   };
 
-  const updateSolve = (id: string, updates: Partial<Solve>) => {
-    setSolves((prev) =>
-      prev.map((solve) => (solve.id === id ? { ...solve, ...updates } : solve))
-    );
+  const handleUpdateSolve = (id: string, updates: Partial<Solve>) => {
+    updateSolve(id, updates);
+    toast.success("Solve mis à jour");
   };
 
-  const deleteSolve = (id: string) => {
-    setSolves((prev) => prev.filter((solve) => solve.id !== id));
+  const handleDeleteSolve = (id: string) => {
+    deleteSolve(id);
+    toast.success("Solve supprimé");
+  };
+
+  const handleClearAll = () => {
+    if (confirm("Êtes-vous sûr de vouloir effacer tous les solves ?")) {
+      clearAllSolves();
+      toast.success("Tous les solves ont été supprimés");
+    }
+  };
+
+  const handleExport = () => {
+    exportSolves();
+    toast.success("Solves exportés !");
   };
 
   const formatTime = (ms: number) => {
@@ -284,11 +307,39 @@ export function TimerCard() {
         </CardContent>
       </Card>
 
+      {/* Actions supplémentaires */}
+      {solves.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Exporter
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearAll}
+                className="flex items-center gap-2 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+                Tout effacer
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* SolveList */}
       <SolveList
         solves={solves}
-        onUpdateSolve={updateSolve}
-        onDeleteSolve={deleteSolve}
+        onUpdateSolve={handleUpdateSolve}
+        onDeleteSolve={handleDeleteSolve}
       />
     </div>
   );
