@@ -1,10 +1,16 @@
-export default function AlgosPage() {
+export default function AlgorithmsPage() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="text-2xl font-bold">Algorithmes</h1>
-      <p className="text-muted-foreground mt-2">Vitrine des sets d'algos (mock).</p>
-    </main>
+    <div className="min-h-screen bg-background pt-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            Algorithmes
+          </h1>
+          <p className="text-muted-foreground">
+            Page algorithmes en cours de développement...
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
-
-

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "./_components/navbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,10 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="fr">
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        <Navbar />
         {children}
       </body>
     </html>
