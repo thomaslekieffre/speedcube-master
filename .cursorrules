@@ -1,0 +1,444 @@
+# 🎨 Speedcube Master — UI/UX Full Brief (Next + Tailwind + shadcn/ui + Framer Motion)
+
+## 🎯 Objectif
+
+Plateforme **bilingue (FR/EN)**, **mobile-first**, **dark par défaut**, design **sobre, rapide, joueur**. Composants shadcn/ui, micro-animations utiles.
+
+---
+
+## 🧱 Design System (Tokens)
+
+**Couleurs**
+
+- `--bg`: #0B0F1A
+- `--card`: #0F1524
+- `--muted`: #111827
+- `--primary`: #2563EB / hover #1E40AF
+- `--accent`: #22C55E
+- `--warning`: #F59E0B
+- `--danger`: #EF4444
+- `--foreground`: #E5E7EB
+- `--muted-foreground`: #9CA3AF
+- `--border`: #1F2937
+
+**Typo**
+
+- Inter (400/600/800)
+- JetBrains Mono pour les chiffres du timer
+
+**Rayons & Ombres**
+
+- Radius: `lg` 16px, `xl` 20px, `2xl` 24px
+- Shadows: `soft` (24 blur), `elevated` (40 blur)
+
+**Espaces & Grilles**
+
+- Base 4px ; cartes `p-6` min
+- Conteneur max `max-w-6xl`
+- Grilles algos: 1→2→3→4 colonnes responsive
+
+**Icônes**
+
+- Lucide (stroke 1.5) — cohérents, sans overload
+
+**États & Accessibilité**
+
+- Focus anneau `ring-2 ring-primary/50`
+- Cibles min 44px, contrastes AA+
+
+---
+
+## 🎞️ Motion (Framer Motion)
+
+**Durées & Easing**
+
+- Pages: 250–350ms, `easeOut`
+- Hover cards: 120ms `easeOut`
+- Toasts: slide-in 250ms
+
+**Patterns**
+
+- Page mount: fade + y(-8)
+- Card hover: y(-2px) + légère ombre
+- Tabs/filters: underline animée (layoutId)
+- Timer:
+
+  - _Tick_: micro-pulse (scale 1→1.02→1, 120ms)
+  - _Start/Stop_: flash bg `primary/10` + scale 0.98→1
+  - _Inspection_: anneau 15s (stroke progress)
+
+---
+
+## 🧩 Pages & Sections
+
+### 1) Accueil `/`
+
+- **Hero**: titre fort + sous-titre + CTA “Start a solve” / “Browse algorithms”
+- **3 Features Cards**: Timer / Algorithms / Progression
+- **Daily Challenge Banner**: CTA “Try today’s scramble”
+- **Social Proof**: captures stats/profils (mock)
+
+### 2) Timer `/timer`
+
+- **TimerCard**: grand compteur monospace (96–128px), chips puzzle/mode, inspection, +2/DNF, notes
+- **Scramble**: visible, copier / regénérer
+- **SolveList**: table compacte (temps, penalty, date, actions)
+- **Action Bar mobile**: Start / Stop / Save (sticky)
+
+### 3) Algorithms `/algos`
+
+- **FilterBar**: puzzle / méthode / set + recherche
+- **AlgoGrid**: cartes compactes (mini anim, titre, difficulté, favori)
+- **Skeletons**: au chargement
+
+### 4) Algorithm Detail `/algos/[id]`
+
+- **Header**: nom + set + bouton Favori / À réviser
+- **Viewer 3D**: contrôles simples
+- **Tabs**: Main / Alternatives / Tips
+- **CTA**: “Add to today’s review”
+
+### 5) Dashboard `/dashboard`
+
+- **StatCards**: PB, avg5, avg12, DNF rate (avec trend chip)
+- **Graph 30j** (ligne)
+- **Histogramme** (distribution)
+- **À réviser aujourd’hui**: 3–5 algos
+
+### 6) Login `/login`
+
+- **Card** centrée, social + email, messages d’état
+
+### 7) Profile `/profile/[username]`
+
+- Avatar, bio courte, méthode principale, cubes favoris
+- PB/avg par event, derniers solves (sélecteur event)
+- Bouton “Share profile” (OG image)
+
+### 8) Settings `/settings`
+
+- Profil: pseudo, bio, avatar
+- Préfs: langue, thème, profil public/privé
+- Data: export / suppression
+
+### 9) Daily Challenge `/challenge`
+
+- Scramble du jour, fenêtre 24h, 3 tentatives comptées
+- Classement, badges top X
+
+---
+
+## 🧰 Composants (shadcn base à styliser)
+
+- `Navbar` (sticky, blur): logo, Timer | Algorithms | Dashboard, toggle FR/EN, dark, avatar
+- `Footer` simple (liens légaux)
+- `TimerCard`, `SolveRow`, `StatCard`, `AlgoCard`, `FilterBar`, `ChallengeBanner`, `EmptyState`
+- Utilitaires: `Toast`, `Tooltip`, `Dialog`, `DropdownMenu`, `Tabs`, `Skeleton`
+
+---
+
+## 🌐 i18n — Clés & Micro-copy
+
+> **Convention**: `namespace.key`. Deux fichiers `fr.json`, `en.json`.
+> **Règle**: interface concise, positive, action-first.
+
+**Global**
+
+```json
+{
+  "nav.timer": "Timer",
+  "nav.algorithms": "Algorithmes",
+  "nav.dashboard": "Dashboard",
+  "nav.login": "Connexion",
+  "nav.logout": "Déconnexion",
+  "nav.profile": "Profil",
+  "nav.settings": "Paramètres",
+  "nav.challenge": "Défi du jour",
+  "cta.start": "Lancer un solve",
+  "cta.browse": "Explorer les algos",
+  "cta.try_today": "Essayer le scramble du jour",
+  "state.saved": "Sauvegardé",
+  "state.added": "Ajouté",
+  "state.removed": "Supprimé",
+  "form.save": "Enregistrer",
+  "form.cancel": "Annuler",
+  "form.delete": "Supprimer",
+  "lang.fr": "Français",
+  "lang.en": "English"
+}
+```
+
+**Timer**
+
+```json
+{
+  "timer.inspection": "Inspection",
+  "timer.plus2": "Pénalité +2",
+  "timer.dnf": "DNF",
+  "timer.notes": "Notes",
+  "timer.scramble": "Scramble",
+  "timer.new_scramble": "Nouveau scramble",
+  "timer.start_hint": "Espace pour démarrer/arrêter",
+  "timer.session": "Session",
+  "timer.add_time": "Ajouter le temps",
+  "timer.clear_all": "Effacer la session",
+  "timer.empty": "Aucun solve pour l’instant."
+}
+```
+
+**Stats**
+
+```json
+{
+  "stats.pb": "Meilleur temps",
+  "stats.avg5": "Moyenne de 5",
+  "stats.avg12": "Moyenne de 12",
+  "stats.dnf_rate": "Taux de DNF",
+  "stats.last30": "30 derniers jours",
+  "stats.distribution": "Distribution des temps",
+  "stats.trend": "Tendance 14j"
+}
+```
+
+**Algorithms**
+
+```json
+{
+  "algos.title": "Algorithmes",
+  "algos.search": "Rechercher un algo",
+  "algos.filters.puzzle": "Puzzle",
+  "algos.filters.method": "Méthode",
+  "algos.filters.set": "Set",
+  "algos.difficulty": "Difficulté",
+  "algos.favorite": "Favori",
+  "algos.review": "À réviser",
+  "algos.empty": "Aucun algo trouvé.",
+  "algo.main": "Principal",
+  "algo.alternatives": "Alternatives",
+  "algo.tips": "Conseils",
+  "algo.add_today": "Ajouter à la révision du jour"
+}
+```
+
+**Dashboard**
+
+```json
+{
+  "dash.overview": "Vue d’ensemble",
+  "dash.to_review": "À réviser aujourd’hui",
+  "dash.latest_solves": "Derniers solves"
+}
+```
+
+**Auth**
+
+```json
+{
+  "auth.welcome": "Content de te revoir",
+  "auth.login_google": "Continuer avec Google",
+  "auth.login_github": "Continuer avec GitHub",
+  "auth.or": "ou",
+  "auth.email": "Email",
+  "auth.password": "Mot de passe",
+  "auth.sign_in": "Se connecter",
+  "auth.sign_up": "Créer un compte"
+}
+```
+
+**Challenge**
+
+```json
+{
+  "challenge.title": "Défi du jour",
+  "challenge.window": "Fenêtre: 24h",
+  "challenge.attempts": "Tentatives: 3",
+  "challenge.leaderboard": "Classement",
+  "challenge.badge_top": "Badge Top {n}"
+}
+```
+
+**Empty / Error**
+
+```json
+{
+  "empty.default": "Rien ici pour l’instant.",
+  "error.default": "Une erreur est survenue.",
+  "error.retry": "Réessayer"
+}
+```
+
+> **EN file**: traduire 1:1 (e.g., “Start a solve”, “Algorithms”, “Best time”, “Average of 5”).
+
+---
+
+## 📚 Parcours d’apprentissage (résumé par puzzle)
+
+**3x3**
+
+- Débutant: Notation, Cross intuitive, 4LLL (2-Look OLL/PLL)
+- Intermédiaire: F2L intuitif → F2L avancé
+- Avancé: Full OLL (57), Full PLL (21)
+- Expert: Look-ahead, fingertricks, solutions 1-look LL
+
+**2x2**
+
+- Débutant: Ortega (faces)
+- Inter: CLL
+- Avancé: EG1
+- Expert: EG2 + premoves
+
+**4x4–7x7**
+
+- Réduction, centres/edges, parités (OLL/PLL parité 4x4), LL
+- Optimisations: yau, h2l, edge pairing rapide
+
+**Pyraminx / Skewb**
+
+- Méthode de base → L4E (Pyraminx), Sledge spam / Sarah’s int (Skewb)
+
+**Megaminx**
+
+- F2L en étoile, S2L, LL (PLL spécifiques)
+
+**Square-1**
+
+- Shapes → CO/EO → Perm (PLL sq1)
+
+**Clock**
+
+- Pins méthode complète, cycles et optimisations
+
+**Blind (3BLD/4BLD/5BLD)**
+
+- M2/OP → 3-Style
+- Mémo visuelle/audio, safety vs speed
+
+**FMC**
+
+- Premoves, insertions, niss, skeletons
+
+> Chaque étape reliée à un **set d’algos** + **exercices ciblés** + **révision intelligente**.
+
+---
+
+## 🔁 Révision intelligente (spaced repetition simplifié)
+
+- États: `À apprendre` → `En cours` → `Maîtrisé` → `À revoir`
+- Session quotidienne suggérée: 5–10 algos
+- Règle simple: +1 jour, +3 jours, +7 jours (reset si échec)
+- Badges: “Full PLL Mastered”, “12/21 OLL appris”
+
+---
+
+## 🧭 Flows clés
+
+**Onboarding (3 écrans)**
+
+1. Choisis tes events principaux (3x3, 2x2…)
+2. Méthode & objectif (ex: sub-20)
+3. “Fais 5 solves maintenant” → badge Starter
+
+**Défi du jour**
+
+- Scramble unique, 24h, 3 tentatives, classement + badge
+
+**Partage**
+
+- OG image dynamique: avatar, PB 3x3, avg12, pays + QR vers profil
+
+---
+
+## 🧪 QA & DoD
+
+**Definition of Done (MVP UI)**
+
+- Navbar/Footer, 5 pages stylisées, composants clés en place
+- Dark mode + toggle, responsive 360→1440
+- Focus states testés clavier
+- Skeletons <100ms
+- i18n prêt (FR/EN placeholders)
+- Lighthouse ≥ 90 (Perf/Access/BP/SEO)
+
+**Tests UX rapides**
+
+- Timer: espace start/stop, inspection 15s visible
+- Averages: avg5/avg12 corrects (DNF/+2 inclus)
+- Filtres algos persistants
+- Empty states clairs, erreurs explicites
+
+---
+
+## 🗓️ Ordre de dev (Cursor)
+
+1. **Structure & DS**
+
+- Tailwind + tokens + dark mode
+- shadcn/ui installé, icônes, fonts
+- Layout global (Navbar/Footer), pages vides
+
+2. **Timer (core)**
+
+- TimerCard, pénalités, inspection
+- SolveList + stockage local
+- Toast “Sauvegardé”
+
+3. **Stats de base**
+
+- PB, avg5/avg12, StatCards
+- Graph 30j (mock)
+
+4. **Algorithms v1 (vitrine)**
+
+- FilterBar + AlgoGrid (données mock)
+- Détail algo (tabs + CTA favoris/à réviser)
+
+5. **Dashboard v1**
+
+- StatCards + graph + “À réviser”
+
+6. **Login page (UI)**
+
+- Sans logique auth pour l’instant (placeholder)
+
+7. **Daily Challenge (UI)**
+
+- Bannière + page challenge (mock classement)
+
+---
+
+## ✍️ Micro-copy FR/EN — Exemples prêts
+
+**Hero**
+
+- FR: “La référence du speedcubing. Timer, algos, stats et défis pour tous les puzzles WCA.”
+  CTA: “Lancer un solve” / “Explorer les algos”
+- EN: “The reference of the speedcubing. Timer, algorithms, stats and challenges for all WCA puzzles.”
+  CTA: “Start a solve” / “Browse algorithms”
+
+**Timer hints**
+
+- FR: “Appuie sur espace pour démarrer/arrêter.”
+- EN: “Press space to start/stop.”
+
+**Empty states**
+
+- FR: “Pas encore de solve. Lance-toi !”
+- EN: “No solves yet. Get started!”
+
+**Challenge**
+
+- FR: “3 tentatives. 24h. Montre ce que tu vaux.”
+- EN: “3 attempts. 24h. Show what you’ve got.”
+
+---
+
+## 🔐 Légal & RGPD (texte court)
+
+- FR: “Nous stockons vos données de solves pour afficher vos stats. Vous pouvez exporter ou supprimer vos données à tout moment.”
+- EN: “We store your solve data to display your stats. You can export or delete your data at any time.”
+
+---
+
+## 🎯 Résumé à coller tout en haut (mémo Cursor)
+
+> “Construire une UI Next.js premium (Tailwind + shadcn/ui + Framer Motion). Dark par défaut, mobile-first. Pages: Home, Timer, Algorithms (list + detail), Dashboard, Login, Challenge. Composants: TimerCard, SolveList, StatCard, AlgoCard, FilterBar, ChallengeBanner. i18n FR/EN prêt (clés fournies). Motion subtil: fade/y transitions, pulses sur le timer, underline animée sur tabs. Focus sur lisibilité, vitesse, et plaisir d’usage.”
