@@ -252,7 +252,11 @@ export function TimerCard() {
                       }
                       size="sm"
                       onClick={() => handlePuzzleChange(puzzle.id)}
-                      className="h-8 px-2 flex items-center gap-1"
+                      className={`h-8 px-2 flex items-center gap-1 transition-all duration-300 ease-out ${
+                        selectedPuzzle === puzzle.id
+                          ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                          : "hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 hover:shadow-lg hover:scale-105 hover:border-primary/30"
+                      }`}
                     >
                       <div className={`w-3 h-3 rounded-full ${puzzle.color}`} />
                       <span className="text-xs font-medium">

@@ -271,39 +271,105 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
     skewb: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
     sq1: ["(0,0)", "(1,0)", "(-1,0)", "(0,1)", "(0,-1)", "(1,1)", "(-1,-1)"],
     clock: [
-      "UR",
-      "UR'",
-      "DR",
-      "DR'",
-      "DL",
-      "DL'",
-      "UL",
-      "UL'",
-      "U",
-      "U'",
-      "R",
-      "R'",
-      "D",
-      "D'",
-      "L",
-      "L'",
+      "UR0+ DR0+ DL0+ UL0+ U0+ R0+ D0+ L0+ UR0+ DR0+ DL0+ UL0+",
+      "UR1+ DR1+ DL1+ UL1+ U1+ R1+ D1+ L1+ UR1+ DR1+ DL1+ UL1+",
+      "UR2+ DR2+ DL2+ UL2+ U2+ R2+ D2+ L2+ UR2+ DR2+ DL2+ UL2+",
+      "UR3+ DR3+ DL3+ UL3+ U3+ R3+ D3+ L3+ UR3+ DR3+ DL3+ UL3+",
+      "UR4+ DR4+ DL4+ UL4+ U4+ R4+ D4+ L4+ UR4+ DR4+ DL4+ UL4+",
+      "UR5+ DR5+ DL5+ UL5+ U5+ R5+ D5+ L5+ UR5+ DR5+ DL5+ UL5+",
+      "UR6+ DR6+ DL6+ UL6+ U6+ R6+ D6+ L6+ UR6+ DR6+ DL6+ UL6+",
+      "UR7+ DR7+ DL7+ UL7+ U7+ R7+ D7+ L7+ UR7+ DR7+ DL7+ UL7+",
+      "UR8+ DR8+ DL8+ UL8+ U8+ R8+ D8+ L8+ UR8+ DR8+ DL8+ UL8+",
+      "UR9+ DR9+ DL9+ UL9+ U9+ R9+ D9+ L9+ UR9+ DR9+ DL9+ UL9+",
+      "UR10+ DR10+ DL10+ UL10+ U10+ R10+ D10+ L10+ UR10+ DR10+ DL10+ UL10+",
+      "UR11+ DR11+ DL11+ UL11+ U11+ R11+ D11+ L11+ UR11+ DR11+ DL11+ UL11+",
     ],
     minx: ["R", "R'", "U", "U'", "F", "F'"],
   } as const;
 
   const puzzleMoves = moves[puzzleType] || moves["333"];
-  const length = puzzleType === "sq1" ? 8 : puzzleType === "clock" ? 12 : 20;
+
+  // Longueurs spécifiques par puzzle
+  let length: number;
+  if (puzzleType === "sq1") {
+    length = 8;
+  } else if (puzzleType === "clock") {
+    length = 12;
+  } else if (puzzleType === "pyram" || puzzleType === "skewb") {
+    length = 8;
+  } else if (puzzleType === "minx") {
+    length = 10;
+  } else {
+    length = 20; // 3x3, 4x4, 5x5, 6x6, 7x7
+  }
 
   let scramble = "";
   let lastMove = "";
-  for (let i = 0; i < length; i++) {
-    let move;
-    do {
-      move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
-    } while (move === lastMove);
-    scramble += move + " ";
-    lastMove = move;
+
+  // Logique spéciale pour Square-1
+  if (puzzleType === "sq1") {
+    // Scrambles Square-1 plus réalistes avec des mouvements de forme
+    const square1Moves = [
+      "(0,0)",
+      "(1,0)",
+      "(-1,0)",
+      "(0,1)",
+      "(0,-1)",
+      "(1,1)",
+      "(-1,-1)",
+      "(2,0)",
+      "(-2,0)",
+      "(0,2)",
+      "(0,-2)",
+      "(1,2)",
+      "(-1,2)",
+      "(2,1)",
+      "(-2,1)",
+    ];
+
+    for (let i = 0; i < length; i++) {
+      let move;
+      do {
+        move = square1Moves[Math.floor(Math.random() * square1Moves.length)];
+      } while (move === lastMove);
+      scramble += move + " ";
+      lastMove = move;
+    }
   }
+  // Logique spéciale pour Clock
+  else if (puzzleType === "clock") {
+    // Scrambles pré-générés qui fonctionnent avec cubing.js
+    const clockScrambles = [
+      "UR0+ DR0+ DL0+ UL0+ U0+ R0+ D0+ L0+ UR0+ DR0+ DL0+ UL0+",
+      "UR1+ DR1+ DL1+ UL1+ U1+ R1+ D1+ L1+ UR1+ DR1+ DL1+ UL1+",
+      "UR2+ DR2+ DL2+ UL2+ U2+ R2+ D2+ L2+ UR2+ DR2+ DL2+ UL2+",
+      "UR3+ DR3+ DL3+ UL3+ U3+ R3+ D3+ L3+ UR3+ DR3+ DL3+ UL3+",
+      "UR4+ DR4+ DL4+ UL4+ U4+ R4+ D4+ L4+ UR4+ DR4+ DL4+ UL4+",
+      "UR5+ DR5+ DL5+ UL5+ U5+ R5+ D5+ L5+ UR5+ DR5+ DL5+ UL5+",
+      "UR6+ DR6+ DL6+ UL6+ U6+ R6+ D6+ L6+ UR6+ DR6+ DL6+ UL6+",
+      "UR7+ DR7+ DL7+ UL7+ U7+ R7+ D7+ L7+ UR7+ DR7+ DL7+ UL7+",
+      "UR8+ DR8+ DL8+ UL8+ U8+ R8+ D8+ L8+ UR8+ DR8+ DL8+ UL8+",
+      "UR9+ DR9+ DL9+ UL9+ U9+ R9+ D9+ L9+ UR9+ DR9+ DL9+ UL9+",
+      "UR10+ DR10+ DL10+ UL10+ U10+ R10+ D10+ L10+ UR10+ DR10+ DL10+ UL10+",
+      "UR11+ DR11+ DL11+ UL11+ U11+ R11+ D11+ L11+ UR11+ DR11+ DL11+ UL11+",
+    ];
+
+    // Choisir un scramble aléatoire
+    const randomIndex = Math.floor(Math.random() * clockScrambles.length);
+    scramble = clockScrambles[randomIndex];
+  }
+  // Logique standard pour les autres puzzles
+  else {
+    for (let i = 0; i < length; i++) {
+      let move;
+      do {
+        move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
+      } while (move === lastMove);
+      scramble += move + " ";
+      lastMove = move;
+    }
+  }
+
   return scramble.trim();
 };
 
