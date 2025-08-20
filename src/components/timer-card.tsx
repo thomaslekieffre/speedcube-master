@@ -9,6 +9,7 @@ import {
   X,
   Download,
   Trash2,
+  Box,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,8 @@ import {
   PuzzleSelector,
   type PuzzleType,
   type PuzzleSelectorRef,
+  PUZZLES,
+  generateMockScramble,
 } from "./puzzle-selector";
 import { CubeViewer } from "./cube-viewer";
 
@@ -31,7 +34,6 @@ export function TimerCard() {
   const [isInspection, setIsInspection] = useState(false);
   const [currentScramble, setCurrentScramble] = useState("R U R' U'");
   const [selectedPuzzle, setSelectedPuzzle] = useState<PuzzleType>("333");
-  const puzzleSelectorRef = useRef<{ regenerateScramble: () => void }>(null);
 
   const {
     solves,
@@ -42,11 +44,16 @@ export function TimerCard() {
     exportSolves,
   } = useSolves();
 
-  // Générer un nouveau scramble (maintenant géré par PuzzleSelector)
-  const generateScramble = useCallback(() => {
-    // Cette fonction est maintenant gérée par PuzzleSelector
-    // On peut la garder pour la compatibilité
-  }, []);
+  // Générer un nouveau scramble
+  const generateNewScramble = () => {
+    const newScramble = generateMockScramble(selectedPuzzle);
+    setCurrentScramble(newScramble);
+  };
+
+  // Générer le premier scramble au montage
+  useEffect(() => {
+    generateNewScramble();
+  }, [selectedPuzzle]);
 
   // Timer principal
   useEffect(() => {
@@ -132,9 +139,7 @@ export function TimerCard() {
 
     setTime(0);
     // Régénérer un nouveau scramble après avoir sauvegardé
-    if (puzzleSelectorRef.current) {
-      puzzleSelectorRef.current.regenerateScramble();
-    }
+    generateNewScramble();
   };
 
   const handleUpdateSolve = (id: string, updates: Partial<Solve>) => {
@@ -212,126 +217,208 @@ export function TimerCard() {
   const stats = getStats();
 
   return (
-    <div className="space-y-6">
-      {/* Sélecteur de puzzle */}
-      <PuzzleSelector
-        ref={puzzleSelectorRef}
-        selectedPuzzle={selectedPuzzle}
-        onPuzzleChange={handlePuzzleChange}
-        onScrambleChange={handleScrambleChange}
-      />
-
-      {/* Visualiseur 3D */}
-      <CubeViewer
-        puzzleType={selectedPuzzle}
-        scramble={currentScramble}
-        onReset={handleResetCube}
-      />
-
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="p-8">
-          {/* Timer Display */}
-          <div className="text-center mb-8">
-            {isInspection ? (
-              <div className="text-6xl font-mono font-bold text-warning">
-                {formatInspection(inspection)}
+    <div className="min-h-screen bg-background">
+      {/* Header compact avec puzzle et scramble */}
+      <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            {/* Sélecteur de puzzle compact */}
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Box className="h-5 w-5" />
+                Puzzle
+              </h3>
+              <div className="flex gap-1">
+                {[
+                  "333",
+                  "222",
+                  "444",
+                  "555",
+                  "666",
+                  "777",
+                  "pyram",
+                  "skewb",
+                  "sq1",
+                  "clock",
+                  "minx",
+                ].map((puzzleId) => {
+                  const puzzle = PUZZLES.find((p: any) => p.id === puzzleId);
+                  if (!puzzle) return null;
+                  return (
+                    <Button
+                      key={puzzle.id}
+                      variant={
+                        selectedPuzzle === puzzle.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => handlePuzzleChange(puzzle.id)}
+                      className="h-8 px-2 flex items-center gap-1"
+                    >
+                      <div className={`w-3 h-3 rounded-full ${puzzle.color}`} />
+                      <span className="text-xs font-medium">
+                        {puzzle.shortName}
+                      </span>
+                    </Button>
+                  );
+                })}
               </div>
-            ) : (
-              <div className="text-8xl font-mono font-bold text-foreground">
-                {formatTime(time)}
-              </div>
-            )}
+            </div>
 
-            <p className="text-muted-foreground mt-2 text-sm">
-              {isInspection
-                ? "Inspection en cours..."
-                : "Appuie sur espace pour démarrer/arrêter"}
-            </p>
-          </div>
-
-          {/* Controls */}
-          <div className="flex gap-3 justify-center">
+            {/* Bouton nouveau scramble */}
             <Button
-              onClick={handleSpacePress}
-              disabled={isInspection}
-              className="flex-1 h-12"
+              variant="outline"
+              size="sm"
+              onClick={generateNewScramble}
+              className="h-8"
             >
-              {isRunning ? (
-                <>
-                  <Square className="h-5 w-5 mr-2" />
-                  Arrêter
-                </>
-              ) : (
-                <>
-                  <Play className="h-5 w-5 mr-2" />
-                  {isInspection ? "Démarrer" : "Inspection"}
-                </>
-              )}
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Nouveau scramble
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Stats rapides */}
-          {stats && (
-            <div className="mt-6 pt-6 border-t border-border">
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-foreground">
-                    {stats.total}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Solves</div>
+      {/* Contenu principal */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+          {/* Colonne gauche - Timer et Visualiseur */}
+          <div className="xl:col-span-3 space-y-6">
+            {/* Timer principal */}
+            <Card className="w-full">
+              <CardContent className="p-8">
+                {/* Timer Display */}
+                <div className="text-center mb-8">
+                  {isInspection ? (
+                    <div className="space-y-4">
+                      <div className="text-7xl font-mono font-bold text-warning">
+                        {formatInspection(inspection)}
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-warning h-2 rounded-full transition-all duration-100"
+                          style={{ width: `${(inspection / 15000) * 100}%` }}
+                        />
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        Inspection en cours... Appuie sur espace pour démarrer
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-8xl font-mono font-bold text-foreground">
+                        {formatTime(time)}
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        Appuie sur espace pour commencer l'inspection
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-primary">
-                    {formatTime(stats.pb)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">PB</div>
+
+                {/* Controls */}
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    onClick={handleSpacePress}
+                    disabled={isInspection}
+                    className="flex-1 h-14 text-lg font-semibold"
+                    size="lg"
+                  >
+                    {isRunning ? (
+                      <>
+                        <Square className="h-6 w-6 mr-2" />
+                        Arrêter
+                      </>
+                    ) : (
+                      <>
+                        <Play className="h-6 w-6 mr-2" />
+                        {isInspection ? "Démarrer" : "Inspection"}
+                      </>
+                    )}
+                  </Button>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-accent">
-                    {formatTime(stats.average)}
+
+                {/* Stats rapides */}
+                {stats && (
+                  <div className="mt-8 pt-6 border-t border-border">
+                    <div className="grid grid-cols-3 gap-6 text-center">
+                      <div className="space-y-2">
+                        <div className="text-3xl font-bold text-foreground">
+                          {stats.total}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Solves
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-3xl font-bold text-primary">
+                          {formatTime(stats.pb)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">PB</div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-3xl font-bold text-accent">
+                          {formatTime(stats.average)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Moyenne
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">Moyenne</div>
-                </div>
-              </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Visualiseur 3D */}
+            {currentScramble && currentScramble.trim() !== "" && (
+              <CubeViewer
+                puzzleType={selectedPuzzle}
+                scramble={currentScramble}
+                onReset={handleResetCube}
+              />
+            )}
+
+            {/* Actions supplémentaires */}
+            {solves.length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleExport}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-5 w-5" />
+                      Exporter
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleClearAll}
+                      className="flex items-center gap-2 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      Tout effacer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Colonne droite - Historique des solves */}
+          <div className="xl:col-span-1">
+            <div className="sticky top-32">
+              <SolveList
+                solves={solves}
+                onUpdateSolve={handleUpdateSolve}
+                onDeleteSolve={handleDeleteSolve}
+              />
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Actions supplémentaires */}
-      {solves.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex gap-2 justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Exporter
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearAll}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-                Tout effacer
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* SolveList */}
-      <SolveList
-        solves={solves}
-        onUpdateSolve={handleUpdateSolve}
-        onDeleteSolve={handleDeleteSolve}
-      />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ interface PuzzleInfo {
   color: string;
 }
 
-const PUZZLES: PuzzleInfo[] = [
+export const PUZZLES: PuzzleInfo[] = [
   {
     id: "333",
     name: "3x3x3",
@@ -53,58 +53,259 @@ const PUZZLES: PuzzleInfo[] = [
     name: "5x5x5",
     shortName: "5x5",
     description: "Professor's Cube",
-    color: "bg-red-500",
+    color: "bg-yellow-500",
   },
   {
     id: "666",
     name: "6x6x6",
     shortName: "6x6",
     description: "V-Cube 6",
-    color: "bg-yellow-500",
+    color: "bg-pink-500",
   },
   {
     id: "777",
     name: "7x7x7",
     shortName: "7x7",
     description: "V-Cube 7",
-    color: "bg-orange-500",
+    color: "bg-indigo-500",
   },
   {
     id: "pyram",
     name: "Pyraminx",
     shortName: "Pyra",
-    description: "Pyramide tétraédrique",
-    color: "bg-pink-500",
+    description: "Pyramide à 4 faces",
+    color: "bg-orange-500",
   },
   {
     id: "skewb",
     name: "Skewb",
     shortName: "Skewb",
-    description: "Cube oblique",
-    color: "bg-indigo-500",
+    description: "Cube à rotation oblique",
+    color: "bg-teal-500",
   },
   {
     id: "sq1",
     name: "Square-1",
     shortName: "Sq1",
-    description: "Cube carré",
-    color: "bg-teal-500",
+    description: "Cube à forme variable",
+    color: "bg-cyan-500",
   },
   {
     id: "clock",
     name: "Clock",
     shortName: "Clock",
-    description: "Rubik's Clock",
+    description: "Horloge à 4 faces",
     color: "bg-amber-500",
   },
   {
     id: "minx",
     name: "Megaminx",
     shortName: "Mega",
-    description: "Dodécaèdre",
-    color: "bg-rose-500",
+    description: "Dodécaèdre à 12 faces",
+    color: "bg-red-500",
   },
 ];
+
+// Fonction de génération de scramble mock
+export const generateMockScramble = (puzzleType: PuzzleType): string => {
+  const moves = {
+    "333": [
+      "R",
+      "R'",
+      "R2",
+      "U",
+      "U'",
+      "U2",
+      "F",
+      "F'",
+      "F2",
+      "L",
+      "L'",
+      "L2",
+      "D",
+      "D'",
+      "D2",
+      "B",
+      "B'",
+      "B2",
+    ],
+    "222": ["R", "R'", "R2", "U", "U'", "U2", "F", "F'", "F2"],
+    "444": [
+      "R",
+      "R'",
+      "R2",
+      "Rw",
+      "Rw'",
+      "Rw2",
+      "U",
+      "U'",
+      "U2",
+      "Uw",
+      "Uw'",
+      "Uw2",
+      "F",
+      "F'",
+      "F2",
+      "Fw",
+      "Fw'",
+      "Fw2",
+    ],
+    "555": [
+      // Added 5x5 moves
+      "R",
+      "R'",
+      "R2",
+      "Rw",
+      "Rw'",
+      "Rw2",
+      "U",
+      "U'",
+      "U2",
+      "Uw",
+      "Uw'",
+      "Uw2",
+      "F",
+      "F'",
+      "F2",
+      "Fw",
+      "Fw'",
+      "Fw2",
+      "L",
+      "L'",
+      "L2",
+      "Lw",
+      "Lw'",
+      "Lw2",
+      "D",
+      "D'",
+      "D2",
+      "Dw",
+      "Dw'",
+      "Dw2",
+      "B",
+      "B'",
+      "B2",
+      "Bw",
+      "Bw'",
+      "Bw2",
+    ],
+    "666": [
+      // Added 6x6 moves
+      "R",
+      "R'",
+      "R2",
+      "Rw",
+      "Rw'",
+      "Rw2",
+      "U",
+      "U'",
+      "U2",
+      "Uw",
+      "Uw'",
+      "Uw2",
+      "F",
+      "F'",
+      "F2",
+      "Fw",
+      "Fw'",
+      "Fw2",
+      "L",
+      "L'",
+      "L2",
+      "Lw",
+      "Lw'",
+      "Lw2",
+      "D",
+      "D'",
+      "D2",
+      "Dw",
+      "Dw'",
+      "Dw2",
+      "B",
+      "B'",
+      "B2",
+      "Bw",
+      "Bw'",
+      "Bw2",
+    ],
+    "777": [
+      // Added 7x7 moves
+      "R",
+      "R'",
+      "R2",
+      "Rw",
+      "Rw'",
+      "Rw2",
+      "U",
+      "U'",
+      "U2",
+      "Uw",
+      "Uw'",
+      "Uw2",
+      "F",
+      "F'",
+      "F2",
+      "Fw",
+      "Fw'",
+      "Fw2",
+      "L",
+      "L'",
+      "L2",
+      "Lw",
+      "Lw'",
+      "Lw2",
+      "D",
+      "D'",
+      "D2",
+      "Dw",
+      "Dw'",
+      "Dw2",
+      "B",
+      "B'",
+      "B2",
+      "Bw",
+      "Bw'",
+      "Bw2",
+    ],
+    pyram: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
+    skewb: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
+    sq1: ["(0,0)", "(1,0)", "(-1,0)", "(0,1)", "(0,-1)", "(1,1)", "(-1,-1)"],
+    clock: [
+      "UR",
+      "UR'",
+      "DR",
+      "DR'",
+      "DL",
+      "DL'",
+      "UL",
+      "UL'",
+      "U",
+      "U'",
+      "R",
+      "R'",
+      "D",
+      "D'",
+      "L",
+      "L'",
+    ],
+    minx: ["R", "R'", "U", "U'", "F", "F'"],
+  } as const;
+
+  const puzzleMoves = moves[puzzleType] || moves["333"];
+  const length = puzzleType === "sq1" ? 8 : puzzleType === "clock" ? 12 : 20;
+
+  let scramble = "";
+  let lastMove = "";
+  for (let i = 0; i < length; i++) {
+    let move;
+    do {
+      move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
+    } while (move === lastMove);
+    scramble += move + " ";
+    lastMove = move;
+  }
+  return scramble.trim();
+};
 
 // Mapping vers les codes d'event WCA utilisés par cubing.js
 // TODO: Réintégrer quand on aura résolu les problèmes de compilation
@@ -156,203 +357,6 @@ export const PuzzleSelector = forwardRef<
     regenerateScramble,
   }));
 
-  const generateMockScramble = (puzzleType: PuzzleType): string => {
-    const moves = {
-      "333": [
-        "R",
-        "R'",
-        "R2",
-        "U",
-        "U'",
-        "U2",
-        "F",
-        "F'",
-        "F2",
-        "L",
-        "L'",
-        "L2",
-        "D",
-        "D'",
-        "D2",
-        "B",
-        "B'",
-        "B2",
-      ],
-      "222": ["R", "R'", "R2", "U", "U'", "U2", "F", "F'", "F2"],
-      "444": [
-        "R",
-        "R'",
-        "R2",
-        "Rw",
-        "Rw'",
-        "Rw2",
-        "U",
-        "U'",
-        "U2",
-        "Uw",
-        "Uw'",
-        "Uw2",
-        "F",
-        "F'",
-        "F2",
-        "Fw",
-        "Fw'",
-        "Fw2",
-      ],
-      "555": [
-        "R",
-        "R'",
-        "R2",
-        "Rw",
-        "Rw'",
-        "Rw2",
-        "U",
-        "U'",
-        "U2",
-        "Uw",
-        "Uw'",
-        "Uw2",
-        "F",
-        "F'",
-        "F2",
-        "Fw",
-        "Fw'",
-        "Fw2",
-        "L",
-        "L'",
-        "L2",
-        "Lw",
-        "Lw'",
-        "Lw2",
-        "D",
-        "D'",
-        "D2",
-        "Dw",
-        "Dw'",
-        "Dw2",
-        "B",
-        "B'",
-        "B2",
-        "Bw",
-        "Bw'",
-        "Bw2",
-      ],
-      "666": [
-        "R",
-        "R'",
-        "R2",
-        "Rw",
-        "Rw'",
-        "Rw2",
-        "U",
-        "U'",
-        "U2",
-        "Uw",
-        "Uw'",
-        "Uw2",
-        "F",
-        "F'",
-        "F2",
-        "Fw",
-        "Fw'",
-        "Fw2",
-        "L",
-        "L'",
-        "L2",
-        "Lw",
-        "Lw'",
-        "Lw2",
-        "D",
-        "D'",
-        "D2",
-        "Dw",
-        "Dw'",
-        "Dw2",
-        "B",
-        "B'",
-        "B2",
-        "Bw",
-        "Bw'",
-        "Bw2",
-      ],
-      "777": [
-        "R",
-        "R'",
-        "R2",
-        "Rw",
-        "Rw'",
-        "Rw2",
-        "U",
-        "U'",
-        "U2",
-        "Uw",
-        "Uw'",
-        "Uw2",
-        "F",
-        "F'",
-        "F2",
-        "Fw",
-        "Fw'",
-        "Fw2",
-        "L",
-        "L'",
-        "L2",
-        "Lw",
-        "Lw'",
-        "Lw2",
-        "D",
-        "D'",
-        "D2",
-        "Dw",
-        "Dw'",
-        "Dw2",
-        "B",
-        "B'",
-        "B2",
-        "Bw",
-        "Bw'",
-        "Bw2",
-      ],
-      pyram: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
-      skewb: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
-      sq1: ["(0,0)", "(1,0)", "(-1,0)", "(0,1)", "(0,-1)", "(1,1)", "(-1,-1)"],
-      clock: [
-        "UR",
-        "UR'",
-        "DR",
-        "DR'",
-        "DL",
-        "DL'",
-        "UL",
-        "UL'",
-        "U",
-        "U'",
-        "R",
-        "R'",
-        "D",
-        "D'",
-        "L",
-        "L'",
-      ],
-      minx: ["R", "R'", "U", "U'", "F", "F'"],
-    } as const;
-
-    const puzzleMoves = moves[puzzleType] || moves["333"];
-    const length = puzzleType === "sq1" ? 8 : puzzleType === "clock" ? 12 : 20;
-
-    let scramble = "";
-    let lastMove = "";
-    for (let i = 0; i < length; i++) {
-      let move;
-      do {
-        move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
-      } while (move === lastMove);
-      scramble += move + " ";
-      lastMove = move;
-    }
-    return scramble.trim();
-  };
-
   useEffect(() => {
     generateScramble(selectedPuzzle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -371,53 +375,44 @@ export const PuzzleSelector = forwardRef<
     <Card>
       <CardContent className="p-6">
         <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Box className="h-5 w-5" />
-              Sélectionner le puzzle
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {PUZZLES.map((puzzle) => (
-                <Button
-                  key={puzzle.id}
-                  variant={selectedPuzzle === puzzle.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onPuzzleChange(puzzle.id)}
-                  className="h-auto p-3 flex flex-col items-center gap-1"
-                >
-                  <div className={`w-4 h-4 rounded-full ${puzzle.color}`} />
-                  <span className="text-xs font-medium">
-                    {puzzle.shortName}
-                  </span>
-                  <span className="text-xs text-muted-foreground hidden sm:block">
-                    {puzzle.name}
-                  </span>
-                </Button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2">
+            <Box className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Sélectionner un puzzle</h3>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Scramble {selectedPuzzleInfo?.name}
-              </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {PUZZLES.map((puzzle) => (
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => generateScramble(selectedPuzzle)}
-                className="h-8"
+                key={puzzle.id}
+                variant={selectedPuzzle === puzzle.id ? "default" : "outline"}
+                onClick={() => onPuzzleChange(puzzle.id)}
+                className="h-auto p-3 flex flex-col items-center gap-2"
               >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Nouveau
+                <div className={`w-4 h-4 rounded-full ${puzzle.color}`} />
+                <div className="text-center">
+                  <div className="font-medium text-sm">{puzzle.shortName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {puzzle.name}
+                  </div>
+                </div>
               </Button>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="text-sm text-muted-foreground">
+              Scramble actuel :{" "}
+              <span className="font-mono">{currentScramble}</span>
             </div>
-            <div className="bg-muted p-3 rounded-lg font-mono text-sm">
-              {currentScramble}
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              {selectedPuzzleInfo?.description}
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={regenerateScramble}
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Nouveau scramble
+            </Button>
           </div>
         </div>
       </CardContent>

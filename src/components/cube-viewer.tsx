@@ -141,6 +141,41 @@ export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
             </div>
           </div>
 
+          {/* Affichage du scramble */}
+          <div className="bg-muted p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                Scramble actuel
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {puzzleType === "333"
+                  ? "3x3x3"
+                  : puzzleType === "222"
+                  ? "2x2x2"
+                  : puzzleType === "444"
+                  ? "4x4x4"
+                  : puzzleType === "555"
+                  ? "5x5x5"
+                  : puzzleType === "666"
+                  ? "6x6x6"
+                  : puzzleType === "777"
+                  ? "7x7x7"
+                  : puzzleType === "pyram"
+                  ? "Pyraminx"
+                  : puzzleType === "skewb"
+                  ? "Skewb"
+                  : puzzleType === "sq1"
+                  ? "Square-1"
+                  : puzzleType === "clock"
+                  ? "Clock"
+                  : puzzleType === "minx"
+                  ? "Megaminx"
+                  : "3x3x3"}
+              </span>
+            </div>
+            <div className="font-mono text-sm break-all">{scramble}</div>
+          </div>
+
           <div
             ref={containerRef}
             className="w-full h-[300px] bg-muted rounded-lg flex items-center justify-center"
