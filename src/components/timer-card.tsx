@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Play,
   Square,
@@ -16,6 +16,12 @@ import { Button } from "@/components/ui/button";
 import { SolveList } from "./solve-list";
 import { useSolves, type Solve } from "@/hooks/use-solves";
 import { toast } from "sonner";
+import {
+  PuzzleSelector,
+  type PuzzleType,
+  type PuzzleSelectorRef,
+} from "./puzzle-selector";
+import { CubeViewer } from "./cube-viewer";
 
 export function TimerCard() {
   const [isRunning, setIsRunning] = useState(false);
@@ -24,6 +30,8 @@ export function TimerCard() {
   const [inspection, setInspection] = useState(0);
   const [isInspection, setIsInspection] = useState(false);
   const [currentScramble, setCurrentScramble] = useState("R U R' U'");
+  const [selectedPuzzle, setSelectedPuzzle] = useState<PuzzleType>("333");
+  const puzzleSelectorRef = useRef<{ regenerateScramble: () => void }>(null);
 
   const {
     solves,
@@ -34,37 +42,10 @@ export function TimerCard() {
     exportSolves,
   } = useSolves();
 
-  // Générer un nouveau scramble (mock pour l'instant)
+  // Générer un nouveau scramble (maintenant géré par PuzzleSelector)
   const generateScramble = useCallback(() => {
-    const moves = [
-      "R",
-      "R'",
-      "U",
-      "U'",
-      "F",
-      "F'",
-      "L",
-      "L'",
-      "D",
-      "D'",
-      "B",
-      "B'",
-    ];
-    const length = 20;
-    let scramble = "";
-    let lastMove = "";
-
-    for (let i = 0; i < length; i++) {
-      let move;
-      do {
-        move = moves[Math.floor(Math.random() * moves.length)];
-      } while (move === lastMove);
-
-      scramble += move + " ";
-      lastMove = move;
-    }
-
-    setCurrentScramble(scramble.trim());
+    // Cette fonction est maintenant gérée par PuzzleSelector
+    // On peut la garder pour la compatibilité
   }, []);
 
   // Timer principal
@@ -150,7 +131,10 @@ export function TimerCard() {
     });
 
     setTime(0);
-    generateScramble();
+    // Régénérer un nouveau scramble après avoir sauvegardé
+    if (puzzleSelectorRef.current) {
+      puzzleSelectorRef.current.regenerateScramble();
+    }
   };
 
   const handleUpdateSolve = (id: string, updates: Partial<Solve>) => {
@@ -173,6 +157,19 @@ export function TimerCard() {
   const handleExport = () => {
     exportSolves();
     toast.success("Solves exportés !");
+  };
+
+  const handlePuzzleChange = (puzzle: PuzzleType) => {
+    setSelectedPuzzle(puzzle);
+  };
+
+  const handleScrambleChange = (scramble: string) => {
+    setCurrentScramble(scramble);
+  };
+
+  const handleResetCube = () => {
+    // Reset le cube au solveur
+    // Cette fonction sera gérée par le CubeViewer lui-même
   };
 
   const formatTime = (ms: number) => {
@@ -216,6 +213,21 @@ export function TimerCard() {
 
   return (
     <div className="space-y-6">
+      {/* Sélecteur de puzzle */}
+      <PuzzleSelector
+        ref={puzzleSelectorRef}
+        selectedPuzzle={selectedPuzzle}
+        onPuzzleChange={handlePuzzleChange}
+        onScrambleChange={handleScrambleChange}
+      />
+
+      {/* Visualiseur 3D */}
+      <CubeViewer
+        puzzleType={selectedPuzzle}
+        scramble={currentScramble}
+        onReset={handleResetCube}
+      />
+
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="p-8">
           {/* Timer Display */}
@@ -235,27 +247,6 @@ export function TimerCard() {
                 ? "Inspection en cours..."
                 : "Appuie sur espace pour démarrer/arrêter"}
             </p>
-          </div>
-
-          {/* Scramble */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Scramble
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={generateScramble}
-                className="h-8"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Nouveau
-              </Button>
-            </div>
-            <div className="bg-muted p-3 rounded-lg font-mono text-sm">
-              {currentScramble}
-            </div>
           </div>
 
           {/* Controls */}
