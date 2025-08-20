@@ -108,7 +108,25 @@ export const PUZZLES: PuzzleInfo[] = [
 
 // Fonction de génération de scramble mock
 export const generateMockScramble = (puzzleType: PuzzleType): string => {
-  const moves = {
+  // Longueurs officielles WCA pour chaque puzzle
+  const wcaLengths = {
+    "333": 20, // 20 mouvements
+    "222": 9, // 9 mouvements
+    "444": 40, // 40 mouvements (avec wide moves)
+    "555": 60, // 60 mouvements (avec wide moves)
+    "666": 80, // 80 mouvements (avec wide moves)
+    "777": 100, // 100 mouvements (avec wide moves)
+    pyram: 11, // 11 mouvements
+    skewb: 8, // 8 mouvements
+    sq1: 13, // 13 mouvements (formes + rotations)
+    clock: 9, // 9 mouvements (pins + rotations)
+    minx: 77, // 77 mouvements
+  };
+
+  const length = wcaLengths[puzzleType] || 20;
+
+  // Mouvements officiels WCA pour chaque puzzle
+  const wcaMoves = {
     "333": [
       "R",
       "R'",
@@ -149,167 +167,196 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
       "Fw",
       "Fw'",
       "Fw2",
+      "L",
+      "L'",
+      "L2",
+      "Lw",
+      "Lw'",
+      "Lw2",
+      "D",
+      "D'",
+      "D2",
+      "Dw",
+      "Dw'",
+      "Dw2",
+      "B",
+      "B'",
+      "B2",
+      "Bw",
+      "Bw'",
+      "Bw2",
     ],
     "555": [
-      // Added 5x5 moves
       "R",
       "R'",
       "R2",
       "Rw",
       "Rw'",
       "Rw2",
+      "3Rw",
+      "3Rw'",
+      "3Rw2",
       "U",
       "U'",
       "U2",
       "Uw",
       "Uw'",
       "Uw2",
+      "3Uw",
+      "3Uw'",
+      "3Uw2",
       "F",
       "F'",
       "F2",
       "Fw",
       "Fw'",
       "Fw2",
+      "3Fw",
+      "3Fw'",
+      "3Fw2",
       "L",
       "L'",
       "L2",
       "Lw",
       "Lw'",
       "Lw2",
+      "3Lw",
+      "3Lw'",
+      "3Lw2",
       "D",
       "D'",
       "D2",
       "Dw",
       "Dw'",
       "Dw2",
+      "3Dw",
+      "3Dw'",
+      "3Dw2",
       "B",
       "B'",
       "B2",
       "Bw",
       "Bw'",
       "Bw2",
+      "3Bw",
+      "3Bw'",
+      "3Bw2",
     ],
     "666": [
-      // Added 6x6 moves
       "R",
       "R'",
       "R2",
       "Rw",
       "Rw'",
       "Rw2",
+      "3Rw",
+      "3Rw'",
+      "3Rw2",
       "U",
       "U'",
       "U2",
       "Uw",
       "Uw'",
       "Uw2",
+      "3Uw",
+      "3Uw'",
+      "3Uw2",
       "F",
       "F'",
       "F2",
       "Fw",
       "Fw'",
       "Fw2",
+      "3Fw",
+      "3Fw'",
+      "3Fw2",
       "L",
       "L'",
       "L2",
       "Lw",
       "Lw'",
       "Lw2",
+      "3Lw",
+      "3Lw'",
+      "3Lw2",
       "D",
       "D'",
       "D2",
       "Dw",
       "Dw'",
       "Dw2",
+      "3Dw",
+      "3Dw'",
+      "3Dw2",
       "B",
       "B'",
       "B2",
       "Bw",
       "Bw'",
       "Bw2",
+      "3Bw",
+      "3Bw'",
+      "3Bw2",
     ],
     "777": [
-      // Added 7x7 moves
       "R",
       "R'",
       "R2",
       "Rw",
       "Rw'",
       "Rw2",
+      "3Rw",
+      "3Rw'",
+      "3Rw2",
       "U",
       "U'",
       "U2",
       "Uw",
       "Uw'",
       "Uw2",
+      "3Uw",
+      "3Uw'",
+      "3Uw2",
       "F",
       "F'",
       "F2",
       "Fw",
       "Fw'",
       "Fw2",
+      "3Fw",
+      "3Fw'",
+      "3Fw2",
       "L",
       "L'",
       "L2",
       "Lw",
       "Lw'",
       "Lw2",
+      "3Lw",
+      "3Lw'",
+      "3Lw2",
       "D",
       "D'",
       "D2",
       "Dw",
       "Dw'",
       "Dw2",
+      "3Dw",
+      "3Dw'",
+      "3Dw2",
       "B",
       "B'",
       "B2",
       "Bw",
       "Bw'",
       "Bw2",
+      "3Bw",
+      "3Bw'",
+      "3Bw2",
     ],
     pyram: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
     skewb: ["R", "R'", "U", "U'", "L", "L'", "B", "B'"],
-    sq1: ["(0,0)", "(1,0)", "(-1,0)", "(0,1)", "(0,-1)", "(1,1)", "(-1,-1)"],
-    clock: [
-      "UR0+ DR0+ DL0+ UL0+ U0+ R0+ D0+ L0+ UR0+ DR0+ DL0+ UL0+",
-      "UR1+ DR1+ DL1+ UL1+ U1+ R1+ D1+ L1+ UR1+ DR1+ DL1+ UL1+",
-      "UR2+ DR2+ DL2+ UL2+ U2+ R2+ D2+ L2+ UR2+ DR2+ DL2+ UL2+",
-      "UR3+ DR3+ DL3+ UL3+ U3+ R3+ D3+ L3+ UR3+ DR3+ DL3+ UL3+",
-      "UR4+ DR4+ DL4+ UL4+ U4+ R4+ D4+ L4+ UR4+ DR4+ DL4+ UL4+",
-      "UR5+ DR5+ DL5+ UL5+ U5+ R5+ D5+ L5+ UR5+ DR5+ DL5+ UL5+",
-      "UR6+ DR6+ DL6+ UL6+ U6+ R6+ D6+ L6+ UR6+ DR6+ DL6+ UL6+",
-      "UR7+ DR7+ DL7+ UL7+ U7+ R7+ D7+ L7+ UR7+ DR7+ DL7+ UL7+",
-      "UR8+ DR8+ DL8+ UL8+ U8+ R8+ D8+ L8+ UR8+ DR8+ DL8+ UL8+",
-      "UR9+ DR9+ DL9+ UL9+ U9+ R9+ D9+ L9+ UR9+ DR9+ DL9+ UL9+",
-      "UR10+ DR10+ DL10+ UL10+ U10+ R10+ D10+ L10+ UR10+ DR10+ DL10+ UL10+",
-      "UR11+ DR11+ DL11+ UL11+ U11+ R11+ D11+ L11+ UR11+ DR11+ DL11+ UL11+",
-    ],
-    minx: ["R", "R'", "U", "U'", "F", "F'"],
-  } as const;
-
-  const puzzleMoves = moves[puzzleType] || moves["333"];
-
-  // Longueurs spécifiques par puzzle
-  let length: number;
-  if (puzzleType === "sq1") {
-    length = 8;
-  } else if (puzzleType === "clock") {
-    length = 12;
-  } else if (puzzleType === "pyram" || puzzleType === "skewb") {
-    length = 8;
-  } else if (puzzleType === "minx") {
-    length = 10;
-  } else {
-    length = 20; // 3x3, 4x4, 5x5, 6x6, 7x7
-  }
-
-  let scramble = "";
-  let lastMove = "";
-
-  // Logique spéciale pour Square-1
-  if (puzzleType === "sq1") {
-    // Scrambles Square-1 plus réalistes avec des mouvements de forme
-    const square1Moves = [
+    sq1: [
       "(0,0)",
       "(1,0)",
       "(-1,0)",
@@ -325,38 +372,220 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
       "(-1,2)",
       "(2,1)",
       "(-2,1)",
+      "(3,0)",
+      "(-3,0)",
+      "(0,3)",
+      "(0,-3)",
+      "(1,3)",
+      "(-1,3)",
+      "(3,1)",
+      "(-3,1)",
+      "(4,0)",
+      "(-4,0)",
+      "(0,4)",
+      "(0,-4)",
+      "(1,4)",
+      "(-1,4)",
+      "(4,1)",
+      "(-4,1)",
+      "(5,0)",
+      "(-5,0)",
+      "(0,5)",
+      "(0,-5)",
+      "(1,5)",
+      "(-1,5)",
+      "(5,1)",
+      "(-5,1)",
+    ],
+    clock: [
+      "UR0+",
+      "DR0+",
+      "DL0+",
+      "UL0+",
+      "U0+",
+      "R0+",
+      "D0+",
+      "L0+",
+      "UR1+",
+      "DR1+",
+      "DL1+",
+      "UL1+",
+      "U1+",
+      "R1+",
+      "D1+",
+      "L1+",
+      "UR2+",
+      "DR2+",
+      "DL2+",
+      "UL2+",
+      "U2+",
+      "R2+",
+      "D2+",
+      "L2+",
+      "UR3+",
+      "DR3+",
+      "DL3+",
+      "UL3+",
+      "U3+",
+      "R3+",
+      "D3+",
+      "L3+",
+      "UR4+",
+      "DR4+",
+      "DL4+",
+      "UL4+",
+      "U4+",
+      "R4+",
+      "D4+",
+      "L4+",
+      "UR5+",
+      "DR5+",
+      "DL5+",
+      "UL5+",
+      "U5+",
+      "R5+",
+      "D5+",
+      "L5+",
+      "UR6+",
+      "DR6+",
+      "DL6+",
+      "UL6+",
+      "U6+",
+      "R6+",
+      "D6+",
+      "L6+",
+      "UR7+",
+      "DR7+",
+      "DL7+",
+      "UL7+",
+      "U7+",
+      "R7+",
+      "D7+",
+      "L7+",
+      "UR8+",
+      "DR8+",
+      "DL8+",
+      "UL8+",
+      "U8+",
+      "R8+",
+      "D8+",
+      "L8+",
+      "UR9+",
+      "DR9+",
+      "DL9+",
+      "UL9+",
+      "U9+",
+      "R9+",
+      "D9+",
+      "L9+",
+      "UR10+",
+      "DR10+",
+      "DL10+",
+      "UL10+",
+      "U10+",
+      "R10+",
+      "D10+",
+      "L10+",
+      "UR11+",
+      "DR11+",
+      "DL11+",
+      "UL11+",
+      "U11+",
+      "R11+",
+      "D11+",
+      "L11+",
+    ],
+    minx: [
+      "R",
+      "R'",
+      "U",
+      "U'",
+      "F",
+      "F'",
+      "L",
+      "L'",
+      "D",
+      "D'",
+      "B",
+      "B'",
+      "R++",
+      "R--",
+      "U++",
+      "U--",
+      "F++",
+      "F--",
+      "L++",
+      "L--",
+      "D++",
+      "D--",
+      "B++",
+      "B--",
+    ],
+  };
+
+  const puzzleMoves = wcaMoves[puzzleType] || wcaMoves["333"];
+  let scramble = "";
+  let lastMove = "";
+  let lastLastMove = "";
+
+  // Logique spéciale pour Square-1
+  if (puzzleType === "sq1") {
+    // Scrambles Square-1 WCA : alterner formes et rotations
+    const shapes = [
+      "(0,0)",
+      "(1,0)",
+      "(-1,0)",
+      "(0,1)",
+      "(0,-1)",
+      "(1,1)",
+      "(-1,-1)",
     ];
+    const rotations = ["U", "U'", "U2", "D", "D'", "D2"];
 
     for (let i = 0; i < length; i++) {
-      let move;
-      do {
-        move = square1Moves[Math.floor(Math.random() * square1Moves.length)];
-      } while (move === lastMove);
-      scramble += move + " ";
-      lastMove = move;
+      if (i % 2 === 0) {
+        // Mouvement de forme
+        let move;
+        do {
+          move = shapes[Math.floor(Math.random() * shapes.length)];
+        } while (move === lastMove);
+        scramble += move + " ";
+        lastMove = move;
+      } else {
+        // Mouvement de rotation
+        let move;
+        do {
+          move = rotations[Math.floor(Math.random() * rotations.length)];
+        } while (move === lastMove);
+        scramble += move + " ";
+        lastMove = move;
+      }
     }
   }
   // Logique spéciale pour Clock
   else if (puzzleType === "clock") {
-    // Scrambles pré-générés qui fonctionnent avec cubing.js
-    const clockScrambles = [
-      "UR0+ DR0+ DL0+ UL0+ U0+ R0+ D0+ L0+ UR0+ DR0+ DL0+ UL0+",
-      "UR1+ DR1+ DL1+ UL1+ U1+ R1+ D1+ L1+ UR1+ DR1+ DL1+ UL1+",
-      "UR2+ DR2+ DL2+ UL2+ U2+ R2+ D2+ L2+ UR2+ DR2+ DL2+ UL2+",
-      "UR3+ DR3+ DL3+ UL3+ U3+ R3+ D3+ L3+ UR3+ DR3+ DL3+ UL3+",
-      "UR4+ DR4+ DL4+ UL4+ U4+ R4+ D4+ L4+ UR4+ DR4+ DL4+ UL4+",
-      "UR5+ DR5+ DL5+ UL5+ U5+ R5+ D5+ L5+ UR5+ DR5+ DL5+ UL5+",
-      "UR6+ DR6+ DL6+ UL6+ U6+ R6+ D6+ L6+ UR6+ DR6+ DL6+ UL6+",
-      "UR7+ DR7+ DL7+ UL7+ U7+ R7+ D7+ L7+ UR7+ DR7+ DL7+ UL7+",
-      "UR8+ DR8+ DL8+ UL8+ U8+ R8+ D8+ L8+ UR8+ DR8+ DL8+ UL8+",
-      "UR9+ DR9+ DL9+ UL9+ U9+ R9+ D9+ L9+ UR9+ DR9+ DL9+ UL9+",
-      "UR10+ DR10+ DL10+ UL10+ U10+ R10+ D10+ L10+ UR10+ DR10+ DL10+ UL10+",
-      "UR11+ DR11+ DL11+ UL11+ U11+ R11+ D11+ L11+ UR11+ DR11+ DL11+ UL11+",
+    // Scrambles Clock WCA : pins + rotations
+    const pins = ["UR", "DR", "DL", "UL"];
+    const rotations = [
+      "0+",
+      "1+",
+      "2+",
+      "3+",
+      "4+",
+      "5+",
+      "6+",
+      "7+",
+      "8+",
+      "9+",
+      "10+",
+      "11+",
     ];
 
-    // Choisir un scramble aléatoire
-    const randomIndex = Math.floor(Math.random() * clockScrambles.length);
-    scramble = clockScrambles[randomIndex];
+    for (let i = 0; i < length; i++) {
+      const pin = pins[Math.floor(Math.random() * pins.length)];
+      const rotation = rotations[Math.floor(Math.random() * rotations.length)];
+      scramble += pin + rotation + " ";
+    }
   }
   // Logique standard pour les autres puzzles
   else {
@@ -364,8 +593,32 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
       let move;
       do {
         move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
-      } while (move === lastMove);
+      } while (
+        move === lastMove ||
+        move === lastLastMove ||
+        // Éviter les répétitions de face (ex: R R' R)
+        (move.startsWith("R") &&
+          lastMove.startsWith("R") &&
+          lastLastMove.startsWith("R")) ||
+        (move.startsWith("U") &&
+          lastMove.startsWith("U") &&
+          lastLastMove.startsWith("U")) ||
+        (move.startsWith("F") &&
+          lastMove.startsWith("F") &&
+          lastLastMove.startsWith("F")) ||
+        (move.startsWith("L") &&
+          lastMove.startsWith("L") &&
+          lastLastMove.startsWith("L")) ||
+        (move.startsWith("D") &&
+          lastMove.startsWith("D") &&
+          lastLastMove.startsWith("D")) ||
+        (move.startsWith("B") &&
+          lastMove.startsWith("B") &&
+          lastLastMove.startsWith("B"))
+      );
+
       scramble += move + " ";
+      lastLastMove = lastMove;
       lastMove = move;
     }
   }
