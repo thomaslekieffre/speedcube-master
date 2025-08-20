@@ -31,9 +31,13 @@ export function TimerCard() {
   const [time, setTime] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [inspection, setInspection] = useState(0);
+  const [inspectionStartTime, setInspectionStartTime] = useState<number | null>(
+    null
+  );
   const [isInspection, setIsInspection] = useState(false);
   const [currentScramble, setCurrentScramble] = useState("R U R' U'");
   const [selectedPuzzle, setSelectedPuzzle] = useState<PuzzleType>("333");
+  const [dnfAlreadySaved, setDnfAlreadySaved] = useState(false);
 
   const {
     solves,
@@ -71,24 +75,63 @@ export function TimerCard() {
     return () => clearInterval(interval);
   }, [isRunning, startTime]);
 
-  // Inspection timer
+  // Inspection timer avec règles WCA
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
+    let interval: ReturnType<typeof setInterval> | null = null;
 
-    if (isInspection) {
+    if (isInspection && inspectionStartTime) {
+      // Commencer immédiatement
+      setInspection(Date.now() - inspectionStartTime);
+
       interval = setInterval(() => {
-        setInspection((prev) => {
-          if (prev >= 15000) {
-            setIsInspection(false);
-            return 0;
-          }
-          return prev + 100;
-        });
-      }, 100);
+        const currentInspection = Date.now() - inspectionStartTime;
+        setInspection(currentInspection);
+
+        // Règles WCA pour l'inspection :
+        // - 15 secondes maximum
+        // - +2 si > 15s
+        // - DNF si > 17s
+        if (currentInspection >= 17000) {
+          // DNF - arrêter l'inspection et sauvegarder le DNF
+          setIsInspection(false);
+          setIsRunning(false);
+          setInspection(0);
+          setInspectionStartTime(null);
+          setDnfAlreadySaved(true); // Marquer que le DNF est déjà sauvegardé
+
+          // Sauvegarder le DNF dans les solves
+          addSolve({
+            time: 0,
+            penalty: "dnf",
+            date: new Date(),
+            scramble: currentScramble,
+          });
+
+          toast.error("DNF - Inspection > 17 secondes", {
+            description: "Règles WCA : DNF si inspection > 17s",
+          });
+
+          // Régénérer un nouveau scramble
+          generateNewScramble();
+        } else if (currentInspection >= 15000 && currentInspection < 15016) {
+          // +2 - afficher le warning une seule fois
+          toast.warning("+2 - Inspection > 15 secondes", {
+            description: "Règles WCA : +2 si inspection > 15s",
+          });
+        }
+      }, 10); // Même fréquence que le timer principal
     }
 
-    return () => clearInterval(interval);
-  }, [isInspection]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [
+    isInspection,
+    inspectionStartTime,
+    currentScramble,
+    addSolve,
+    generateNewScramble,
+  ]);
 
   // Gestion des touches
   useEffect(() => {
@@ -107,10 +150,11 @@ export function TimerCard() {
     if (!isRunning && !isInspection) {
       // Commencer l'inspection
       setIsInspection(true);
-      setInspection(0);
+      setInspectionStartTime(Date.now());
     } else if (isInspection) {
       // Démarrer le timer
       setIsInspection(false);
+      setInspectionStartTime(null);
       setIsRunning(true);
       setStartTime(Date.now());
       setTime(0); // Remettre à 0 au début du timer
@@ -123,21 +167,54 @@ export function TimerCard() {
   };
 
   const saveSolve = () => {
-    // Calculer le temps directement depuis startTime
     const currentTime = startTime ? Date.now() - startTime : 0;
+
+    // Déterminer la pénalité selon les règles WCA
+    let penalty: "none" | "plus2" | "dnf" = "none";
+
+    if (inspection > 17000) {
+      penalty = "dnf";
+    } else if (inspection > 15000) {
+      penalty = "plus2";
+    }
+
+    // Ne pas sauvegarder si c'est déjà un DNF d'inspection (déjà sauvegardé)
+    if (dnfAlreadySaved) {
+      setDnfAlreadySaved(false); // Reset le flag
+      setTime(0);
+      setInspection(0);
+      setInspectionStartTime(null);
+      setIsInspection(false);
+      generateNewScramble();
+      return;
+    }
 
     const newSolve = addSolve({
       time: currentTime,
-      penalty: "none",
+      penalty: penalty,
       date: new Date(),
       scramble: currentScramble,
     });
 
-    toast.success("Solve sauvegardé !", {
-      description: `Temps: ${formatTime(currentTime)}`,
-    });
+    // Message selon la pénalité
+    if (penalty === "dnf") {
+      toast.error("DNF - Inspection > 17 secondes", {
+        description: `Temps: ${formatTime(currentTime)} (DNF)`,
+      });
+    } else if (penalty === "plus2") {
+      toast.warning("Solve sauvegardé avec +2", {
+        description: `Temps: ${formatTime(currentTime)} + 2 secondes`,
+      });
+    } else {
+      toast.success("Solve sauvegardé !", {
+        description: `Temps: ${formatTime(currentTime)}`,
+      });
+    }
 
     setTime(0);
+    setInspection(0);
+    setInspectionStartTime(null);
+    setIsInspection(false);
     // Régénérer un nouveau scramble après avoir sauvegardé
     generateNewScramble();
   };
@@ -201,6 +278,18 @@ export function TimerCard() {
     if (solves.length === 0) return null;
 
     const validSolves = solves.filter((s) => s.penalty !== "dnf");
+    const dnfCount = solves.filter((s) => s.penalty === "dnf").length;
+
+    // Si tous les solves sont DNF, pas de moyenne
+    if (validSolves.length === 0) {
+      return {
+        pb: null,
+        average: null,
+        total: solves.length,
+        dnfCount: dnfCount,
+      };
+    }
+
     const times = validSolves.map((s) =>
       s.penalty === "plus2" ? s.time + 2000 : s.time
     );
@@ -211,7 +300,12 @@ export function TimerCard() {
         ? Math.floor(times.reduce((a, b) => a + b, 0) / times.length)
         : 0;
 
-    return { pb, average, total: solves.length };
+    return {
+      pb,
+      average,
+      total: solves.length,
+      dnfCount: dnfCount,
+    };
   };
 
   const stats = getStats();
@@ -294,17 +388,89 @@ export function TimerCard() {
                 <div className="text-center mb-8">
                   {isInspection ? (
                     <div className="space-y-4">
-                      <div className="text-7xl font-mono font-bold text-warning">
+                      <div
+                        className={`text-7xl font-mono font-bold ${
+                          inspection > 17000
+                            ? "text-destructive"
+                            : inspection > 15000
+                            ? "text-warning"
+                            : "text-primary"
+                        }`}
+                      >
                         {formatInspection(inspection)}
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-3 relative overflow-hidden">
+                        {/* Barre de progression principale */}
                         <div
-                          className="bg-warning h-2 rounded-full transition-all duration-100"
-                          style={{ width: `${(inspection / 15000) * 100}%` }}
+                          className={`h-3 rounded-full transition-all duration-200 ease-out ${
+                            inspection > 17000
+                              ? "bg-destructive"
+                              : inspection > 15000
+                              ? "bg-warning"
+                              : "bg-primary"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              (inspection / 15000) * 100,
+                              100
+                            )}%`,
+                          }}
+                        />
+
+                        {/* Barre de progression étendue pour montrer jusqu'à 17s */}
+                        {inspection > 15000 && (
+                          <div
+                            className={`h-3 rounded-full transition-all duration-200 ease-out ${
+                              inspection > 17000
+                                ? "bg-destructive"
+                                : "bg-warning"
+                            }`}
+                            style={{
+                              width: `${Math.min(
+                                ((inspection - 15000) / 2000) * 100,
+                                100
+                              )}%`,
+                              marginLeft: "100%",
+                            }}
+                          />
+                        )}
+
+                        {/* Indicateur de position */}
+                        <div
+                          className={`absolute top-0 w-1 h-3 rounded-full transition-all duration-200 ease-out ${
+                            inspection > 17000
+                              ? "bg-white"
+                              : inspection > 15000
+                              ? "bg-white"
+                              : "bg-white/50"
+                          }`}
+                          style={{
+                            left: `${Math.min(
+                              (inspection / 17000) * 100,
+                              100
+                            )}%`,
+                          }}
                         />
                       </div>
-                      <p className="text-muted-foreground text-sm">
-                        Inspection en cours... Appuie sur espace pour démarrer
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>0s</span>
+                        <span>15s (WCA)</span>
+                        <span>17s (DNF)</span>
+                      </div>
+                      <p
+                        className={`text-sm ${
+                          inspection > 17000
+                            ? "text-destructive"
+                            : inspection > 15000
+                            ? "text-warning"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {inspection > 17000
+                          ? "DNF - Inspection > 17 secondes"
+                          : inspection > 15000
+                          ? "+2 - Inspection > 15 secondes"
+                          : "Inspection en cours... Appuie sur espace pour démarrer"}
                       </p>
                     </div>
                   ) : (
@@ -355,13 +521,13 @@ export function TimerCard() {
                       </div>
                       <div className="space-y-2">
                         <div className="text-3xl font-bold text-primary">
-                          {formatTime(stats.pb)}
+                          {stats.pb ? formatTime(stats.pb) : "N/A"}
                         </div>
                         <div className="text-sm text-muted-foreground">PB</div>
                       </div>
                       <div className="space-y-2">
                         <div className="text-3xl font-bold text-accent">
-                          {formatTime(stats.average)}
+                          {stats.average ? formatTime(stats.average) : "N/A"}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Moyenne
