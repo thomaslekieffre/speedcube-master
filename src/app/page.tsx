@@ -1,5 +1,6 @@
 import { Timer, Zap, BarChart3, Play, Search, Trophy } from "lucide-react";
 import Link from "next/link";
+import { TypingEffect } from "@/components/typing-effect";
 
 export default function Home() {
   return (
@@ -8,12 +9,20 @@ export default function Home() {
       <section className="pt-24 pb-16 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl text-center">
           <h1 className="text-4xl sm:text-6xl font-bold text-foreground mb-6">
-            La <span className="text-primary">référence</span> du speedcubing
+            <TypingEffect
+              text="La référence du speedcubing"
+              speed={150}
+              highlightWords={["référence"]}
+              highlightColor="text-primary"
+            />
           </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Timer, algos, stats et défis pour tous les puzzles WCA. Améliore tes
-            temps, maîtrise tes algorithmes.
-          </p>
+          <div className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            <TypingEffect
+              text="Timer, algos, stats et défis pour tous les puzzles WCA. Améliore tes temps, maîtrise tes algorithmes."
+              speed={50}
+              delay={2000}
+            />
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
