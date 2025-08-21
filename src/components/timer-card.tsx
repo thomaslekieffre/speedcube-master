@@ -38,6 +38,7 @@ export function TimerCard() {
   const [currentScramble, setCurrentScramble] = useState("R U R' U'");
   const [selectedPuzzle, setSelectedPuzzle] = useState<PuzzleType>("333");
   const [dnfAlreadySaved, setDnfAlreadySaved] = useState(false);
+  const isInitialized = useRef(false);
 
   const {
     solves,
@@ -48,16 +49,20 @@ export function TimerCard() {
     exportSolves,
   } = useSolves();
 
-  // Générer un nouveau scramble
-  const generateNewScramble = useCallback(() => {
-    const newScramble = generateMockScramble(selectedPuzzle);
-    setCurrentScramble(newScramble);
-  }, [selectedPuzzle]);
-
-  // Générer le premier scramble au montage
+  // Générer le premier scramble côté client seulement
   useEffect(() => {
-    generateNewScramble();
-  }, [generateNewScramble]);
+    if (!isInitialized.current) {
+      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      isInitialized.current = true;
+    }
+  }, []);
+
+  // Générer un nouveau scramble quand le puzzle change
+  useEffect(() => {
+    if (isInitialized.current) {
+      setCurrentScramble(generateMockScramble(selectedPuzzle));
+    }
+  }, [selectedPuzzle]);
 
   // Timer principal
   useEffect(() => {
@@ -100,20 +105,26 @@ export function TimerCard() {
           setDnfAlreadySaved(true); // Marquer que le DNF est déjà sauvegardé
 
           // Sauvegarder le DNF dans les solves
-          addSolve({
+          const dnfSolve = {
             time: 0,
-            penalty: "dnf",
+            penalty: "dnf" as const,
             date: new Date(),
             scramble: currentScramble,
             puzzle: selectedPuzzle,
-          });
+          };
+
+          // Utiliser setTimeout pour éviter la boucle infinie
+          setTimeout(() => {
+            addSolve(dnfSolve);
+          }, 0);
 
           toast.error("DNF - Inspection > 17 secondes", {
             description: "Règles WCA : DNF si inspection > 17s",
           });
 
           // Régénérer un nouveau scramble
-          generateNewScramble();
+          const newScramble = generateMockScramble(selectedPuzzle);
+          setCurrentScramble(newScramble);
         } else if (currentInspection >= 15000 && currentInspection < 15016) {
           // +2 - afficher le warning une seule fois
           toast.warning("+2 - Inspection > 15 secondes", {
@@ -126,42 +137,9 @@ export function TimerCard() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isInspection, inspectionStartTime, currentScramble, addSolve]);
+  }, [isInspection, inspectionStartTime, selectedPuzzle]);
 
-  // Gestion des touches
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        handleSpacePress();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isRunning, isInspection]);
-
-  const handleSpacePress = () => {
-    if (!isRunning && !isInspection) {
-      // Commencer l'inspection
-      setIsInspection(true);
-      setInspectionStartTime(Date.now());
-    } else if (isInspection) {
-      // Démarrer le timer
-      setIsInspection(false);
-      setInspectionStartTime(null);
-      setIsRunning(true);
-      setStartTime(Date.now());
-      setTime(0); // Remettre à 0 au début du timer
-    } else if (isRunning) {
-      // Arrêter le timer
-      setIsRunning(false);
-      setStartTime(null);
-      saveSolve();
-    }
-  };
-
-  const saveSolve = () => {
+  const saveSolve = useCallback(() => {
     const currentTime = startTime ? Date.now() - startTime : 0;
 
     // Déterminer la pénalité selon les règles WCA
@@ -180,7 +158,9 @@ export function TimerCard() {
       setInspection(0);
       setInspectionStartTime(null);
       setIsInspection(false);
-      generateNewScramble();
+      // Appeler generateNewScramble directement
+      const newScramble = generateMockScramble(selectedPuzzle);
+      setCurrentScramble(newScramble);
       return;
     }
 
@@ -211,9 +191,50 @@ export function TimerCard() {
     setInspection(0);
     setInspectionStartTime(null);
     setIsInspection(false);
-    // Régénérer un nouveau scramble après avoir sauvegardé
-    generateNewScramble();
-  };
+    // Appeler generateNewScramble directement
+    const newScramble = generateMockScramble(selectedPuzzle);
+    setCurrentScramble(newScramble);
+  }, [
+    startTime,
+    inspection,
+    dnfAlreadySaved,
+    addSolve,
+    currentScramble,
+    selectedPuzzle,
+  ]);
+
+  const handleSpacePress = useCallback(() => {
+    if (!isRunning && !isInspection) {
+      // Commencer l'inspection
+      setIsInspection(true);
+      setInspectionStartTime(Date.now());
+    } else if (isInspection) {
+      // Démarrer le timer
+      setIsInspection(false);
+      setInspectionStartTime(null);
+      setIsRunning(true);
+      setStartTime(Date.now());
+      setTime(0); // Remettre à 0 au début du timer
+    } else if (isRunning) {
+      // Arrêter le timer
+      setIsRunning(false);
+      setStartTime(null);
+      saveSolve();
+    }
+  }, [isRunning, isInspection, saveSolve]);
+
+  // Gestion des touches
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleSpacePress();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSpacePress]);
 
   const handleUpdateSolve = (id: string, updates: Partial<Solve>) => {
     updateSolve(id, updates);
@@ -365,7 +386,13 @@ export function TimerCard() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={generateNewScramble}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentScramble(generateMockScramble(selectedPuzzle))
+                }
+              >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Nouveau scramble
               </Button>
