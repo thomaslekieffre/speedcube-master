@@ -589,14 +589,51 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
   }
   // Logique standard pour les autres puzzles
   else {
+    // Fonction helper pour vérifier si deux mouvements s'annulent
+    const movesCancel = (move1: string, move2: string): boolean => {
+      // Extraire la face et la direction
+      const getFace = (move: string) =>
+        move.replace(/['2]/, "").replace(/w|3/, "");
+      const getDirection = (move: string) =>
+        move.includes("'") ? "'" : move.includes("2") ? "2" : "";
+
+      const face1 = getFace(move1);
+      const face2 = getFace(move2);
+      const dir1 = getDirection(move1);
+      const dir2 = getDirection(move2);
+
+      // Même face
+      if (face1 !== face2) return false;
+
+      // Annulation directe : R R', Rw Rw', 3Rw 3Rw', etc.
+      if ((dir1 === "" && dir2 === "'") || (dir1 === "'" && dir2 === ""))
+        return true;
+
+      // Même mouvement : R R, R2 R2, etc.
+      if (move1 === move2) return true;
+
+      return false;
+    };
+
     for (let i = 0; i < length; i++) {
       let move;
+      let attempts = 0;
+      const maxAttempts = 100; // Éviter les boucles infinies
+
       do {
         move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
+        attempts++;
+
+        // Éviter les boucles infinies
+        if (attempts > maxAttempts) {
+          // Si on ne trouve pas de mouvement valide, on prend le premier disponible
+          move = puzzleMoves[0];
+          break;
+        }
       } while (
-        move === lastMove ||
-        move === lastLastMove ||
-        // Éviter les répétitions de face (ex: R R' R)
+        // Règle WCA : aucun mouvement ne doit annuler ou partiellement annuler le mouvement précédent
+        movesCancel(move, lastMove) ||
+        // Éviter les répétitions de face sur 3 mouvements consécutifs
         (move.startsWith("R") &&
           lastMove.startsWith("R") &&
           lastLastMove.startsWith("R")) ||
