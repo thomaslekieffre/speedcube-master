@@ -574,11 +574,13 @@ export function TimerCard() {
             {currentScramble && currentScramble.trim() !== "" && (
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Scramble</h3>
-                    <Badge variant="secondary" className="font-mono text-sm">
-                      {currentScramble}
-                    </Badge>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Scramble</h3>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <code className="text-sm font-mono break-all leading-relaxed">
+                        {currentScramble}
+                      </code>
+                    </div>
                   </div>
                   <CubeViewer
                     puzzleType={selectedPuzzle}
@@ -608,7 +610,7 @@ export function TimerCard() {
                       <p className="text-sm">Commence à résoudre !</p>
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
                       {puzzleSolves.slice(0, 10).map((solve, index) => (
                         <div
                           key={solve.id}
@@ -617,7 +619,7 @@ export function TimerCard() {
                           {/* Header avec numéro et temps */}
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
-                              <div className="text-sm font-mono text-muted-foreground w-8">
+                              <div className="text-sm font-mono text-muted-foreground w-6">
                                 #{puzzleSolves.length - index}
                               </div>
                               <div className="text-sm font-mono font-semibold">
@@ -636,9 +638,9 @@ export function TimerCard() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteSolve(solve.id)}
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-3 w-3" />
                             </Button>
                           </div>
 
@@ -652,7 +654,7 @@ export function TimerCard() {
                               onClick={() =>
                                 handleUpdateSolve(solve.id, { penalty: "none" })
                               }
-                              className="h-6 px-2 text-xs"
+                              className="h-5 px-2 text-xs"
                             >
                               OK
                             </Button>
@@ -668,7 +670,7 @@ export function TimerCard() {
                                   penalty: "plus2",
                                 })
                               }
-                              className="h-6 px-2 text-xs text-warning hover:text-warning"
+                              className="h-5 px-2 text-xs text-warning hover:text-warning"
                             >
                               +2
                             </Button>
@@ -680,25 +682,30 @@ export function TimerCard() {
                               onClick={() =>
                                 handleUpdateSolve(solve.id, { penalty: "dnf" })
                               }
-                              className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                              className="h-5 px-2 text-xs text-destructive hover:text-destructive"
                             >
                               DNF
                             </Button>
                           </div>
 
-                          {/* Notes */}
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              placeholder="Ajouter des notes..."
-                              value={solve.notes || ""}
-                              onChange={(e) =>
-                                handleUpdateSolve(solve.id, {
-                                  notes: e.target.value,
-                                })
-                              }
-                              className="flex-1 text-xs bg-transparent border border-border rounded px-2 py-1 focus:outline-none focus:border-primary"
-                            />
+                          {/* Scramble et Notes */}
+                          <div className="space-y-2">
+                            <div className="text-xs text-muted-foreground font-mono break-all leading-tight">
+                              {solve.scramble}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder="Notes..."
+                                value={solve.notes || ""}
+                                onChange={(e) =>
+                                  handleUpdateSolve(solve.id, {
+                                    notes: e.target.value,
+                                  })
+                                }
+                                className="flex-1 text-xs bg-transparent border border-border rounded px-2 py-1 focus:outline-none focus:border-primary"
+                              />
+                            </div>
                           </div>
                         </div>
                       ))}
