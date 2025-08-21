@@ -120,6 +120,32 @@ export function usePersonalBests(userId?: string) {
     return personalBests.find((pb) => pb.puzzle_type === puzzleType);
   };
 
+  const deletePersonalBest = async (puzzleType: string) => {
+    if (!user) return;
+
+    try {
+      const existingPB = personalBests.find(
+        (pb) => pb.puzzle_type === puzzleType
+      );
+
+      if (existingPB) {
+        const { error } = await supabase
+          .from("personal_bests")
+          .delete()
+          .eq("id", existingPB.id);
+
+        if (error) throw error;
+
+        setPersonalBests((prev) =>
+          prev.filter((pb) => pb.id !== existingPB.id)
+        );
+      }
+    } catch (err) {
+      console.error("Erreur lors de la suppression du PB:", err);
+      throw err;
+    }
+  };
+
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -139,6 +165,7 @@ export function usePersonalBests(userId?: string) {
     loading,
     error,
     updateOrCreatePersonalBest,
+    deletePersonalBest,
     getPersonalBest,
     formatTime,
     refresh: loadPersonalBests,

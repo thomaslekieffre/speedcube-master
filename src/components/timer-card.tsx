@@ -55,7 +55,8 @@ export function TimerCard() {
     error: solvesError,
   } = useSupabaseSolves();
 
-  const { updateOrCreatePersonalBest } = usePersonalBests();
+  const { updateOrCreatePersonalBest, deletePersonalBest, getPersonalBest } =
+    usePersonalBests();
 
   // Générer le premier scramble côté client seulement
   useEffect(() => {
@@ -100,254 +101,211 @@ export function TimerCard() {
         const currentInspection = Date.now() - inspectionStartTime;
         setInspection(currentInspection);
 
-        // Règles WCA pour l'inspection :
-        // - 15 secondes maximum
-        // - +2 si > 15s
-        // - DNF si > 17s
-        if (currentInspection >= 17000) {
-          // DNF - arrêter l'inspection et sauvegarder le DNF
+        // Règles WCA : +2 si > 15s, DNF si > 17s
+        if (currentInspection > 17000) {
+          // DNF automatique
           setIsInspection(false);
-          setIsRunning(false);
           setInspection(0);
           setInspectionStartTime(null);
-          setDnfAlreadySaved(true); // Marquer que le DNF est déjà sauvegardé
-
-          // Sauvegarder le DNF dans les solves
-          const dnfSolve = {
-            time: 0,
-            penalty: "dnf" as const,
-            scramble: currentScramble,
-            puzzle_type: selectedPuzzle,
-          };
-
-          // Utiliser setTimeout pour éviter la boucle infinie
-          setTimeout(() => {
-            addSolve(dnfSolve);
-          }, 0);
-
-          toast.error("DNF - Inspection > 17 secondes", {
-            description: "Règles WCA : DNF si inspection > 17s",
-          });
-
-          // Régénérer un nouveau scramble
-          const newScramble = generateMockScramble(selectedPuzzle);
-          setCurrentScramble(newScramble);
-        } else if (currentInspection >= 15000 && currentInspection < 15016) {
-          // +2 - afficher le warning une seule fois
-          toast.warning("+2 - Inspection > 15 secondes", {
-            description: "Règles WCA : +2 si inspection > 15s",
-          });
+          setDnfAlreadySaved(true);
+          toast.error("DNF - Inspection > 17 secondes");
         }
-      }, 10); // Même fréquence que le timer principal
+      }, 10);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isInspection, inspectionStartTime, selectedPuzzle]);
+  }, [isInspection, inspectionStartTime]);
 
-  const saveSolve = useCallback(() => {
-    const currentTime = startTime ? Date.now() - startTime : 0;
-
-    // Déterminer la pénalité selon les règles WCA
-    let penalty: "none" | "plus2" | "dnf" = "none";
-
-    if (inspection > 17000) {
-      penalty = "dnf";
-    } else if (inspection > 15000) {
-      penalty = "plus2";
-    }
-
-    // Ne pas sauvegarder si c'est déjà un DNF d'inspection (déjà sauvegardé)
-    if (dnfAlreadySaved) {
-      setDnfAlreadySaved(false); // Reset le flag
-      setTime(0);
-      setInspection(0);
-      setInspectionStartTime(null);
-      setIsInspection(false);
-      // Appeler generateNewScramble directement
-      const newScramble = generateMockScramble(selectedPuzzle);
-      setCurrentScramble(newScramble);
-      return;
-    }
-
-    const newSolve = addSolve({
-      time: currentTime,
-      penalty: penalty,
-      scramble: currentScramble,
-      puzzle_type: selectedPuzzle,
-    });
-
-    // Mettre à jour le PB si nécessaire
-    if (penalty !== "dnf") {
-      updateOrCreatePersonalBest(
-        selectedPuzzle,
-        currentTime,
-        penalty,
-        currentScramble
-      );
-    }
-
-    // Message selon la pénalité
-    if (penalty === "dnf") {
-      toast.error("DNF - Inspection > 17 secondes", {
-        description: `Temps: ${formatTime(currentTime)} (DNF)`,
-      });
-    } else if (penalty === "plus2") {
-      toast.warning("Solve sauvegardé avec +2", {
-        description: `Temps: ${formatTime(currentTime)} + 2 secondes`,
-      });
-    } else {
-      toast.success("Solve sauvegardé !", {
-        description: `Temps: ${formatTime(currentTime)}`,
-      });
-    }
-
-    setTime(0);
-    setInspection(0);
-    setInspectionStartTime(null);
-    setIsInspection(false);
-    // Appeler generateNewScramble directement
-    const newScramble = generateMockScramble(selectedPuzzle);
-    setCurrentScramble(newScramble);
-  }, [
-    startTime,
-    inspection,
-    dnfAlreadySaved,
-    addSolve,
-    currentScramble,
-    selectedPuzzle,
-  ]);
-
-  const handleSpacePress = useCallback(() => {
-    if (!isRunning && !isInspection) {
-      // Commencer l'inspection
-      setIsInspection(true);
-      setInspectionStartTime(Date.now());
-    } else if (isInspection) {
-      // Démarrer le timer
-      setIsInspection(false);
-      setInspectionStartTime(null);
-      setIsRunning(true);
-      setStartTime(Date.now());
-      setTime(0); // Remettre à 0 au début du timer
-    } else if (isRunning) {
-      // Arrêter le timer
-      setIsRunning(false);
-      setStartTime(null);
-      saveSolve();
-    }
-  }, [isRunning, isInspection, saveSolve]);
-
-  // Gestion des touches
+  // Gestion des touches clavier
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        e.preventDefault();
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        event.preventDefault();
         handleSpacePress();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSpacePress]);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [isRunning, isInspection, inspectionStartTime]);
 
-  const handleUpdateSolve = (id: string, updates: Partial<Solve>) => {
-    updateSolve(id, updates);
-    toast.success("Solve mis à jour");
-  };
+  const handleSpacePress = useCallback(() => {
+    if (isRunning) {
+      // Arrêter le timer
+      setIsRunning(false);
+      const finalTime = Date.now() - (startTime || 0);
 
-  const handleDeleteSolve = (id: string) => {
-    deleteSolve(id);
-    toast.success("Solve supprimé");
-  };
+      // Ajouter le solve
+      const penalty =
+        inspection > 17000 ? "dnf" : inspection > 15000 ? "plus2" : "none";
+      const solveData = {
+        time: penalty === "dnf" ? 0 : finalTime,
+        penalty: penalty as "none" | "plus2" | "dnf",
+        puzzle_type: selectedPuzzle,
+        scramble: currentScramble,
+        notes: "",
+      };
 
-  const handleClearAll = () => {
-    if (confirm("Êtes-vous sûr de vouloir effacer tous les solves ?")) {
-      clearAllSolves();
-      toast.success("Tous les solves ont été supprimés");
+      addSolve(solveData);
+
+      // Mettre à jour le PB si nécessaire
+      if (penalty !== "dnf") {
+        updateOrCreatePersonalBest(
+          selectedPuzzle,
+          finalTime,
+          penalty as "none" | "plus2",
+          currentScramble
+        );
+      }
+
+      // Générer un nouveau scramble
+      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setDnfAlreadySaved(false);
+
+      toast.success("Solve sauvegardé !");
+    } else if (isInspection) {
+      // Démarrer le solve depuis l'inspection
+      setIsInspection(false);
+      setInspection(0);
+      setInspectionStartTime(null);
+      setIsRunning(true);
+      setStartTime(Date.now());
+    } else {
+      // Commencer l'inspection
+      setIsInspection(true);
+      setInspectionStartTime(Date.now());
     }
-  };
+  }, [
+    isRunning,
+    isInspection,
+    inspectionStartTime,
+    startTime,
+    selectedPuzzle,
+    currentScramble,
+    addSolve,
+    updateOrCreatePersonalBest,
+  ]);
 
-  const handleExport = () => {
+  const handlePuzzleChange = useCallback((puzzleType: PuzzleType) => {
+    setSelectedPuzzle(puzzleType);
+    setCurrentScramble(generateMockScramble(puzzleType));
+  }, []);
+
+  const handleResetCube = useCallback(() => {
+    // Reset du cube viewer si nécessaire
+  }, []);
+
+  const handleExport = useCallback(() => {
     exportSolves();
-    toast.success("Solves exportés !");
-  };
+  }, [exportSolves]);
 
-  const handlePuzzleChange = (puzzle: PuzzleType) => {
-    setSelectedPuzzle(puzzle);
-  };
+  const handleDeleteSolve = useCallback(
+    (solveId: string) => {
+      // Trouver le solve à supprimer
+      const solveToDelete = solves.find((s) => s.id === solveId);
 
-  const handleScrambleChange = (scramble: string) => {
-    setCurrentScramble(scramble);
-  };
+      if (solveToDelete) {
+        // Vérifier si c'était le PB en comparant avec le PB de la base de données
+        const currentPB = getPersonalBest(solveToDelete.puzzle_type);
+        const wasPB =
+          currentPB &&
+          currentPB.time === solveToDelete.time &&
+          solveToDelete.penalty !== "dnf";
 
-  const handleResetCube = () => {
-    // Reset le cube au solveur
-    // Cette fonction sera gérée par le CubeViewer lui-même
-  };
+        // Supprimer le solve
+        deleteSolve(solveId);
+
+        // Si c'était le PB, mettre à jour le PB avec le nouveau meilleur temps
+        if (wasPB) {
+          const remainingSolves = solves.filter(
+            (s) =>
+              s.puzzle_type === solveToDelete.puzzle_type && s.id !== solveId
+          );
+          const remainingValidSolves = remainingSolves.filter(
+            (s) => s.penalty !== "dnf"
+          );
+
+          if (remainingValidSolves.length > 0) {
+            const newPB = Math.min(...remainingValidSolves.map((s) => s.time));
+            const newPBSolve = remainingValidSolves.find(
+              (s) => s.time === newPB
+            );
+
+            if (newPBSolve) {
+              updateOrCreatePersonalBest(
+                solveToDelete.puzzle_type,
+                newPB,
+                newPBSolve.penalty as "none" | "plus2",
+                newPBSolve.scramble
+              );
+            }
+          } else {
+            // Plus aucun solve valide, supprimer le PB
+            deletePersonalBest(solveToDelete.puzzle_type);
+          }
+        }
+
+        toast.success("Solve supprimé");
+      }
+    },
+    [
+      deleteSolve,
+      solves,
+      updateOrCreatePersonalBest,
+      deletePersonalBest,
+      getPersonalBest,
+    ]
+  );
+
+  const handleUpdateSolve = useCallback(
+    (solveId: string, updates: Partial<Solve>) => {
+      updateSolve(solveId, updates);
+      toast.success("Solve mis à jour");
+    },
+    [updateSolve]
+  );
+
+  const handleClearAll = useCallback(() => {
+    clearAllSolves();
+    toast.success("Tous les solves supprimés");
+  }, [clearAllSolves]);
 
   const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    const centiseconds = Math.floor((ms % 1000) / 10);
-
-    if (minutes > 0) {
-      return `${minutes}:${seconds.toString().padStart(2, "0")}.${centiseconds
-        .toString()
-        .padStart(2, "0")}`;
+    if (ms === 0) return "0.00";
+    const seconds = ms / 1000;
+    if (seconds < 60) {
+      return seconds.toFixed(2);
     }
-    return `${seconds}.${centiseconds.toString().padStart(2, "0")}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = (seconds % 60).toFixed(2);
+    return `${minutes}:${remainingSeconds.padStart(5, "0")}`;
   };
 
   const formatInspection = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    return `${seconds}s`;
+    const seconds = ms / 1000;
+    return seconds.toFixed(1);
   };
 
-  // Calculer les stats avec pénalités
-  const getStats = () => {
-    // Filtrer les solves par puzzle sélectionné
-    const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
-
-    if (puzzleSolves.length === 0) return null;
-
-    const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
-    const dnfCount = puzzleSolves.filter((s) => s.penalty === "dnf").length;
-
-    // Si tous les solves sont DNF, pas de moyenne
-    if (validSolves.length === 0) {
-      return {
-        pb: null,
-        average: null,
-        total: puzzleSolves.length,
-        dnfCount: dnfCount,
-      };
-    }
-
-    const times = validSolves.map((s) =>
-      s.penalty === "plus2" ? s.time + 2000 : s.time
-    );
-
-    const pb = Math.min(...times);
-    const average =
-      times.length > 0
-        ? Math.floor(times.reduce((a, b) => a + b, 0) / times.length)
-        : 0;
-
-    return {
-      pb,
-      average,
-      total: puzzleSolves.length,
-      dnfCount: dnfCount,
-    };
-  };
-
-  const stats = getStats();
-
-  // Filtrer les solves par puzzle sélectionné pour l'affichage
+  // Calculer les statistiques
   const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
+  const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
+  const currentPB = getPersonalBest(selectedPuzzle);
+
+  const stats = {
+    total: puzzleSolves.length,
+    pb: currentPB
+      ? currentPB.time
+      : validSolves.length > 0
+      ? Math.min(...validSolves.map((s) => s.time))
+      : null,
+    average:
+      validSolves.length > 0
+        ? validSolves.slice(-12).reduce((sum, s) => sum + s.time, 0) /
+          Math.min(12, validSolves.length)
+        : null,
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -426,170 +384,191 @@ export function TimerCard() {
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column - Timer and Cube */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Timer Card */}
+          {/* Left column - Timer and Cube integrated */}
+          <div className="lg:col-span-2">
             <Card className="w-full">
               <CardContent className="p-8">
-                {/* Timer Display */}
-                <div className="text-center space-y-6">
-                  {isInspection ? (
-                    <div className="space-y-6">
-                      <div
-                        className={`text-8xl font-mono font-bold ${
-                          inspection > 17000
-                            ? "text-destructive"
-                            : inspection > 15000
-                            ? "text-warning"
-                            : "text-primary"
-                        }`}
-                      >
-                        {formatInspection(inspection)}
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="w-full bg-muted rounded-full h-2 relative overflow-hidden">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-200 ${
-                            inspection > 17000
-                              ? "bg-destructive"
-                              : inspection > 15000
-                              ? "bg-warning"
-                              : "bg-primary"
-                          }`}
-                          style={{
-                            width: `${Math.min(
-                              (inspection / 15000) * 100,
-                              100
-                            )}%`,
-                          }}
-                        />
-                        {inspection > 15000 && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                  {/* Timer Section */}
+                  <div className="space-y-6">
+                    {/* Timer Display */}
+                    <div className="text-center space-y-6">
+                      {isInspection ? (
+                        <div className="space-y-6">
                           <div
-                            className={`h-2 rounded-full transition-all duration-200 ${
+                            className={`text-8xl font-mono font-bold ${
                               inspection > 17000
-                                ? "bg-destructive"
-                                : "bg-warning"
+                                ? "text-destructive"
+                                : inspection > 15000
+                                ? "text-warning"
+                                : "text-primary"
                             }`}
-                            style={{
-                              width: `${Math.min(
-                                ((inspection - 15000) / 2000) * 100,
-                                100
-                              )}%`,
-                              marginLeft: "100%",
-                            }}
-                          />
-                        )}
-                      </div>
+                          >
+                            {formatInspection(inspection)}
+                          </div>
 
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>0s</span>
-                        <span>15s (WCA)</span>
-                        <span>17s (DNF)</span>
-                      </div>
+                          {/* Progress bar */}
+                          <div className="w-full bg-muted rounded-full h-3 relative overflow-hidden">
+                            <div
+                              className={`h-3 rounded-full transition-all duration-200 ${
+                                inspection > 17000
+                                  ? "bg-destructive"
+                                  : inspection > 15000
+                                  ? "bg-warning"
+                                  : "bg-primary"
+                              }`}
+                              style={{
+                                width: `${Math.min(
+                                  (inspection / 15000) * 100,
+                                  100
+                                )}%`,
+                              }}
+                            />
+                            {inspection > 15000 && (
+                              <div
+                                className={`h-3 rounded-full transition-all duration-200 ${
+                                  inspection > 17000
+                                    ? "bg-destructive"
+                                    : "bg-warning"
+                                }`}
+                                style={{
+                                  width: `${Math.min(
+                                    ((inspection - 15000) / 2000) * 100,
+                                    100
+                                  )}%`,
+                                  marginLeft: "100%",
+                                }}
+                              />
+                            )}
+                          </div>
 
-                      <p
-                        className={`text-sm ${
-                          inspection > 17000
-                            ? "text-destructive"
-                            : inspection > 15000
-                            ? "text-warning"
-                            : "text-muted-foreground"
-                        }`}
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>0s</span>
+                            <span>15s (WCA)</span>
+                            <span>17s (DNF)</span>
+                          </div>
+
+                          <p
+                            className={`text-sm ${
+                              inspection > 17000
+                                ? "text-destructive"
+                                : inspection > 15000
+                                ? "text-warning"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {inspection > 17000
+                              ? "DNF - Inspection > 17 secondes"
+                              : inspection > 15000
+                              ? "+2 - Inspection > 15 secondes"
+                              : "Inspection en cours... Appuie sur espace pour démarrer"}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="text-9xl font-mono font-bold text-foreground">
+                            {formatTime(time)}
+                          </div>
+                          <p className="text-muted-foreground">
+                            Appuie sur espace pour commencer l'inspection
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Control Button */}
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={handleSpacePress}
+                        disabled={isInspection}
+                        className="h-16 px-8 text-xl font-semibold"
+                        size="lg"
                       >
-                        {inspection > 17000
-                          ? "DNF - Inspection > 17 secondes"
-                          : inspection > 15000
-                          ? "+2 - Inspection > 15 secondes"
-                          : "Inspection en cours... Appuie sur espace pour démarrer"}
-                      </p>
+                        {isRunning ? (
+                          <>
+                            <Square className="h-6 w-6 mr-3" />
+                            Arrêter
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-6 w-6 mr-3" />
+                            {isInspection ? "Démarrer" : "Inspection"}
+                          </>
+                        )}
+                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="text-9xl font-mono font-bold text-foreground">
-                        {formatTime(time)}
-                      </div>
-                      <p className="text-muted-foreground">
-                        Appuie sur espace pour commencer l'inspection
-                      </p>
-                    </div>
-                  )}
-                </div>
 
-                {/* Control Button */}
-                <div className="mt-8 flex justify-center">
-                  <Button
-                    onClick={handleSpacePress}
-                    disabled={isInspection}
-                    className="h-16 px-8 text-xl font-semibold"
-                    size="lg"
-                  >
-                    {isRunning ? (
-                      <>
-                        <Square className="h-6 w-6 mr-3" />
-                        Arrêter
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-6 w-6 mr-3" />
-                        {isInspection ? "Démarrer" : "Inspection"}
-                      </>
+                    {/* Quick Stats */}
+                    {stats && (
+                      <div className="pt-6 border-t border-border">
+                        <div className="grid grid-cols-3 gap-6 text-center">
+                          <div className="space-y-2">
+                            <div className="text-2xl font-bold text-foreground">
+                              {stats.total}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Solves
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-2xl font-bold text-primary">
+                              {stats.pb ? formatTime(stats.pb) : "N/A"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              PB
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-2xl font-bold text-accent">
+                              {stats.average
+                                ? formatTime(stats.average)
+                                : "N/A"}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Moyenne
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </Button>
-                </div>
+                  </div>
 
-                {/* Quick Stats */}
-                {stats && (
-                  <div className="mt-8 pt-6 border-t border-border">
-                    <div className="grid grid-cols-3 gap-6 text-center">
-                      <div className="space-y-2">
-                        <div className="text-2xl font-bold text-foreground">
-                          {stats.total}
+                  {/* Cube Viewer Section */}
+                  <div className="space-y-4">
+                    {/* Scramble Display */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">
+                        Scramble actuel
+                      </h3>
+                      <div className="bg-muted/50 p-4 rounded-lg border border-border">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-muted-foreground">
+                            2x2x2
+                          </span>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Solves
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-2xl font-bold text-primary">
-                          {stats.pb ? formatTime(stats.pb) : "N/A"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">PB</div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-2xl font-bold text-accent">
-                          {stats.average ? formatTime(stats.average) : "N/A"}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Moyenne
-                        </div>
+                        <code className="text-base font-mono break-all leading-relaxed text-foreground">
+                          {currentScramble}
+                        </code>
                       </div>
                     </div>
+
+                    {/* Cube Viewer */}
+                    {currentScramble && currentScramble.trim() !== "" && (
+                      <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                        <CubeViewer
+                          puzzleType={selectedPuzzle}
+                          scramble={currentScramble}
+                          onReset={handleResetCube}
+                        />
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                          Utilisez la souris pour faire tourner le cube
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
-
-            {/* Cube Viewer */}
-            {currentScramble && currentScramble.trim() !== "" && (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold mb-2">Scramble</h3>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <code className="text-sm font-mono break-all leading-relaxed">
-                        {currentScramble}
-                      </code>
-                    </div>
-                  </div>
-                  <CubeViewer
-                    puzzleType={selectedPuzzle}
-                    scramble={currentScramble}
-                    onReset={handleResetCube}
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Right column - Solve History */}
@@ -599,116 +578,135 @@ export function TimerCard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">Historique</h3>
-                    <Badge variant="outline">
-                      {puzzleSolves.length} solves
-                    </Badge>
+                    <Badge variant="secondary">{puzzleSolves.length}</Badge>
                   </div>
 
                   {puzzleSolves.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
+                      <Box className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Aucun solve pour ce puzzle</p>
-                      <p className="text-sm">Commence à résoudre !</p>
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {puzzleSolves.slice(0, 10).map((solve, index) => (
-                        <div
-                          key={solve.id}
-                          className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                        >
-                          {/* Header avec numéro et temps */}
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                              <div className="text-sm font-mono text-muted-foreground w-6">
-                                #{puzzleSolves.length - index}
-                              </div>
-                              <div className="text-sm font-mono font-semibold">
-                                {formatTime(solve.time)}
-                                {solve.penalty === "plus2" && (
-                                  <span className="text-warning ml-1">+2</span>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {puzzleSolves
+                        .slice()
+                        .sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() -
+                            new Date(a.created_at).getTime()
+                        )
+                        .map((solve) => (
+                          <div
+                            key={solve.id}
+                            className="p-3 rounded-lg border border-border bg-muted/30"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-mono text-lg font-bold">
+                                {solve.penalty === "dnf"
+                                  ? "DNF"
+                                  : formatTime(solve.time)}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {solve.penalty && solve.penalty !== "none" && (
+                                  <Badge
+                                    variant={
+                                      solve.penalty === "dnf"
+                                        ? "destructive"
+                                        : "secondary"
+                                    }
+                                    className="text-xs"
+                                  >
+                                    {solve.penalty === "dnf"
+                                      ? "DNF"
+                                      : solve.penalty === "plus2"
+                                      ? "+2"
+                                      : solve.penalty}
+                                  </Badge>
                                 )}
-                                {solve.penalty === "dnf" && (
-                                  <span className="text-destructive ml-1">
-                                    DNF
-                                  </span>
-                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteSolve(solve.id)}
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSolve(solve.id)}
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
 
-                          {/* Actions pour pénalités */}
-                          <div className="flex items-center gap-1 mb-2">
-                            <Button
-                              variant={
-                                solve.penalty === "none" ? "default" : "outline"
-                              }
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateSolve(solve.id, { penalty: "none" })
-                              }
-                              className="h-5 px-2 text-xs"
-                            >
-                              OK
-                            </Button>
-                            <Button
-                              variant={
-                                solve.penalty === "plus2"
-                                  ? "default"
-                                  : "outline"
-                              }
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateSolve(solve.id, {
-                                  penalty: "plus2",
-                                })
-                              }
-                              className="h-5 px-2 text-xs text-warning hover:text-warning"
-                            >
-                              +2
-                            </Button>
-                            <Button
-                              variant={
-                                solve.penalty === "dnf" ? "default" : "outline"
-                              }
-                              size="sm"
-                              onClick={() =>
-                                handleUpdateSolve(solve.id, { penalty: "dnf" })
-                              }
-                              className="h-5 px-2 text-xs text-destructive hover:text-destructive"
-                            >
-                              DNF
-                            </Button>
-                          </div>
-
-                          {/* Scramble et Notes */}
-                          <div className="space-y-2">
-                            <div className="text-xs text-muted-foreground font-mono break-all leading-tight">
-                              {solve.scramble}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="text"
-                                placeholder="Notes..."
-                                value={solve.notes || ""}
-                                onChange={(e) =>
+                            {/* Actions pour pénalités */}
+                            <div className="flex items-center gap-1 mb-2">
+                              <Button
+                                variant={
+                                  solve.penalty === "none"
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() =>
                                   handleUpdateSolve(solve.id, {
-                                    notes: e.target.value,
+                                    penalty: "none",
                                   })
                                 }
-                                className="flex-1 text-xs bg-transparent border border-border rounded px-2 py-1 focus:outline-none focus:border-primary"
-                              />
+                                className="h-5 px-2 text-xs"
+                              >
+                                OK
+                              </Button>
+                              <Button
+                                variant={
+                                  solve.penalty === "plus2"
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateSolve(solve.id, {
+                                    penalty: "plus2",
+                                  })
+                                }
+                                className="h-5 px-2 text-xs text-warning hover:text-warning"
+                              >
+                                +2
+                              </Button>
+                              <Button
+                                variant={
+                                  solve.penalty === "dnf"
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateSolve(solve.id, {
+                                    penalty: "dnf",
+                                  })
+                                }
+                                className="h-5 px-2 text-xs text-destructive hover:text-destructive"
+                              >
+                                DNF
+                              </Button>
+                            </div>
+
+                            {/* Scramble et Notes */}
+                            <div className="space-y-2">
+                              <div className="text-xs text-muted-foreground font-mono break-all leading-tight">
+                                {solve.scramble}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Notes..."
+                                  value={solve.notes || ""}
+                                  onChange={(e) =>
+                                    handleUpdateSolve(solve.id, {
+                                      notes: e.target.value,
+                                    })
+                                  }
+                                  className="flex-1 text-xs bg-transparent border border-border rounded px-2 py-1 focus:outline-none focus:border-primary"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
 
