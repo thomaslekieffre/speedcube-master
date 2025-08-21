@@ -23,110 +23,37 @@ import {
 } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { toast } from "sonner";
+import { useFavorites } from "@/hooks/use-favorites";
+import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
 
-// Types pour les algorithmes
-interface Algorithm {
-  id: string;
-  name: string;
-  notation: string;
-  puzzle_type: string;
-  method: string;
-  set: string;
-  difficulty: "beginner" | "intermediate" | "advanced" | "expert";
-  description: string;
-  scramble: string;
-  solution: string;
-  fingertricks?: string;
-  notes?: string;
-  alternatives?: string[];
-  isFavorite?: boolean;
-}
 
-// Données mock pour commencer
-const MOCK_ALGORITHMS: Algorithm[] = [
-  {
-    id: "1",
-    name: "Sune",
-    notation: "R U R' U R U2 R'",
-    puzzle_type: "333",
-    method: "CFOP",
-    set: "OLL",
-    difficulty: "beginner",
-    description:
-      "Un des algorithmes OLL les plus importants à connaître. Il résout le cas où les coins de la face supérieure forment un motif en 'S'.",
-    scramble: "R U R' U R U2 R'",
-    solution: "R U R' U R U2 R'",
-    fingertricks:
-      "Commencez avec votre main droite en position de départ. Utilisez votre index droit pour le R' et votre pouce pour le U. L'algorithme est très fluide et peut être exécuté rapidement.",
-    notes:
-      "Très utile pour de nombreuses situations OLL. C'est souvent le premier algorithme OLL que les speedcubeurs apprennent.",
-    alternatives: [
-      "R U R' U R U2 R' (standard)",
-      "R U2 R' U' R U' R' (inverse)",
-      "R U R' U R U2 R' (avec rotations)",
-    ],
-  },
-  {
-    id: "2",
-    name: "T Permutation",
-    notation: "R U R' U' R' F R2 U' R' U' R U R' F'",
-    puzzle_type: "333",
-    method: "CFOP",
-    set: "PLL",
-    difficulty: "intermediate",
-    description:
-      "Permutation PLL en forme de T, très courante. Elle permute les coins et les arêtes de manière spécifique.",
-    scramble: "R U R' U' R' F R2 U' R' U' R U R' F'",
-    solution: "R U R' U' R' F R2 U' R' U' R U R' F'",
-    fingertricks:
-      "Commencez avec le pouce sur F. L'algorithme utilise beaucoup de mouvements R et U, ce qui le rend très rapide à exécuter.",
-    notes:
-      "Un des PLL les plus rapides à exécuter. Très utile pour les compétitions.",
-    alternatives: [
-      "R U R' U' R' F R2 U' R' U' R U R' F' (standard)",
-      "F R U' R' U' R U R' F' R U R' U' R' F R F' (alternative)",
-    ],
-  },
-  {
-    id: "3",
-    name: "Ortega T",
-    notation: "R U R' U' R' F R F'",
-    puzzle_type: "222",
-    method: "Ortega",
-    set: "CLL",
-    difficulty: "beginner",
-    description:
-      "Algorithme CLL pour 2x2, forme en T. Base de la méthode Ortega.",
-    scramble: "R U R' U' R' F R F'",
-    solution: "R U R' U' R' F R F'",
-    notes: "Base de la méthode Ortega",
-    alternatives: [
-      "R U R' U' R' F R F' (standard)",
-      "F R U' R' U' R U R' F' (inverse)",
-    ],
-  },
-];
+
+
 
 export default function AlgorithmDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [algorithm, setAlgorithm] = useState<Algorithm | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  const { isFavorite, toggleFavorite, loading: favoritesLoading } = useFavorites();
+  const { getAlgorithmById } = useAlgorithms();
 
-  // Trouver l'algorithme par ID
+  // Charger l'algorithme par ID
   useEffect(() => {
-    const algo = MOCK_ALGORITHMS.find((a) => a.id === params.id);
-    if (algo) {
-      setAlgorithm(algo);
-      setIsFavorite(algo.isFavorite || false);
-    }
-  }, [params.id]);
+    const loadAlgorithm = async () => {
+      if (params.id) {
+        const algo = await getAlgorithmById(params.id as string);
+        setAlgorithm(algo);
+      }
+    };
+    loadAlgorithm();
+  }, [params.id, getAlgorithmById]);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    // TODO: Sauvegarder en base de données
-    toast.success(isFavorite ? "Retiré des favoris" : "Ajouté aux favoris");
+  const handleToggleFavorite = async () => {
+    if (algorithm) {
+      await toggleFavorite(algorithm.id);
+    }
   };
 
   const copyNotation = async () => {
@@ -210,13 +137,20 @@ export default function AlgorithmDetailPage() {
             </Button>
             <Button
               variant="ghost"
-              onClick={toggleFavorite}
+              onClick={handleToggleFavorite}
+              disabled={favoritesLoading}
               className={`flex items-center gap-2 ${
-                isFavorite ? "text-yellow-500" : "text-muted-foreground"
+                algorithm && isFavorite(algorithm.id)
+                  ? "text-yellow-500"
+                  : "text-muted-foreground"
               }`}
             >
-              <Star className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
-              {isFavorite ? "Favori" : "Ajouter aux favoris"}
+              <Star
+                className={`h-4 w-4 ${
+                  algorithm && isFavorite(algorithm.id) ? "fill-current" : ""
+                }`}
+              />
+              {algorithm && isFavorite(algorithm.id) ? "Favori" : "Ajouter aux favoris"}
             </Button>
           </div>
 
@@ -227,7 +161,7 @@ export default function AlgorithmDetailPage() {
             </h1>
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline">{algorithm.method.toUpperCase()}</Badge>
-              <Badge variant="outline">{algorithm.set.toUpperCase()}</Badge>
+              <Badge variant="outline">{algorithm.set_name.toUpperCase()}</Badge>
               <Badge
                 className={`text-white ${getDifficultyColor(
                   algorithm.difficulty

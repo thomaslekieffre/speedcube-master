@@ -9,10 +9,12 @@ import {
   User,
   LogOut,
   Settings,
+  Heart,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { useProfile } from "@/hooks/use-profile";
+import { useFavorites } from "@/hooks/use-favorites";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +26,7 @@ import {
 export function Navbar() {
   const { isSignedIn, user } = useUser();
   const { profile, loading: profileLoading } = useProfile();
+  const { favorites } = useFavorites();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -56,6 +59,20 @@ export function Navbar() {
               <span className="hidden lg:inline">Algorithmes</span>
               <span className="lg:hidden hidden sm:inline">Algos</span>
             </Link>
+            {isSignedIn && (
+              <Link
+                href="/favorites"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors relative"
+              >
+                <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Favoris</span>
+                {favorites.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {favorites.length > 99 ? "99+" : favorites.length}
+                  </span>
+                )}
+              </Link>
+            )}
             <Link
               href="/dashboard"
               className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"

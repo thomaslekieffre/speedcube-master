@@ -17,68 +17,12 @@ import {
 import { Search, Filter, Star, Eye, BookOpen, Zap } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { PUZZLES } from "@/components/puzzle-selector";
+import { useFavorites } from "@/hooks/use-favorites";
+import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
 
-// Types pour les algorithmes
-interface Algorithm {
-  id: string;
-  name: string;
-  notation: string;
-  puzzle_type: string;
-  method: string;
-  set: string;
-  difficulty: "beginner" | "intermediate" | "advanced" | "expert";
-  description: string;
-  scramble: string;
-  solution: string;
-  fingertricks?: string;
-  notes?: string;
-  isFavorite?: boolean;
-}
 
-// Données mock pour commencer
-const MOCK_ALGORITHMS: Algorithm[] = [
-  {
-    id: "1",
-    name: "Sune",
-    notation: "R U R' U R U2 R'",
-    puzzle_type: "333",
-    method: "CFOP",
-    set: "OLL",
-    difficulty: "beginner",
-    description: "Un des algorithmes OLL les plus importants à connaître.",
-    scramble: "R U R' U R U2 R'",
-    solution: "R U R' U R U2 R'",
-    fingertricks: "Utilisez votre index droit pour le R'",
-    notes: "Très utile pour de nombreuses situations OLL",
-  },
-  {
-    id: "2",
-    name: "T Permutation",
-    notation: "R U R' U' R' F R2 U' R' U' R U R' F'",
-    puzzle_type: "333",
-    method: "CFOP",
-    set: "PLL",
-    difficulty: "intermediate",
-    description: "Permutation PLL en forme de T, très courante.",
-    scramble: "R U R' U' R' F R2 U' R' U' R U R' F'",
-    solution: "R U R' U' R' F R2 U' R' U' R U R' F'",
-    fingertricks: "Commencez avec le pouce sur F",
-    notes: "Un des PLL les plus rapides à exécuter",
-  },
-  {
-    id: "3",
-    name: "Ortega T",
-    notation: "R U R' U' R' F R F'",
-    puzzle_type: "222",
-    method: "Ortega",
-    set: "CLL",
-    difficulty: "beginner",
-    description: "Algorithme CLL pour 2x2, forme en T.",
-    scramble: "R U R' U' R' F R F'",
-    solution: "R U R' U' R' F R F'",
-    notes: "Base de la méthode Ortega",
-  },
-];
+
+
 
 // Méthodes disponibles
 const METHODS = [
@@ -108,48 +52,47 @@ export default function AlgorithmsPage() {
   const [selectedSet, setSelectedSet] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  
+  const {
+    favorites,
+    loading: favoritesLoading,
+    toggleFavorite,
+    isFavorite,
+  } = useFavorites();
+  
+  const { algorithms, loading: algorithmsLoading, filterAlgorithms } = useAlgorithms();
 
   // Filtrer les algorithmes
   const filteredAlgorithms = useMemo(() => {
-    return MOCK_ALGORITHMS.filter((algo) => {
-      const matchesSearch =
-        algo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        algo.notation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        algo.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesPuzzle =
-        selectedPuzzle === "all" || algo.puzzle_type === selectedPuzzle;
-      const matchesMethod =
-        selectedMethod === "all" ||
-        algo.method.toLowerCase() === selectedMethod;
-      const matchesSet =
-        selectedSet === "all" || algo.set.toLowerCase() === selectedSet;
-      const matchesDifficulty =
-        selectedDifficulty === "all" || algo.difficulty === selectedDifficulty;
-      const matchesFavorites = !favoritesOnly || algo.isFavorite;
-
-      return (
-        matchesSearch &&
-        matchesPuzzle &&
-        matchesMethod &&
-        matchesSet &&
-        matchesDifficulty &&
-        matchesFavorites
-      );
+    if (algorithmsLoading) return [];
+    
+    const filtered = filterAlgorithms(algorithms, {
+      puzzle_type: selectedPuzzle === "all" ? undefined : selectedPuzzle,
+      method: selectedMethod === "all" ? undefined : selectedMethod,
+      set_name: selectedSet === "all" ? undefined : selectedSet,
+      difficulty: selectedDifficulty === "all" ? undefined : selectedDifficulty,
+      search: searchQuery,
     });
+
+    // Filtrer par favoris si nécessaire
+    if (favoritesOnly) {
+      return filtered.filter((algo) => isFavorite(algo.id));
+    }
+
+    return filtered;
   }, [
+    algorithms,
+    algorithmsLoading,
     searchQuery,
     selectedPuzzle,
     selectedMethod,
     selectedSet,
     selectedDifficulty,
     favoritesOnly,
+    favorites,
+    filterAlgorithms,
+    isFavorite,
   ]);
-
-  const toggleFavorite = (algoId: string) => {
-    // TODO: Implémenter la logique de favoris
-    console.log("Toggle favorite:", algoId);
-  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -368,9 +311,9 @@ export default function AlgorithmsPage() {
                             <Badge variant="outline" className="text-xs">
                               {algo.method.toUpperCase()}
                             </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {algo.set.toUpperCase()}
-                            </Badge>
+                                                       <Badge variant="outline" className="text-xs">
+                             {algo.set_name.toUpperCase()}
+                           </Badge>
                             <Badge
                               className={`text-xs text-white ${getDifficultyColor(
                                 algo.difficulty
@@ -384,15 +327,16 @@ export default function AlgorithmsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleFavorite(algo.id)}
+                          disabled={favoritesLoading}
                           className={`p-1 ${
-                            algo.isFavorite
+                            isFavorite(algo.id)
                               ? "text-yellow-500"
                               : "text-muted-foreground"
                           }`}
                         >
                           <Star
                             className={`h-4 w-4 ${
-                              algo.isFavorite ? "fill-current" : ""
+                              isFavorite(algo.id) ? "fill-current" : ""
                             }`}
                           />
                         </Button>
