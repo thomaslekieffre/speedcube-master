@@ -137,9 +137,10 @@ export function TimerCard() {
 
   const handleSpacePress = useCallback(() => {
     if (isRunning) {
-      // Arrêter le timer
-      setIsRunning(false);
+      // Arrêter le timer immédiatement
       const finalTime = Date.now() - (startTime || 0);
+      setIsRunning(false);
+      setTime(finalTime); // Fixer le temps affiché
 
       // Ajouter le solve
       const penalty =
