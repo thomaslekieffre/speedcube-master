@@ -52,7 +52,7 @@ export function Navbar() {
           </Link>
           {isSignedIn && (
             <Link
-              href="/profile"
+              href={`/profile/${profile?.username || "me"}`}
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
             >
               <User className="h-4 w-4" />

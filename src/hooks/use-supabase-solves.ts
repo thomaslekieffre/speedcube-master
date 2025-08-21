@@ -7,14 +7,16 @@ type Solve = Database["public"]["Tables"]["solves"]["Row"];
 type InsertSolve = Database["public"]["Tables"]["solves"]["Insert"];
 type UpdateSolve = Database["public"]["Tables"]["solves"]["Update"];
 
-export function useSupabaseSolves() {
+export function useSupabaseSolves(userId?: string) {
   const [solves, setSolves] = useState<Solve[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useUser();
 
+  const targetUserId = userId || user?.id;
+
   const loadSolves = async () => {
-    if (!user) {
+    if (!targetUserId) {
       setSolves([]);
       setLoading(false);
       return;
@@ -22,12 +24,12 @@ export function useSupabaseSolves() {
 
     try {
       setLoading(true);
-      console.log("Chargement des solves pour user:", user.id);
+      console.log("Chargement des solves pour user:", targetUserId);
 
       const { data, error } = await supabase
         .from("solves")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -47,7 +49,7 @@ export function useSupabaseSolves() {
 
   useEffect(() => {
     loadSolves();
-  }, [user?.id]);
+  }, [targetUserId]);
 
   const addSolve = async (solve: Omit<InsertSolve, "user_id">) => {
     if (!user) {
