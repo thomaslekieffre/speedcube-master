@@ -8,7 +8,7 @@ interface CubeViewerProps {
   scramble: string;
   onReset: () => void;
   onViewerReady?: (viewer: any) => void;
-  showControls?: boolean;
+  showControls?: boolean; // Par défaut false
   algorithm?: string; // Pour le reset, si différent du scramble
 }
 
@@ -237,7 +237,7 @@ export function CubeViewer({
   scramble,
   onReset,
   onViewerReady,
-  showControls = true,
+  showControls = false, // Par défaut, pas de contrôles
   algorithm,
 }: CubeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -269,12 +269,18 @@ export function CubeViewer({
           puzzle: puzzleName as any, // Type assertion pour éviter l'erreur
           alg: scramble,
           background: "none",
-          controlPanel: "none", // Désactiver les contrôles par défaut
+          controlPanel: "none", // Toujours désactiver les contrôles du Twisty Player
+          viewerLink: "none", // Désactiver le lien vers alg.cubing.net
+          experimentalSetupAnchor: "end", // Pour une meilleure animation
+          experimentalStickering: "full", // Animation complète
         });
 
         containerRef.current?.appendChild(viewer);
         viewerRef.current = viewer;
         viewer.alg = scramble;
+
+        // Appliquer le scramble au viewer
+        // Les contrôles sont masqués via CSS avec la classe twisty-no-controls
 
         // Reset l'index des mouvements
         setCurrentMoveIndex(0);
@@ -310,7 +316,9 @@ export function CubeViewer({
         <>
           <div
             ref={containerRef}
-            className="flex-1 flex items-center justify-center"
+            className={`flex-1 flex items-center justify-center ${
+              !showControls ? "twisty-no-controls" : ""
+            }`}
           >
             {!isReady && (
               <div className="text-muted-foreground text-center">
@@ -326,43 +334,91 @@ export function CubeViewer({
               <button
                 onClick={() => {
                   if (viewerRef.current) {
-                    // Aller au début
+                    // Aller au début (cube résolu)
                     viewerRef.current.alg = "";
                     setCurrentMoveIndex(0);
                   }
                 }}
                 className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                title="Début"
+                title="Début - Cube résolu"
               >
                 ⏮️
               </button>
               <button
-                onClick={() => viewerRef.current?.pause()}
-                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                title="Pause"
-              >
-                ⏸️
-              </button>
-              <button
-                onClick={() => viewerRef.current?.play()}
-                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                title="Play"
-              >
-                ▶️
-              </button>
-              <button
                 onClick={() => {
                   if (viewerRef.current) {
-                    // Aller à la fin
-                    viewerRef.current.alg = algorithm || scramble;
-                    const totalMoves = (algorithm || scramble).split(
-                      " "
-                    ).length;
-                    setCurrentMoveIndex(totalMoves);
+                    // Animation manuelle avec délais plus longs pour voir les mouvements
+                    const moves = (algorithm || scramble).split(" ");
+                    let currentIndex = 0;
+                    let isPlaying = true;
+
+                    // Fonction pour arrêter l'animation
+                    const stopAnimation = () => {
+                      isPlaying = false;
+                    };
+
+                    // Stocker la fonction d'arrêt
+                    (window as any).stopCubeAnimation = stopAnimation;
+
+                    const animateMove = () => {
+                      if (!isPlaying || currentIndex >= moves.length) {
+                        return;
+                      }
+
+                      // Appliquer le mouvement actuel
+                      const currentMoves = moves
+                        .slice(0, currentIndex + 1)
+                        .join(" ");
+
+                      // Forcer le rendu avec un délai pour voir l'animation
+                      viewerRef.current.alg = currentMoves;
+                      setCurrentMoveIndex(currentIndex + 1);
+
+                      currentIndex++;
+
+                      // Délai plus long pour voir l'animation des pièces
+                      setTimeout(animateMove, 800); // 800ms entre chaque mouvement
+                    };
+
+                    // Commencer par le cube résolu
+                    viewerRef.current.alg = "";
+                    setCurrentMoveIndex(0);
+
+                    // Démarrer l'animation après un délai
+                    setTimeout(animateMove, 800);
                   }
                 }}
                 className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
-                title="Fin"
+                title="Play - Voir l'algorithme en action"
+              >
+                ▶️
+              </button>
+
+              <button
+                onClick={() => {
+                  // Arrêter l'animation en cours
+                  if ((window as any).stopCubeAnimation) {
+                    (window as any).stopCubeAnimation();
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Stop - Arrêter l'animation"
+              >
+                ⏸️
+              </button>
+
+              <button
+                onClick={() => {
+                  if (viewerRef.current) {
+                    // Aller à la fin (algorithme terminé)
+                    viewerRef.current.alg = algorithm || scramble;
+                    setCurrentMoveIndex(
+                      (algorithm || scramble).split(" ").length
+                    );
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Fin - Algorithme terminé"
               >
                 ⏭️
               </button>

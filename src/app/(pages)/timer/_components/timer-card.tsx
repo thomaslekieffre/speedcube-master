@@ -7,6 +7,7 @@ import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
 import { generate333Scramble } from "../_utils/scramble";
 import { Penalty, Solve, useSolves } from "../_hooks/use-solves";
+import { CubeViewer } from "@/components/cube-viewer";
 
 function useRafTimer() {
   const [running, setRunning] = useState(false);
@@ -162,6 +163,21 @@ export function TimerCard() {
             >
               Enregistrer
             </Button>
+          </div>
+
+          {/* Visualisation du cube mélangé */}
+          <div className="w-full">
+            <label className="text-sm text-muted-foreground mb-2 block">
+              Visualisation
+            </label>
+            <div className="h-64 bg-muted/30 rounded-lg border">
+              <CubeViewer
+                puzzleType="333"
+                scramble={scramble}
+                onReset={() => {}}
+                showControls={false}
+              />
+            </div>
           </div>
 
           <div className="w-full">

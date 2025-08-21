@@ -26,17 +26,17 @@ import { toast } from "sonner";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
 
-
-
-
-
 export default function AlgorithmDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [algorithm, setAlgorithm] = useState<Algorithm | null>(null);
   const [copied, setCopied] = useState(false);
-  
-  const { isFavorite, toggleFavorite, loading: favoritesLoading } = useFavorites();
+
+  const {
+    isFavorite,
+    toggleFavorite,
+    loading: favoritesLoading,
+  } = useFavorites();
   const { getAlgorithmById } = useAlgorithms();
 
   // Charger l'algorithme par ID
@@ -150,7 +150,9 @@ export default function AlgorithmDetailPage() {
                   algorithm && isFavorite(algorithm.id) ? "fill-current" : ""
                 }`}
               />
-              {algorithm && isFavorite(algorithm.id) ? "Favori" : "Ajouter aux favoris"}
+              {algorithm && isFavorite(algorithm.id)
+                ? "Favori"
+                : "Ajouter aux favoris"}
             </Button>
           </div>
 
@@ -161,7 +163,9 @@ export default function AlgorithmDetailPage() {
             </h1>
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline">{algorithm.method.toUpperCase()}</Badge>
-              <Badge variant="outline">{algorithm.set_name.toUpperCase()}</Badge>
+              <Badge variant="outline">
+                {algorithm.set_name.toUpperCase()}
+              </Badge>
               <Badge
                 className={`text-white ${getDifficultyColor(
                   algorithm.difficulty
@@ -178,7 +182,7 @@ export default function AlgorithmDetailPage() {
 
         {/* Contenu principal */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Visualiseur 3D */}
+          {/* Visualisation du cube avec contrôles */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -186,7 +190,10 @@ export default function AlgorithmDetailPage() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Visualisation 3D</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Visualisation de l'algorithme
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-96 bg-muted/30 rounded-lg border">
@@ -198,9 +205,8 @@ export default function AlgorithmDetailPage() {
                     algorithm={algorithm.notation}
                   />
                 </div>
-
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Utilisez la souris pour faire tourner le cube
+                  Utilisez les contrôles pour voir l'algorithme en action
                 </p>
               </CardContent>
             </Card>

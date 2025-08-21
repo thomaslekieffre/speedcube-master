@@ -192,4 +192,41 @@
     fill: #e5e7eb !important;
     stroke: #e5e7eb !important;
   }
+
+  /* Masquer complètement les contrôles dans le timer */
+  .twisty-no-controls twisty-player::part(control-panel),
+  .twisty-no-controls twisty-player .control-panel,
+  .twisty-no-controls twisty-player [class*="control"],
+  .twisty-no-controls twisty-player [class*="button"],
+  .twisty-no-controls twisty-player [class*="scrub"],
+  .twisty-no-controls twisty-player [class*="timeline"],
+  .twisty-no-controls twisty-player button {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Animation fluide pour le cube */
+  twisty-player {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Animation des mouvements du cube */
+  twisty-player * {
+    transition: transform 0.2s ease-out !important;
+  }
+
+  /* Animation spécifique pour les pièces du cube */
+  twisty-player .cube-face,
+  twisty-player .cube-piece,
+  twisty-player .cube-sticker {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Animation des rotations du cube */
+  twisty-player .cube-rotation {
+    transition: transform 0.5s ease-in-out !important;
+  }
 }
