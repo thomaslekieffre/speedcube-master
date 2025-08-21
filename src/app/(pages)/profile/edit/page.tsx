@@ -50,16 +50,31 @@ export default function EditProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
+    // Validation du fichier
+    if (!file.type.startsWith('image/')) {
+      toast.error("Veuillez sélectionner une image");
+      return;
+    }
+
+    // Limiter la taille à 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("L'image doit faire moins de 2MB");
+      return;
+    }
+
     try {
-      // Pour l'instant, on utilise une URL temporaire
-      // Plus tard, on pourra implémenter l'upload vers Supabase Storage
-      const imageUrl = URL.createObjectURL(file);
+      // Convertir l'image en base64 pour la persistance
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64String = event.target?.result as string;
+        
+        await updateProfile({
+          custom_avatar_url: base64String,
+        });
 
-      await updateProfile({
-        custom_avatar_url: imageUrl,
-      });
-
-      toast.success("Avatar mis à jour !");
+        toast.success("Avatar mis à jour !");
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error("Erreur lors de l'upload:", error);
       toast.error("Erreur lors de l'upload de l'avatar");
@@ -154,42 +169,61 @@ export default function EditProfilePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Avatar */}
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <img
-                    src={
-                      profile.custom_avatar_url ||
-                      profile.avatar_url ||
-                      "/default-avatar.png"
-                    }
-                    alt={profile.username || "Avatar"}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="absolute -bottom-1 -right-1 h-6 w-6 p-0"
-                    onClick={() =>
-                      document.getElementById("avatar-upload")?.click()
-                    }
-                  >
-                    <Upload className="h-3 w-3" />
-                  </Button>
-                  <input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarUpload}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Cliquez sur l'icône pour changer votre avatar
-                  </p>
-                </div>
-              </div>
+                             {/* Avatar */}
+               <div className="flex items-center gap-4">
+                 <div className="relative">
+                   <img
+                     src={
+                       profile.custom_avatar_url ||
+                       profile.avatar_url ||
+                       "/default-avatar.png"
+                     }
+                     alt={profile.username || "Avatar"}
+                     className="w-16 h-16 rounded-full object-cover"
+                   />
+                   <Button
+                     size="sm"
+                     variant="outline"
+                     className="absolute -bottom-1 -right-1 h-6 w-6 p-0"
+                     onClick={() =>
+                       document.getElementById("avatar-upload")?.click()
+                     }
+                   >
+                     <Upload className="h-3 w-3" />
+                   </Button>
+                   <input
+                     id="avatar-upload"
+                     type="file"
+                     accept="image/*"
+                     className="hidden"
+                     onChange={handleAvatarUpload}
+                   />
+                 </div>
+                 <div className="flex-1">
+                   <p className="text-sm text-muted-foreground mb-2">
+                     Cliquez sur l'icône pour changer votre avatar
+                   </p>
+                   {profile.custom_avatar_url && (
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={async () => {
+                         try {
+                           await updateProfile({
+                             custom_avatar_url: null,
+                           });
+                           toast.success("Avatar par défaut restauré");
+                         } catch (error) {
+                           toast.error("Erreur lors de la suppression");
+                         }
+                       }}
+                       className="text-xs text-destructive hover:text-destructive"
+                     >
+                       Supprimer l'avatar personnalisé
+                     </Button>
+                   )}
+                 </div>
+               </div>
 
               {/* Username */}
               <div className="space-y-2">
