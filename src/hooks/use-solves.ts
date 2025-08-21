@@ -7,6 +7,7 @@ export interface Solve {
   date: Date;
   scramble: string;
   notes?: string;
+  puzzle: string; // Ajout de la propriété puzzle
 }
 
 const STORAGE_KEY = "speedcube-solves";

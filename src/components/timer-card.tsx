@@ -49,15 +49,15 @@ export function TimerCard() {
   } = useSolves();
 
   // Générer un nouveau scramble
-  const generateNewScramble = () => {
+  const generateNewScramble = useCallback(() => {
     const newScramble = generateMockScramble(selectedPuzzle);
     setCurrentScramble(newScramble);
-  };
+  }, [selectedPuzzle]);
 
   // Générer le premier scramble au montage
   useEffect(() => {
     generateNewScramble();
-  }, [selectedPuzzle]);
+  }, [generateNewScramble]);
 
   // Timer principal
   useEffect(() => {
@@ -105,6 +105,7 @@ export function TimerCard() {
             penalty: "dnf",
             date: new Date(),
             scramble: currentScramble,
+            puzzle: selectedPuzzle,
           });
 
           toast.error("DNF - Inspection > 17 secondes", {
@@ -125,13 +126,7 @@ export function TimerCard() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [
-    isInspection,
-    inspectionStartTime,
-    currentScramble,
-    addSolve,
-    generateNewScramble,
-  ]);
+  }, [isInspection, inspectionStartTime, currentScramble, addSolve]);
 
   // Gestion des touches
   useEffect(() => {
@@ -194,6 +189,7 @@ export function TimerCard() {
       penalty: penalty,
       date: new Date(),
       scramble: currentScramble,
+      puzzle: selectedPuzzle,
     });
 
     // Message selon la pénalité
@@ -275,17 +271,20 @@ export function TimerCard() {
 
   // Calculer les stats avec pénalités
   const getStats = () => {
-    if (solves.length === 0) return null;
+    // Filtrer les solves par puzzle sélectionné
+    const puzzleSolves = solves.filter((s) => s.puzzle === selectedPuzzle);
 
-    const validSolves = solves.filter((s) => s.penalty !== "dnf");
-    const dnfCount = solves.filter((s) => s.penalty === "dnf").length;
+    if (puzzleSolves.length === 0) return null;
+
+    const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
+    const dnfCount = puzzleSolves.filter((s) => s.penalty === "dnf").length;
 
     // Si tous les solves sont DNF, pas de moyenne
     if (validSolves.length === 0) {
       return {
         pb: null,
         average: null,
-        total: solves.length,
+        total: puzzleSolves.length,
         dnfCount: dnfCount,
       };
     }
@@ -303,26 +302,26 @@ export function TimerCard() {
     return {
       pb,
       average,
-      total: solves.length,
+      total: puzzleSolves.length,
       dnfCount: dnfCount,
     };
   };
 
   const stats = getStats();
 
+  // Filtrer les solves par puzzle sélectionné pour l'affichage
+  const puzzleSolves = solves.filter((s) => s.puzzle === selectedPuzzle);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header compact avec puzzle et scramble */}
+      {/* Header avec puzzle selector */}
       <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Sélecteur de puzzle compact */}
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Box className="h-5 w-5" />
-                Puzzle
-              </h3>
-              <div className="flex gap-1">
+            {/* Puzzle selector */}
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-bold text-foreground">Timer</h2>
+              <div className="flex gap-2">
                 {[
                   "333",
                   "222",
@@ -346,14 +345,16 @@ export function TimerCard() {
                       }
                       size="sm"
                       onClick={() => handlePuzzleChange(puzzle.id)}
-                      className={`h-8 px-2 flex items-center gap-1 transition-all duration-300 ease-out ${
+                      className={`h-9 px-3 transition-all duration-200 ${
                         selectedPuzzle === puzzle.id
-                          ? "bg-primary text-primary-foreground shadow-lg scale-105"
-                          : "hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 hover:shadow-lg hover:scale-105 hover:border-primary/30"
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "hover:bg-muted/50 hover:border-primary/30"
                       }`}
                     >
-                      <div className={`w-3 h-3 rounded-full ${puzzle.color}`} />
-                      <span className="text-xs font-medium">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${puzzle.color} mr-2`}
+                      />
+                      <span className="text-sm font-medium">
                         {puzzle.shortName}
                       </span>
                     </Button>
@@ -362,34 +363,37 @@ export function TimerCard() {
               </div>
             </div>
 
-            {/* Bouton nouveau scramble */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={generateNewScramble}
-              className="h-8"
-            >
-              <RotateCcw className="h-4 w-4 mr-1" />
-              Nouveau scramble
-            </Button>
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={generateNewScramble}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Nouveau scramble
+              </Button>
+              {solves.length > 0 && (
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Contenu principal */}
+      {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Colonne gauche - Timer et Visualiseur */}
-          <div className="xl:col-span-3 space-y-6">
-            {/* Timer principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left column - Timer and Cube */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Timer Card */}
             <Card className="w-full">
               <CardContent className="p-8">
                 {/* Timer Display */}
-                <div className="text-center mb-8">
+                <div className="text-center space-y-6">
                   {isInspection ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div
-                        className={`text-7xl font-mono font-bold ${
+                        className={`text-8xl font-mono font-bold ${
                           inspection > 17000
                             ? "text-destructive"
                             : inspection > 15000
@@ -399,10 +403,11 @@ export function TimerCard() {
                       >
                         {formatInspection(inspection)}
                       </div>
-                      <div className="w-full bg-muted rounded-full h-3 relative overflow-hidden">
-                        {/* Barre de progression principale */}
+
+                      {/* Progress bar */}
+                      <div className="w-full bg-muted rounded-full h-2 relative overflow-hidden">
                         <div
-                          className={`h-3 rounded-full transition-all duration-200 ease-out ${
+                          className={`h-2 rounded-full transition-all duration-200 ${
                             inspection > 17000
                               ? "bg-destructive"
                               : inspection > 15000
@@ -416,11 +421,9 @@ export function TimerCard() {
                             )}%`,
                           }}
                         />
-
-                        {/* Barre de progression étendue pour montrer jusqu'à 17s */}
                         {inspection > 15000 && (
                           <div
-                            className={`h-3 rounded-full transition-all duration-200 ease-out ${
+                            className={`h-2 rounded-full transition-all duration-200 ${
                               inspection > 17000
                                 ? "bg-destructive"
                                 : "bg-warning"
@@ -434,29 +437,14 @@ export function TimerCard() {
                             }}
                           />
                         )}
-
-                        {/* Indicateur de position */}
-                        <div
-                          className={`absolute top-0 w-1 h-3 rounded-full transition-all duration-200 ease-out ${
-                            inspection > 17000
-                              ? "bg-white"
-                              : inspection > 15000
-                              ? "bg-white"
-                              : "bg-white/50"
-                          }`}
-                          style={{
-                            left: `${Math.min(
-                              (inspection / 17000) * 100,
-                              100
-                            )}%`,
-                          }}
-                        />
                       </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
+
+                      <div className="flex justify-between text-sm text-muted-foreground">
                         <span>0s</span>
                         <span>15s (WCA)</span>
                         <span>17s (DNF)</span>
                       </div>
+
                       <p
                         className={`text-sm ${
                           inspection > 17000
@@ -475,44 +463,44 @@ export function TimerCard() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="text-8xl font-mono font-bold text-foreground">
+                      <div className="text-9xl font-mono font-bold text-foreground">
                         {formatTime(time)}
                       </div>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground">
                         Appuie sur espace pour commencer l'inspection
                       </p>
                     </div>
                   )}
                 </div>
 
-                {/* Controls */}
-                <div className="flex gap-3 justify-center">
+                {/* Control Button */}
+                <div className="mt-8 flex justify-center">
                   <Button
                     onClick={handleSpacePress}
                     disabled={isInspection}
-                    className="flex-1 h-14 text-lg font-semibold"
+                    className="h-16 px-8 text-xl font-semibold"
                     size="lg"
                   >
                     {isRunning ? (
                       <>
-                        <Square className="h-6 w-6 mr-2" />
+                        <Square className="h-6 w-6 mr-3" />
                         Arrêter
                       </>
                     ) : (
                       <>
-                        <Play className="h-6 w-6 mr-2" />
+                        <Play className="h-6 w-6 mr-3" />
                         {isInspection ? "Démarrer" : "Inspection"}
                       </>
                     )}
                   </Button>
                 </div>
 
-                {/* Stats rapides */}
+                {/* Quick Stats */}
                 {stats && (
                   <div className="mt-8 pt-6 border-t border-border">
                     <div className="grid grid-cols-3 gap-6 text-center">
                       <div className="space-y-2">
-                        <div className="text-3xl font-bold text-foreground">
+                        <div className="text-2xl font-bold text-foreground">
                           {stats.total}
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -520,13 +508,13 @@ export function TimerCard() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-3xl font-bold text-primary">
+                        <div className="text-2xl font-bold text-primary">
                           {stats.pb ? formatTime(stats.pb) : "N/A"}
                         </div>
                         <div className="text-sm text-muted-foreground">PB</div>
                       </div>
                       <div className="space-y-2">
-                        <div className="text-3xl font-bold text-accent">
+                        <div className="text-2xl font-bold text-accent">
                           {stats.average ? formatTime(stats.average) : "N/A"}
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -539,52 +527,156 @@ export function TimerCard() {
               </CardContent>
             </Card>
 
-            {/* Visualiseur 3D */}
+            {/* Cube Viewer */}
             {currentScramble && currentScramble.trim() !== "" && (
-              <CubeViewer
-                puzzleType={selectedPuzzle}
-                scramble={currentScramble}
-                onReset={handleResetCube}
-              />
-            )}
-
-            {/* Actions supplémentaires */}
-            {solves.length > 0 && (
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex gap-3 justify-center">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={handleExport}
-                      className="flex items-center gap-2"
-                    >
-                      <Download className="h-5 w-5" />
-                      Exporter
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={handleClearAll}
-                      className="flex items-center gap-2 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                      Tout effacer
-                    </Button>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Scramble</h3>
+                    <Badge variant="secondary" className="font-mono text-sm">
+                      {currentScramble}
+                    </Badge>
                   </div>
+                  <CubeViewer
+                    puzzleType={selectedPuzzle}
+                    scramble={currentScramble}
+                    onReset={handleResetCube}
+                  />
                 </CardContent>
               </Card>
             )}
           </div>
 
-          {/* Colonne droite - Historique des solves */}
-          <div className="xl:col-span-1">
+          {/* Right column - Solve History */}
+          <div className="lg:col-span-1">
             <div className="sticky top-32">
-              <SolveList
-                solves={solves}
-                onUpdateSolve={handleUpdateSolve}
-                onDeleteSolve={handleDeleteSolve}
-              />
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Historique</h3>
+                    <Badge variant="outline">
+                      {puzzleSolves.length} solves
+                    </Badge>
+                  </div>
+
+                  {puzzleSolves.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Aucun solve pour ce puzzle</p>
+                      <p className="text-sm">Commence à résoudre !</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {puzzleSolves.slice(0, 10).map((solve, index) => (
+                        <div
+                          key={solve.id}
+                          className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                        >
+                          {/* Header avec numéro et temps */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className="text-sm font-mono text-muted-foreground w-8">
+                                #{puzzleSolves.length - index}
+                              </div>
+                              <div className="text-sm font-mono font-semibold">
+                                {formatTime(solve.time)}
+                                {solve.penalty === "plus2" && (
+                                  <span className="text-warning ml-1">+2</span>
+                                )}
+                                {solve.penalty === "dnf" && (
+                                  <span className="text-destructive ml-1">
+                                    DNF
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSolve(solve.id)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          {/* Actions pour pénalités */}
+                          <div className="flex items-center gap-1 mb-2">
+                            <Button
+                              variant={
+                                solve.penalty === "none" ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() =>
+                                handleUpdateSolve(solve.id, { penalty: "none" })
+                              }
+                              className="h-6 px-2 text-xs"
+                            >
+                              OK
+                            </Button>
+                            <Button
+                              variant={
+                                solve.penalty === "plus2"
+                                  ? "default"
+                                  : "outline"
+                              }
+                              size="sm"
+                              onClick={() =>
+                                handleUpdateSolve(solve.id, {
+                                  penalty: "plus2",
+                                })
+                              }
+                              className="h-6 px-2 text-xs text-warning hover:text-warning"
+                            >
+                              +2
+                            </Button>
+                            <Button
+                              variant={
+                                solve.penalty === "dnf" ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() =>
+                                handleUpdateSolve(solve.id, { penalty: "dnf" })
+                              }
+                              className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                            >
+                              DNF
+                            </Button>
+                          </div>
+
+                          {/* Notes */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder="Ajouter des notes..."
+                              value={solve.notes || ""}
+                              onChange={(e) =>
+                                handleUpdateSolve(solve.id, {
+                                  notes: e.target.value,
+                                })
+                              }
+                              className="flex-1 text-xs bg-transparent border border-border rounded px-2 py-1 focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {puzzleSolves.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearAll}
+                        className="w-full text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Effacer tout
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
