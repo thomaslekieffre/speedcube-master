@@ -7,6 +7,9 @@ interface CubeViewerProps {
   puzzleType: PuzzleType;
   scramble: string;
   onReset: () => void;
+  onViewerReady?: (viewer: any) => void;
+  showControls?: boolean;
+  algorithm?: string; // Pour le reset, si différent du scramble
 }
 
 // Mapping our puzzle IDs to cubing.js puzzle names
@@ -229,10 +232,18 @@ function ClockViewer({ scramble }: { scramble: string }) {
   );
 }
 
-export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
+export function CubeViewer({
+  puzzleType,
+  scramble,
+  onReset,
+  onViewerReady,
+  showControls = true,
+  algorithm,
+}: CubeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
   useEffect(() => {
     // reset le ready state à chaque changement
@@ -258,15 +269,21 @@ export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
           puzzle: puzzleName as any, // Type assertion pour éviter l'erreur
           alg: scramble,
           background: "none",
-          controlPanel: "none",
+          controlPanel: "none", // Désactiver les contrôles par défaut
         });
 
         containerRef.current?.appendChild(viewer);
         viewerRef.current = viewer;
         viewer.alg = scramble;
 
+        // Reset l'index des mouvements
+        setCurrentMoveIndex(0);
+
         // Marquer comme prêt après insertion
         setIsReady(true);
+
+        // Notifier le parent que le viewer est prêt
+        onViewerReady?.(viewer);
       } catch (error) {
         console.error("Erreur lors de l'initialisation du viewer:", error);
       }
@@ -285,22 +302,73 @@ export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
   }, [puzzleType, scramble]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full flex flex-col">
       {/* Visualiseur spécifique pour le Clock */}
       {puzzleType === "clock" ? (
         <ClockViewer scramble={scramble} />
       ) : (
-        <div
-          ref={containerRef}
-          className="w-full h-full flex items-center justify-center"
-        >
-          {!isReady && (
-            <div className="text-muted-foreground text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p>Chargement du visualiseur...</p>
+        <>
+          <div
+            ref={containerRef}
+            className="flex-1 flex items-center justify-center"
+          >
+            {!isReady && (
+              <div className="text-muted-foreground text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p>Chargement du visualiseur...</p>
+              </div>
+            )}
+          </div>
+
+          {/* Contrôles personnalisés */}
+          {showControls && isReady && viewerRef.current && (
+            <div className="flex items-center justify-center gap-2 p-4 bg-muted/30 rounded-lg mt-4">
+              <button
+                onClick={() => {
+                  if (viewerRef.current) {
+                    // Aller au début
+                    viewerRef.current.alg = "";
+                    setCurrentMoveIndex(0);
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Début"
+              >
+                ⏮️
+              </button>
+              <button
+                onClick={() => viewerRef.current?.pause()}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Pause"
+              >
+                ⏸️
+              </button>
+              <button
+                onClick={() => viewerRef.current?.play()}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Play"
+              >
+                ▶️
+              </button>
+              <button
+                onClick={() => {
+                  if (viewerRef.current) {
+                    // Aller à la fin
+                    viewerRef.current.alg = algorithm || scramble;
+                    const totalMoves = (algorithm || scramble).split(
+                      " "
+                    ).length;
+                    setCurrentMoveIndex(totalMoves);
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Fin"
+              >
+                ⏭️
+              </button>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

@@ -99,4 +99,97 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Styles pour les contrôles du TwistyPlayer */
+  twisty-player {
+    --twisty-player-controls-color: #e5e7eb !important;
+    --twisty-player-controls-background: transparent !important;
+  }
+
+  /* Styles globaux pour tous les éléments du TwistyPlayer */
+  twisty-player,
+  twisty-player * {
+    color: #e5e7eb !important;
+  }
+
+  /* Cibler tous les boutons et contrôles */
+  twisty-player button,
+  twisty-player .twisty-controls button,
+  twisty-player .twisty-player-controls button,
+  twisty-player .control-panel button,
+  twisty-player .control-panel * button,
+  twisty-player [class*="control"] button,
+  twisty-player [class*="button"] {
+    color: #e5e7eb !important;
+    background: transparent !important;
+    border: none !important;
+    fill: #e5e7eb !important;
+    stroke: #e5e7eb !important;
+  }
+
+  /* Hover effects */
+  twisty-player button:hover,
+  twisty-player .twisty-controls button:hover,
+  twisty-player .twisty-player-controls button:hover,
+  twisty-player .control-panel button:hover,
+  twisty-player .control-panel * button:hover,
+  twisty-player [class*="control"] button:hover,
+  twisty-player [class*="button"]:hover {
+    background: rgba(37, 99, 235, 0.1) !important;
+  }
+
+  /* Active effects */
+  twisty-player button:active,
+  twisty-player .twisty-controls button:active,
+  twisty-player .twisty-player-controls button:active,
+  twisty-player .control-panel button:active,
+  twisty-player .control-panel * button:active,
+  twisty-player [class*="control"] button:active,
+  twisty-player [class*="button"]:active {
+    background: rgba(37, 99, 235, 0.2) !important;
+  }
+
+  /* Cibler tous les SVG et icônes */
+  twisty-player svg,
+  twisty-player .twisty-controls svg,
+  twisty-player .twisty-player-controls svg,
+  twisty-player .control-panel svg,
+  twisty-player [class*="control"] svg,
+  twisty-player [class*="icon"] svg,
+  twisty-player [class*="button"] svg {
+    fill: #e5e7eb !important;
+    stroke: #e5e7eb !important;
+    color: #e5e7eb !important;
+  }
+
+  /* Cibler les sliders et progress bars */
+  twisty-player input[type="range"],
+  twisty-player .twisty-controls input[type="range"],
+  twisty-player .twisty-player-controls input[type="range"],
+  twisty-player .control-panel input[type="range"],
+  twisty-player [class*="control"] input[type="range"] {
+    background: rgba(37, 99, 235, 0.2) !important;
+  }
+
+  twisty-player input[type="range"]::-webkit-slider-thumb,
+  twisty-player .twisty-controls input[type="range"]::-webkit-slider-thumb,
+  twisty-player
+    .twisty-player-controls
+    input[type="range"]::-webkit-slider-thumb,
+  twisty-player .control-panel input[type="range"]::-webkit-slider-thumb,
+  twisty-player [class*="control"] input[type="range"]::-webkit-slider-thumb {
+    background: #2563eb !important;
+  }
+
+  /* Force la couleur sur tous les éléments de contrôle */
+  twisty-player [class*="control"],
+  twisty-player [class*="button"],
+  twisty-player [class*="icon"],
+  twisty-player [class*="play"],
+  twisty-player [class*="pause"],
+  twisty-player [class*="reset"] {
+    color: #e5e7eb !important;
+    fill: #e5e7eb !important;
+    stroke: #e5e7eb !important;
+  }
 }
