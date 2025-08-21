@@ -612,6 +612,9 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
       // Même mouvement : R R, R2 R2, etc.
       if (move1 === move2) return true;
 
+      // Même face avec des directions différentes : R R2, F F', etc.
+      // Ceci est autorisé par la WCA, donc on ne l'interdit pas
+
       return false;
     };
 
@@ -633,25 +636,13 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
       } while (
         // Règle WCA : aucun mouvement ne doit annuler ou partiellement annuler le mouvement précédent
         movesCancel(move, lastMove) ||
-        // Éviter les répétitions de face sur 3 mouvements consécutifs
-        (move.startsWith("R") &&
-          lastMove.startsWith("R") &&
-          lastLastMove.startsWith("R")) ||
-        (move.startsWith("U") &&
-          lastMove.startsWith("U") &&
-          lastLastMove.startsWith("U")) ||
-        (move.startsWith("F") &&
-          lastMove.startsWith("F") &&
-          lastLastMove.startsWith("F")) ||
-        (move.startsWith("L") &&
-          lastMove.startsWith("L") &&
-          lastLastMove.startsWith("L")) ||
-        (move.startsWith("D") &&
-          lastMove.startsWith("D") &&
-          lastLastMove.startsWith("D")) ||
-        (move.startsWith("B") &&
-          lastMove.startsWith("B") &&
-          lastLastMove.startsWith("B"))
+        // Éviter TOUTE répétition de face consécutive (règle WCA stricte)
+        (move.startsWith("R") && lastMove.startsWith("R")) ||
+        (move.startsWith("U") && lastMove.startsWith("U")) ||
+        (move.startsWith("F") && lastMove.startsWith("F")) ||
+        (move.startsWith("L") && lastMove.startsWith("L")) ||
+        (move.startsWith("D") && lastMove.startsWith("D")) ||
+        (move.startsWith("B") && lastMove.startsWith("B"))
       );
 
       scramble += move + " ";
