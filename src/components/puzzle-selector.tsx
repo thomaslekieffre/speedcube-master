@@ -589,32 +589,60 @@ export const generateMockScramble = (puzzleType: PuzzleType): string => {
   }
   // Logique standard pour les autres puzzles
   else {
+    // Fonction helper pour vérifier si deux mouvements s'annulent
+    const movesCancel = (move1: string, move2: string): boolean => {
+      // Extraire la face et la direction
+      const getFace = (move: string) =>
+        move.replace(/['2]/, "").replace(/w|3/, "");
+      const getDirection = (move: string) =>
+        move.includes("'") ? "'" : move.includes("2") ? "2" : "";
+
+      const face1 = getFace(move1);
+      const face2 = getFace(move2);
+      const dir1 = getDirection(move1);
+      const dir2 = getDirection(move2);
+
+      // Même face
+      if (face1 !== face2) return false;
+
+      // Annulation directe : R R', Rw Rw', 3Rw 3Rw', etc.
+      if ((dir1 === "" && dir2 === "'") || (dir1 === "'" && dir2 === ""))
+        return true;
+
+      // Même mouvement : R R, R2 R2, etc.
+      if (move1 === move2) return true;
+
+      // Même face avec des directions différentes : R R2, F F', etc.
+      // Ceci est autorisé par la WCA, donc on ne l'interdit pas
+
+      return false;
+    };
+
     for (let i = 0; i < length; i++) {
       let move;
+      let attempts = 0;
+      const maxAttempts = 100; // Éviter les boucles infinies
+
       do {
         move = puzzleMoves[Math.floor(Math.random() * puzzleMoves.length)];
+        attempts++;
+
+        // Éviter les boucles infinies
+        if (attempts > maxAttempts) {
+          // Si on ne trouve pas de mouvement valide, on prend le premier disponible
+          move = puzzleMoves[0];
+          break;
+        }
       } while (
-        move === lastMove ||
-        move === lastLastMove ||
-        // Éviter les répétitions de face (ex: R R' R)
-        (move.startsWith("R") &&
-          lastMove.startsWith("R") &&
-          lastLastMove.startsWith("R")) ||
-        (move.startsWith("U") &&
-          lastMove.startsWith("U") &&
-          lastLastMove.startsWith("U")) ||
-        (move.startsWith("F") &&
-          lastMove.startsWith("F") &&
-          lastLastMove.startsWith("F")) ||
-        (move.startsWith("L") &&
-          lastMove.startsWith("L") &&
-          lastLastMove.startsWith("L")) ||
-        (move.startsWith("D") &&
-          lastMove.startsWith("D") &&
-          lastLastMove.startsWith("D")) ||
-        (move.startsWith("B") &&
-          lastMove.startsWith("B") &&
-          lastLastMove.startsWith("B"))
+        // Règle WCA : aucun mouvement ne doit annuler ou partiellement annuler le mouvement précédent
+        movesCancel(move, lastMove) ||
+        // Éviter TOUTE répétition de face consécutive (règle WCA stricte)
+        (move.startsWith("R") && lastMove.startsWith("R")) ||
+        (move.startsWith("U") && lastMove.startsWith("U")) ||
+        (move.startsWith("F") && lastMove.startsWith("F")) ||
+        (move.startsWith("L") && lastMove.startsWith("L")) ||
+        (move.startsWith("D") && lastMove.startsWith("D")) ||
+        (move.startsWith("B") && lastMove.startsWith("B"))
       );
 
       scramble += move + " ";
