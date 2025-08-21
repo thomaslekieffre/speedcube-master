@@ -55,8 +55,12 @@ export function TimerCard() {
     error: solvesError,
   } = useSupabaseSolves();
 
-  const { updateOrCreatePersonalBest, deletePersonalBest, getPersonalBest } =
-    usePersonalBests();
+  const {
+    updateOrCreatePersonalBest,
+    deletePersonalBest,
+    getPersonalBest,
+    refresh: refreshPersonalBests,
+  } = usePersonalBests();
 
   // Générer le premier scramble côté client seulement
   useEffect(() => {
@@ -202,69 +206,80 @@ export function TimerCard() {
   }, [exportSolves]);
 
   const handleDeleteSolve = useCallback(
-    (solveId: string) => {
-      // Trouver le solve à supprimer
-      const solveToDelete = solves.find((s) => s.id === solveId);
-
-      if (solveToDelete) {
-        // Vérifier si c'était le PB en comparant avec le PB de la base de données
-        const currentPB = getPersonalBest(solveToDelete.puzzle_type);
-        const wasPB =
-          currentPB &&
-          currentPB.time === solveToDelete.time &&
-          solveToDelete.penalty !== "dnf";
-
+    async (solveId: string) => {
+      try {
         // Supprimer le solve
-        deleteSolve(solveId);
+        await deleteSolve(solveId);
 
-        // Si c'était le PB, mettre à jour le PB avec le nouveau meilleur temps
-        if (wasPB) {
-          const remainingSolves = solves.filter(
-            (s) =>
-              s.puzzle_type === solveToDelete.puzzle_type && s.id !== solveId
-          );
-          const remainingValidSolves = remainingSolves.filter(
-            (s) => s.penalty !== "dnf"
-          );
-
-          if (remainingValidSolves.length > 0) {
-            const newPB = Math.min(...remainingValidSolves.map((s) => s.time));
-            const newPBSolve = remainingValidSolves.find(
-              (s) => s.time === newPB
-            );
-
-            if (newPBSolve) {
-              updateOrCreatePersonalBest(
-                solveToDelete.puzzle_type,
-                newPB,
-                newPBSolve.penalty as "none" | "plus2",
-                newPBSolve.scramble
-              );
-            }
-          } else {
-            // Plus aucun solve valide, supprimer le PB
-            deletePersonalBest(solveToDelete.puzzle_type);
-          }
-        }
-
+        // La synchronisation automatique se chargera de mettre à jour le PB
         toast.success("Solve supprimé");
+      } catch (error) {
+        console.error("Erreur lors de la suppression du solve:", error);
+        toast.error("Erreur lors de la suppression du solve");
       }
     },
-    [
-      deleteSolve,
-      solves,
-      updateOrCreatePersonalBest,
-      deletePersonalBest,
-      getPersonalBest,
-    ]
+    [deleteSolve]
   );
 
   const handleUpdateSolve = useCallback(
-    (solveId: string, updates: Partial<Solve>) => {
-      updateSolve(solveId, updates);
-      toast.success("Solve mis à jour");
+    async (solveId: string, updates: Partial<Solve>) => {
+      try {
+        await updateSolve(solveId, updates);
+
+        // Forcer une synchronisation immédiate du PB après mise à jour
+        setTimeout(async () => {
+          try {
+            const updatedSolves = solves.map((s) =>
+              s.id === solveId ? { ...s, ...updates } : s
+            );
+            const puzzleSolves = updatedSolves.filter(
+              (s) => s.puzzle_type === selectedPuzzle
+            );
+            const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
+
+            if (validSolves.length === 0) {
+              await deletePersonalBest(selectedPuzzle);
+            } else {
+              // Calculer le meilleur temps en tenant compte des pénalités
+              const timesWithPenalties = validSolves.map((s) => ({
+                solve: s,
+                effectiveTime: s.penalty === "plus2" ? s.time + 2000 : s.time,
+              }));
+
+              const bestTimeEntry = timesWithPenalties.reduce((min, current) =>
+                current.effectiveTime < min.effectiveTime ? current : min
+              );
+
+              if (bestTimeEntry) {
+                await updateOrCreatePersonalBest(
+                  selectedPuzzle,
+                  bestTimeEntry.solve.time,
+                  bestTimeEntry.solve.penalty as "none" | "plus2",
+                  bestTimeEntry.solve.scramble
+                );
+              }
+            }
+          } catch (error) {
+            console.error(
+              "Erreur lors de la synchronisation après mise à jour:",
+              error
+            );
+          }
+        }, 200);
+
+        toast.success("Solve mis à jour");
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour du solve:", error);
+        toast.error("Erreur lors de la mise à jour du solve");
+      }
     },
-    [updateSolve]
+    [
+      updateSolve,
+      solves,
+      selectedPuzzle,
+      updateOrCreatePersonalBest,
+      deletePersonalBest,
+    ]
   );
 
   const handleClearAll = useCallback(() => {
@@ -293,13 +308,94 @@ export function TimerCard() {
   const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
   const currentPB = getPersonalBest(selectedPuzzle);
 
+  // Calculer le PB à partir des solves valides uniquement (avec pénalités)
+  const calculatedPB =
+    validSolves.length > 0
+      ? Math.min(
+          ...validSolves.map((s) =>
+            s.penalty === "plus2" ? s.time + 2000 : s.time
+          )
+        )
+      : null;
+
+  // Debug: Afficher les temps pour comprendre le problème
+  console.log("Debug PB:", {
+    selectedPuzzle,
+    currentPB,
+    calculatedPB,
+    calculatedPBFormatted: calculatedPB ? formatTime(calculatedPB) : null,
+    validSolves: validSolves.map((s) => ({
+      time: s.time,
+      formatted: formatTime(s.time),
+    })),
+    minTime:
+      validSolves.length > 0
+        ? Math.min(...validSolves.map((s) => s.time))
+        : null,
+    minTimeFormatted:
+      validSolves.length > 0
+        ? formatTime(Math.min(...validSolves.map((s) => s.time)))
+        : null,
+  });
+
+  // Synchroniser automatiquement le PB de la base de données avec les solves actuels
+  useEffect(() => {
+    const syncPB = async () => {
+      try {
+        if (validSolves.length === 0) {
+          // Supprimer le PB s'il n'y a plus de solves
+          await deletePersonalBest(selectedPuzzle);
+          return;
+        }
+
+        // Calculer le meilleur temps en tenant compte des pénalités
+        const timesWithPenalties = validSolves.map((s) => ({
+          solve: s,
+          effectiveTime: s.penalty === "plus2" ? s.time + 2000 : s.time,
+        }));
+
+        const bestTimeEntry = timesWithPenalties.reduce((min, current) =>
+          current.effectiveTime < min.effectiveTime ? current : min
+        );
+
+        if (bestTimeEntry) {
+          console.log("Synchronisation automatique du PB:", {
+            puzzleType: selectedPuzzle,
+            bestTime: bestTimeEntry.solve.time,
+            effectiveTime: bestTimeEntry.effectiveTime,
+            formatted: formatTime(bestTimeEntry.solve.time),
+            effectiveFormatted: formatTime(bestTimeEntry.effectiveTime),
+            solve: bestTimeEntry.solve,
+          });
+
+          await updateOrCreatePersonalBest(
+            selectedPuzzle,
+            bestTimeEntry.solve.time,
+            bestTimeEntry.solve.penalty as "none" | "plus2",
+            bestTimeEntry.solve.scramble
+          );
+        }
+      } catch (error) {
+        console.error("Erreur lors de la synchronisation du PB:", error);
+        // Ne pas afficher de toast d'erreur pour éviter le spam
+      }
+    };
+
+    // Délai pour éviter les synchronisations trop fréquentes
+    const timeoutId = setTimeout(syncPB, 100);
+    return () => clearTimeout(timeoutId);
+  }, [
+    validSolves,
+    puzzleSolves,
+    selectedPuzzle,
+    updateOrCreatePersonalBest,
+    deletePersonalBest,
+  ]);
+
   const stats = {
     total: puzzleSolves.length,
-    pb: currentPB
-      ? currentPB.time
-      : validSolves.length > 0
-      ? Math.min(...validSolves.map((s) => s.time))
-      : null,
+    // Utiliser le PB calculé, pas le temps du timer
+    pb: calculatedPB,
     average:
       validSolves.length > 0
         ? validSolves.slice(-12).reduce((sum, s) => sum + s.time, 0) /
@@ -525,6 +621,7 @@ export function TimerCard() {
                             </div>
                           </div>
                         </div>
+                        {/* Boutons temporaires pour debug */}
                       </div>
                     )}
 
