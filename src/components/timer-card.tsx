@@ -15,7 +15,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SolveList } from "./solve-list";
-import { useSolves, type Solve } from "@/hooks/use-solves";
+import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
+import type { Database } from "@/lib/supabase";
+
+type Solve = Database["public"]["Tables"]["solves"]["Row"];
 import { toast } from "sonner";
 import {
   PuzzleSelector,
@@ -47,7 +50,9 @@ export function TimerCard() {
     deleteSolve,
     clearAllSolves,
     exportSolves,
-  } = useSolves();
+    loading: solvesLoading,
+    error: solvesError,
+  } = useSupabaseSolves();
 
   // Générer le premier scramble côté client seulement
   useEffect(() => {
@@ -108,9 +113,8 @@ export function TimerCard() {
           const dnfSolve = {
             time: 0,
             penalty: "dnf" as const,
-            date: new Date(),
             scramble: currentScramble,
-            puzzle: selectedPuzzle,
+            puzzle_type: selectedPuzzle,
           };
 
           // Utiliser setTimeout pour éviter la boucle infinie
@@ -167,9 +171,8 @@ export function TimerCard() {
     const newSolve = addSolve({
       time: currentTime,
       penalty: penalty,
-      date: new Date(),
       scramble: currentScramble,
-      puzzle: selectedPuzzle,
+      puzzle_type: selectedPuzzle,
     });
 
     // Message selon la pénalité
@@ -293,7 +296,7 @@ export function TimerCard() {
   // Calculer les stats avec pénalités
   const getStats = () => {
     // Filtrer les solves par puzzle sélectionné
-    const puzzleSolves = solves.filter((s) => s.puzzle === selectedPuzzle);
+    const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
 
     if (puzzleSolves.length === 0) return null;
 
@@ -331,7 +334,7 @@ export function TimerCard() {
   const stats = getStats();
 
   // Filtrer les solves par puzzle sélectionné pour l'affichage
-  const puzzleSolves = solves.filter((s) => s.puzzle === selectedPuzzle);
+  const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
 
   return (
     <div className="min-h-screen bg-background">

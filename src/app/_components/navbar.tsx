@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import { Timer, Zap, BarChart3, Trophy } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 
 export function Navbar() {
+  const { isSignedIn, user } = useUser();
+
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center gap-6">
@@ -47,12 +52,25 @@ export function Navbar() {
           <div className="mx-2 h-6 w-px bg-border" />
 
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="rounded-lg border border-border px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
-          >
-            Connexion
-          </Link>
+
+          {isSignedIn ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {user?.emailAddresses[0]?.emailAddress}
+              </span>
+              <SignOutButton>
+                <button className="rounded-lg border border-border px-4 py-2 hover:bg-muted transition-colors font-medium">
+                  Déconnexion
+                </button>
+              </SignOutButton>
+            </div>
+          ) : (
+            <SignInButton>
+              <button className="rounded-lg border border-border px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium">
+                Connexion
+              </button>
+            </SignInButton>
+          )}
         </nav>
       </div>
     </header>
