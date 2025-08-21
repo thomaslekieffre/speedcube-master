@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export interface Solve {
   id: string;
@@ -7,12 +7,14 @@ export interface Solve {
   date: Date;
   scramble: string;
   notes?: string;
+  puzzle: string; // Ajout de la propriété puzzle
 }
 
 const STORAGE_KEY = "speedcube-solves";
 
 export function useSolves() {
   const [solves, setSolves] = useState<Solve[]>([]);
+  const idCounter = useRef(0);
 
   // Charger les solves depuis localStorage au montage
   useEffect(() => {
@@ -25,7 +27,24 @@ export function useSolves() {
           ...solve,
           date: new Date(solve.date),
         }));
-        setSolves(solvesWithDates);
+        
+        // Nettoyer les doublons basés sur l'ID
+        const uniqueSolves = solvesWithDates.filter((solve: any, index: number, self: any[]) => 
+          index === self.findIndex((s: any) => s.id === solve.id)
+        );
+        
+        setSolves(uniqueSolves);
+        
+        // Mettre à jour le compteur d'ID pour éviter les doublons
+        if (uniqueSolves.length > 0) {
+          const maxId = Math.max(
+            ...uniqueSolves.map((s: any) => {
+              const parts = s.id.split("-");
+              return parts.length > 1 ? parseInt(parts[1]) : 0;
+            })
+          );
+          idCounter.current = maxId + 1;
+        }
       } catch (error) {
         console.error("Erreur lors du chargement des solves:", error);
         localStorage.removeItem(STORAGE_KEY);
@@ -41,7 +60,7 @@ export function useSolves() {
   const addSolve = (solve: Omit<Solve, "id">) => {
     const newSolve: Solve = {
       ...solve,
-      id: Date.now().toString(),
+      id: `${Date.now()}-${idCounter.current++}`,
     };
     setSolves((prev) => [newSolve, ...prev]);
     return newSolve;
@@ -60,6 +79,15 @@ export function useSolves() {
   const clearAllSolves = () => {
     setSolves([]);
     localStorage.removeItem(STORAGE_KEY);
+  };
+
+  const cleanDuplicates = () => {
+    setSolves((prev) => {
+      const uniqueSolves = prev.filter((solve: Solve, index: number, self: Solve[]) => 
+        index === self.findIndex((s: Solve) => s.id === solve.id)
+      );
+      return uniqueSolves;
+    });
   };
 
   const exportSolves = () => {
@@ -88,6 +116,7 @@ export function useSolves() {
     updateSolve,
     deleteSolve,
     clearAllSolves,
+    cleanDuplicates,
     exportSolves,
   };
 }
