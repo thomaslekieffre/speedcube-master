@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { usePersonalBests } from "@/hooks/use-personal-bests";
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { useUser } from "@clerk/nextjs";
+import { PUZZLES } from "@/components/puzzle-selector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function PublicProfilePage() {
   const params = useParams();
   const username = params.username as string;
   const { user } = useUser();
+  const [selectedPuzzle, setSelectedPuzzle] = useState("333");
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,19 +102,22 @@ export default function PublicProfilePage() {
     );
   }
 
-  // Calculer les stats
+  // Calculer les stats pour le puzzle sélectionné
   const getStats = () => {
-    if (solves.length === 0) return null;
+    const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
+    if (puzzleSolves.length === 0) return null;
 
-    const validSolves = solves.filter((s) => s.penalty !== "dnf");
-    const dnfCount = solves.filter((s) => s.penalty === "dnf").length;
+    const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
+    const dnfCount = puzzleSolves.filter((s) => s.penalty === "dnf").length;
 
     if (validSolves.length === 0) {
       return {
-        total: solves.length,
+        total: puzzleSolves.length,
         dnfCount,
         pb: null,
         average: null,
+        avg5: null,
+        avg12: null,
       };
     }
 
@@ -123,11 +128,24 @@ export default function PublicProfilePage() {
     const pb = Math.min(...times);
     const average = Math.floor(times.reduce((a, b) => a + b, 0) / times.length);
 
+    // Calculer avg5 et avg12
+    const sortedTimes = [...times].sort((a, b) => a - b);
+    const avg5 =
+      times.length >= 5
+        ? Math.floor(sortedTimes.slice(0, 5).reduce((a, b) => a + b, 0) / 5)
+        : null;
+    const avg12 =
+      times.length >= 12
+        ? Math.floor(sortedTimes.slice(0, 12).reduce((a, b) => a + b, 0) / 12)
+        : null;
+
     return {
-      total: solves.length,
+      total: puzzleSolves.length,
       dnfCount,
       pb,
       average,
+      avg5,
+      avg12,
     };
   };
 
@@ -191,47 +209,78 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* Stats générales */}
-        {stats && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Statistiques générales
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {/* Sélecteur de puzzle et stats */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Statistiques{" "}
+              {PUZZLES.find((p) => p.id === selectedPuzzle)?.name || "3x3"}
+            </CardTitle>
+            <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+              {PUZZLES.map((puzzle) => (
+                <button
+                  key={puzzle.id}
+                  onClick={() => setSelectedPuzzle(puzzle.id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                    selectedPuzzle === puzzle.id
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-muted/50 hover:border-primary/30 border border-border"
+                  }`}
+                >
+                  <div className={`w-2.5 h-2.5 rounded-full ${puzzle.color}`} />
+                  {puzzle.shortName}
+                </button>
+              ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-xl font-bold text-foreground">
                     {stats.total}
                   </div>
-                  <div className="text-sm text-muted-foreground">Solves</div>
+                  <div className="text-xs text-muted-foreground">Solves</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-xl font-bold text-primary">
                     {stats.pb ? formatTime(stats.pb) : "N/A"}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Meilleur temps
-                  </div>
+                  <div className="text-xs text-muted-foreground">PB</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-accent">
+                  <div className="text-xl font-bold text-accent">
                     {stats.average ? formatTime(stats.average) : "N/A"}
                   </div>
-                  <div className="text-sm text-muted-foreground">Moyenne</div>
+                  <div className="text-xs text-muted-foreground">Moyenne</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-muted-foreground">
+                  <div className="text-xl font-bold text-orange-500">
+                    {stats.avg5 ? formatTime(stats.avg5) : "N/A"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Avg5</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-purple-500">
+                    {stats.avg12 ? formatTime(stats.avg12) : "N/A"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Avg12</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xl font-bold text-muted-foreground">
                     {stats.dnfCount}
                   </div>
-                  <div className="text-sm text-muted-foreground">DNF</div>
+                  <div className="text-xs text-muted-foreground">DNF</div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Aucun solve pour ce puzzle</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Records personnels */}
         <Card className="mb-6">
@@ -296,39 +345,46 @@ export default function PublicProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {solves.length === 0 ? (
+            {solves.filter((s) => s.puzzle_type === selectedPuzzle).length ===
+            0 ? (
               <p className="text-muted-foreground text-center py-4">
-                Aucun solve pour l'instant.
+                Aucun solve pour ce puzzle.
               </p>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {solves.slice(0, 20).map((solve, index) => (
-                  <div
-                    key={solve.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm font-mono text-muted-foreground w-8">
-                        #{solves.length - index}
+                {solves
+                  .filter((s) => s.puzzle_type === selectedPuzzle)
+                  .slice(0, 20)
+                  .map((solve, index) => (
+                    <div
+                      key={solve.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm font-mono text-muted-foreground w-8">
+                          #
+                          {solves.filter(
+                            (s) => s.puzzle_type === selectedPuzzle
+                          ).length - index}
+                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {solve.puzzle_type}
+                        </Badge>
+                        <div className="text-sm font-mono font-semibold">
+                          {formatTime(solve.time)}
+                          {solve.penalty === "plus2" && (
+                            <span className="text-warning ml-1">+2</span>
+                          )}
+                          {solve.penalty === "dnf" && (
+                            <span className="text-destructive ml-1">DNF</span>
+                          )}
+                        </div>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {solve.puzzle_type}
-                      </Badge>
-                      <div className="text-sm font-mono font-semibold">
-                        {formatTime(solve.time)}
-                        {solve.penalty === "plus2" && (
-                          <span className="text-warning ml-1">+2</span>
-                        )}
-                        {solve.penalty === "dnf" && (
-                          <span className="text-destructive ml-1">DNF</span>
-                        )}
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(solve.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(solve.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </CardContent>
