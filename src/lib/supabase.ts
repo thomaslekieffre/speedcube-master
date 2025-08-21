@@ -55,7 +55,10 @@ export interface Database {
           id: string; // Clerk user ID
           username?: string;
           avatar_url?: string;
+          custom_avatar_url?: string;
           bio?: string;
+          wca_id?: string;
+          is_public?: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -63,7 +66,10 @@ export interface Database {
           id: string;
           username?: string;
           avatar_url?: string;
+          custom_avatar_url?: string;
           bio?: string;
+          wca_id?: string;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -71,9 +77,41 @@ export interface Database {
           id?: string;
           username?: string;
           avatar_url?: string;
+          custom_avatar_url?: string;
           bio?: string;
+          wca_id?: string;
+          is_public?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      personal_bests: {
+        Row: {
+          id: string;
+          user_id: string;
+          puzzle_type: string;
+          time: number;
+          penalty: "none" | "plus2" | "dnf";
+          scramble: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          puzzle_type: string;
+          time: number;
+          penalty?: "none" | "plus2" | "dnf";
+          scramble: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          puzzle_type?: string;
+          time?: number;
+          penalty?: "none" | "plus2" | "dnf";
+          scramble?: string;
+          created_at?: string;
         };
       };
     };

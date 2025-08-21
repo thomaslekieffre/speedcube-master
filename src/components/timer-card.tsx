@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SolveList } from "./solve-list";
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
+import { usePersonalBests } from "@/hooks/use-personal-bests";
 import type { Database } from "@/lib/supabase";
 
 type Solve = Database["public"]["Tables"]["solves"]["Row"];
@@ -53,6 +54,8 @@ export function TimerCard() {
     loading: solvesLoading,
     error: solvesError,
   } = useSupabaseSolves();
+
+  const { updateOrCreatePersonalBest } = usePersonalBests();
 
   // Générer le premier scramble côté client seulement
   useEffect(() => {
@@ -174,6 +177,16 @@ export function TimerCard() {
       scramble: currentScramble,
       puzzle_type: selectedPuzzle,
     });
+
+    // Mettre à jour le PB si nécessaire
+    if (penalty !== "dnf") {
+      updateOrCreatePersonalBest(
+        selectedPuzzle,
+        currentTime,
+        penalty,
+        currentScramble
+      );
+    }
 
     // Message selon la pénalité
     if (penalty === "dnf") {
