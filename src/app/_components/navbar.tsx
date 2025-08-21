@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Timer, Zap, BarChart3, Trophy } from "lucide-react";
+import { Timer, Zap, BarChart3, Trophy, User } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
+import { useProfile } from "@/hooks/use-profile";
 
 export function Navbar() {
   const { isSignedIn, user } = useUser();
+  const { profile, loading: profileLoading } = useProfile();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -48,6 +50,15 @@ export function Navbar() {
             <Trophy className="h-4 w-4" />
             Défi
           </Link>
+          {isSignedIn && (
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <User className="h-4 w-4" />
+              Profil
+            </Link>
+          )}
 
           <div className="mx-2 h-6 w-px bg-border" />
 
@@ -55,9 +66,18 @@ export function Navbar() {
 
           {isSignedIn ? (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {user?.emailAddresses[0]?.emailAddress}
-              </span>
+              <div className="flex items-center gap-2">
+                {profile?.avatar_url && (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.username || "Avatar"}
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {profile?.username || user?.emailAddresses[0]?.emailAddress}
+                </span>
+              </div>
               <SignOutButton>
                 <button className="rounded-lg border border-border px-4 py-2 hover:bg-muted transition-colors font-medium">
                   Déconnexion

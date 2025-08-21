@@ -22,7 +22,7 @@ CREATE TABLE solves (
   scramble TEXT NOT NULL,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+);git 
 
 -- Créer les index
 CREATE INDEX idx_solves_user_id ON solves(user_id);
