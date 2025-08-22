@@ -8,11 +8,14 @@ import { Timer, Trophy, Users, Zap } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { formatTime } from "@/lib/time";
 import { useChallenge } from "@/hooks/use-challenge";
+import { getTodayDate, getTimeRemaining } from "@/lib/daily-scramble";
 
 export default function ChallengePage() {
   const [scramble, setScramble] = useState(
     "R U R' U' R' F R2 U' R' U' R U R' F'"
   );
+  const [challengeDate, setChallengeDate] = useState(() => getTodayDate());
+  const [timeRemaining, setTimeRemaining] = useState(() => getTimeRemaining());
   const [currentTime, setCurrentTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isInspection, setIsInspection] = useState(false);
@@ -62,6 +65,27 @@ export default function ChallengePage() {
 
     return () => clearInterval(interval);
   }, [isRunning, isInspection]);
+
+  // Vérifier si la date a changé
+  useEffect(() => {
+    const today = getTodayDate();
+    if (today !== challengeDate) {
+      setChallengeDate(today);
+      // Réinitialiser les tentatives pour le nouveau jour
+      if (attempts.length > 0) {
+        resetAttempts();
+      }
+    }
+  }, [challengeDate, attempts.length, resetAttempts]);
+
+  // Mettre à jour le temps restant chaque seconde
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeRemaining(getTimeRemaining());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const startTimer = () => {
     if (attempts.length >= 3) return;
@@ -166,8 +190,14 @@ export default function ChallengePage() {
             3 tentatives. 24h. Montre ce que tu vaux.
           </p>
           <div className="flex items-center justify-center gap-4 text-sm">
-            <Badge variant="outline">Temps restant: 12h 30m</Badge>
+            <Badge variant="outline">
+              Challenge du {new Date(challengeDate).toLocaleDateString("fr-FR")}
+            </Badge>
             <Badge variant="outline">{attempts.length}/3 tentatives</Badge>
+            <Badge variant="outline" className="text-orange-500">
+              {timeRemaining.hours}h {timeRemaining.minutes}m{" "}
+              {timeRemaining.seconds}s
+            </Badge>
           </div>
         </div>
 
@@ -191,7 +221,7 @@ export default function ChallengePage() {
                 {/* Visualisation du cube */}
                 <div className="h-48 sm:h-56 lg:h-64 bg-muted/30 rounded-lg border overflow-hidden">
                   <CubeViewer
-                    key={scramble} // Force le re-render quand le scramble change
+                    key={`${challengeDate}-${scramble}`} // Force le re-render quand la date ou le scramble change
                     puzzleType="333"
                     scramble={scramble}
                     onReset={() => {}}
