@@ -8,14 +8,16 @@ import { Timer, Trophy, Users, Zap } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { formatTime } from "@/lib/time";
 import { useChallenge } from "@/hooks/use-challenge";
-import { getTodayDate, getTimeRemaining } from "@/lib/daily-scramble";
+import {
+  getTodayDate,
+  getTimeRemaining,
+  getDailyScramble,
+} from "@/lib/daily-scramble";
 
 export default function ChallengePage() {
-  const [scramble, setScramble] = useState(
-    "R U R' U' R' F R2 U' R' U' R U R' F'"
-  );
+  const [scramble, setScramble] = useState(() => getDailyScramble());
   const [challengeDate, setChallengeDate] = useState(() => getTodayDate());
-  const [timeRemaining, setTimeRemaining] = useState(() => getTimeRemaining());
+  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [currentTime, setCurrentTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isInspection, setIsInspection] = useState(false);
@@ -66,11 +68,12 @@ export default function ChallengePage() {
     return () => clearInterval(interval);
   }, [isRunning, isInspection]);
 
-  // Vérifier si la date a changé
+  // Vérifier si la date a changé et mettre à jour le scramble
   useEffect(() => {
     const today = getTodayDate();
     if (today !== challengeDate) {
       setChallengeDate(today);
+      setScramble(getDailyScramble());
       // Réinitialiser les tentatives pour le nouveau jour
       if (attempts.length > 0) {
         resetAttempts();
@@ -78,8 +81,11 @@ export default function ChallengePage() {
     }
   }, [challengeDate, attempts.length, resetAttempts]);
 
-  // Mettre à jour le temps restant chaque seconde
+  // Mettre à jour le temps restant chaque seconde (côté client uniquement)
   useEffect(() => {
+    // Initialiser le temps restant côté client
+    setTimeRemaining(getTimeRemaining());
+    
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining());
     }, 1000);

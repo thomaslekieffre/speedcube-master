@@ -3,6 +3,30 @@ export function getTodayDate(): string {
   return new Date().toISOString().split("T")[0];
 }
 
+// Scrambles de fallback valides pour 3x3
+const FALLBACK_SCRAMBLES = [
+  "R U R' U' R' F R2 U' R' U' R U R' F'",
+  "F R U R' U' F' R U R' U' R' F R F'",
+  "R U R' U R U2 R' F R U R' U' F'",
+  "R U R' U' R' F R F' R U R' U' R' F R F'",
+  "F R U R' U' F' U F R U R' U' F'",
+  "R U R' U' R' F R F' U2 R U R' U' R' F R F'",
+  "F R U R' U' F' U2 F R U R' U' F'",
+  "R U R' U' R' F R F' R U R' U' R' F R F'",
+  "F R U R' U' F' R U R' U' R' F R F'",
+  "R U R' U R U2 R' F R U R' U' F' U2",
+  "R U R' U' R' F R F' U F R U R' U' F'",
+  "F R U R' U' F' U R U R' U' R' F R F'",
+  "R U R' U' R' F R F' R U R' U' R' F R F' U2",
+  "F R U R' U' F' U2 R U R' U' R' F R F'",
+  "R U R' U R U2 R' F R U R' U' F' U'",
+  "R U R' U' R' F R F' U' F R U R' U' F'",
+  "F R U R' U' F' U' R U R' U' R' F R F'",
+  "R U R' U' R' F R F' U2 F R U R' U' F'",
+  "F R U R' U' F' R U R' U' R' F R F' U2",
+  "R U R' U R U2 R' F R U R' U' F' U",
+];
+
 // Fonction pour générer un scramble basé sur une date
 export function generateDailyScramble(date: string): string {
   // Utiliser la date comme seed pour avoir le même scramble pour la même date
@@ -16,36 +40,12 @@ export function generateDailyScramble(date: string): string {
     return Math.floor(random * (max - min + 1)) + min;
   };
 
-  // Utiliser directement le fallback pour l'instant
-  return generateFallbackScramble(seededRandom);
+  // Sélectionner un scramble de manière déterministe
+  const index = seededRandom(0, FALLBACK_SCRAMBLES.length - 1);
+  return FALLBACK_SCRAMBLES[index];
 }
 
-// Fallback scramble si cubing.js ne fonctionne pas
-function generateFallbackScramble(
-  random: (min: number, max: number) => number
-): string {
-  const moves = ["R", "L", "U", "D", "F", "B"];
-  const modifiers = ["", "'", "2"];
-  const scrambleLength = 20;
-
-  let scramble = "";
-  let lastMove = "";
-
-  for (let i = 0; i < scrambleLength; i++) {
-    let move;
-    do {
-      move = moves[random(0, moves.length - 1)];
-    } while (move === lastMove); // Éviter les répétitions
-
-    const modifier = modifiers[random(0, modifiers.length - 1)];
-    scramble += move + modifier + " ";
-    lastMove = move;
-  }
-
-  return scramble.trim();
-}
-
-// Fonction pour obtenir le scramble du jour
+// Fonction pour obtenir le scramble du jour (synchrone)
 export function getDailyScramble(): string {
   const today = getTodayDate();
   return generateDailyScramble(today);
