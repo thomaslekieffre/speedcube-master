@@ -199,7 +199,7 @@ export default function AlgorithmDetailPage() {
                 <div className="h-96 bg-muted/30 rounded-lg border">
                   <CubeViewer
                     puzzleType={algorithm.puzzle_type as any}
-                    scramble={algorithm.notation}
+                    scramble=""
                     onReset={() => {}}
                     showControls={true}
                     algorithm={algorithm.notation}

@@ -1,11 +1,11 @@
 "use client";
 
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatTime } from "@/lib/time";
 import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
-import { generate333Scramble } from "../_utils/scramble";
+import { randomScrambleForEvent } from "cubing/scramble";
 import { Penalty, Solve, useSolves } from "../_hooks/use-solves";
 import { CubeViewer } from "@/components/cube-viewer";
 
@@ -57,9 +57,31 @@ function useRafTimer() {
 export function TimerCard() {
   const { solves, addSolve } = useSolves();
   const { running, elapsedMs, start, stop, reset } = useRafTimer();
-  const [scramble, setScramble] = useState(() => generate333Scramble());
+  const [scramble, setScramble] = useState("");
   const [penalty, setPenalty] = useState<Penalty>("OK");
   const [notes, setNotes] = useState("");
+  const [viewerKey, setViewerKey] = useState(0);
+
+  // Fonction pour générer un scramble avec cubing.js
+  const generateScramble = async () => {
+    try {
+      const scramble = await randomScrambleForEvent("333");
+      return scramble.toString();
+    } catch (error) {
+      console.error("Erreur lors de la génération du scramble:", error);
+      return "R U R' U'"; // Fallback
+    }
+  };
+
+  // Générer le premier scramble au chargement
+  useEffect(() => {
+    const initScramble = async () => {
+      const initialScramble = await generateScramble();
+      setScramble(initialScramble);
+      setViewerKey((prev) => prev + 1);
+    };
+    initScramble();
+  }, []);
 
   const effectiveMs = useMemo(() => {
     if (penalty === "DNF") return NaN;
@@ -81,7 +103,7 @@ export function TimerCard() {
     return () => window.removeEventListener("keydown", onSpace);
   }, [onSpace]);
 
-  function saveSolve() {
+  async function saveSolve() {
     const s: Solve = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       timeMs: Math.max(0, Math.round(elapsedMs)),
@@ -94,7 +116,9 @@ export function TimerCard() {
     // reset for next
     setPenalty("OK");
     setNotes("");
-    setScramble(generate333Scramble());
+    const nextScramble = await generateScramble();
+    setScramble(nextScramble);
+    setViewerKey((prev) => prev + 1); // Forcer le re-render du viewer
     reset();
   }
 
@@ -102,14 +126,18 @@ export function TimerCard() {
     <Card className="p-6">
       <CardHeader className="pt-0 px-0">
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span>Scramble</span>
+          <span>Scramble actuel</span>
           <code className="rounded-md bg-muted px-2 py-1 text-foreground/90 whitespace-pre-wrap break-words">
             {scramble}
           </code>
           <Button
             variant="outline"
             className="h-8 px-3"
-            onClick={() => setScramble(generate333Scramble())}
+            onClick={async () => {
+              const newScramble = await generateScramble();
+              setScramble(newScramble);
+              setViewerKey((prev) => prev + 1); // Forcer le re-render du viewer
+            }}
           >
             Nouveau scramble
           </Button>
@@ -172,6 +200,7 @@ export function TimerCard() {
             </label>
             <div className="h-64 bg-muted/30 rounded-lg border">
               <CubeViewer
+                key={`${scramble}-${viewerKey}`} // Forcer le re-render avec la key
                 puzzleType="333"
                 scramble={scramble}
                 onReset={() => {}}
@@ -192,7 +221,7 @@ export function TimerCard() {
 
           {solves.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Aucun solve pour l’instant.
+              Aucun solve pour l'instant.
             </p>
           ) : null}
         </div>

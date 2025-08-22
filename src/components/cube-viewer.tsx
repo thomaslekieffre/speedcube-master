@@ -249,7 +249,7 @@ export function CubeViewer({
     // reset le ready state à chaque changement
     setIsReady(false);
 
-    if (!containerRef.current || !scramble) return;
+    if (!containerRef.current) return;
 
     const initViewer = async () => {
       try {
@@ -265,22 +265,17 @@ export function CubeViewer({
 
         const puzzleName = puzzleNameMap[puzzleType] ?? "3x3x3";
 
+        // Configuration simple du viewer
         const viewer = new TwistyPlayer({
-          puzzle: puzzleName as any, // Type assertion pour éviter l'erreur
-          alg: scramble,
+          puzzle: puzzleName as any,
+          alg: scramble || "",
           background: "none",
-          controlPanel: "none", // Toujours désactiver les contrôles du Twisty Player
-          viewerLink: "none", // Désactiver le lien vers alg.cubing.net
-          experimentalSetupAnchor: "end", // Pour une meilleure animation
-          experimentalStickering: "full", // Animation complète
+          controlPanel: "none",
+          viewerLink: "none",
         });
 
         containerRef.current?.appendChild(viewer);
         viewerRef.current = viewer;
-        viewer.alg = scramble;
-
-        // Appliquer le scramble au viewer
-        // Les contrôles sont masqués via CSS avec la classe twisty-no-controls
 
         // Reset l'index des mouvements
         setCurrentMoveIndex(0);
@@ -306,6 +301,13 @@ export function CubeViewer({
       }
     };
   }, [puzzleType, scramble]);
+
+  // Mettre à jour le scramble quand il change
+  useEffect(() => {
+    if (viewerRef.current && scramble) {
+      viewerRef.current.alg = scramble;
+    }
+  }, [scramble]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -380,9 +382,11 @@ export function CubeViewer({
                       setTimeout(animateMove, 800); // 800ms entre chaque mouvement
                     };
 
-                    // Commencer par le cube résolu
-                    viewerRef.current.alg = "";
-                    setCurrentMoveIndex(0);
+                    // Commencer par le cube résolu (sauf si on a déjà un scramble)
+                    if (!scramble) {
+                      viewerRef.current.alg = "";
+                      setCurrentMoveIndex(0);
+                    }
 
                     // Démarrer l'animation après un délai
                     setTimeout(animateMove, 800);

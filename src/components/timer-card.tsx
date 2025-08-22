@@ -319,25 +319,7 @@ export function TimerCard() {
         )
       : null;
 
-  // Debug: Afficher les temps pour comprendre le problème
-  console.log("Debug PB:", {
-    selectedPuzzle,
-    currentPB,
-    calculatedPB,
-    calculatedPBFormatted: calculatedPB ? formatTime(calculatedPB) : null,
-    validSolves: validSolves.map((s) => ({
-      time: s.time,
-      formatted: formatTime(s.time),
-    })),
-    minTime:
-      validSolves.length > 0
-        ? Math.min(...validSolves.map((s) => s.time))
-        : null,
-    minTimeFormatted:
-      validSolves.length > 0
-        ? formatTime(Math.min(...validSolves.map((s) => s.time)))
-        : null,
-  });
+
 
   // Synchroniser automatiquement le PB de la base de données avec les solves actuels
   useEffect(() => {
@@ -360,14 +342,6 @@ export function TimerCard() {
         );
 
         if (bestTimeEntry) {
-          console.log("Synchronisation automatique du PB:", {
-            puzzleType: selectedPuzzle,
-            bestTime: bestTimeEntry.solve.time,
-            effectiveTime: bestTimeEntry.effectiveTime,
-            formatted: formatTime(bestTimeEntry.solve.time),
-            effectiveFormatted: formatTime(bestTimeEntry.effectiveTime),
-            solve: bestTimeEntry.solve,
-          });
 
           await updateOrCreatePersonalBest(
             selectedPuzzle,
