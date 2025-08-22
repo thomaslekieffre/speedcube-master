@@ -1,11 +1,188 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Timer, Trophy, Users } from "lucide-react";
+import { Timer, Trophy, Users, Zap } from "lucide-react";
+import { CubeViewer } from "@/components/cube-viewer";
+import { formatTime } from "@/lib/time";
+import { useChallenge } from "@/hooks/use-challenge";
+import {
+  getTodayDate,
+  getTimeRemaining,
+  getDailyScramble,
+} from "@/lib/daily-scramble";
 
 export default function ChallengePage() {
+  const [scramble, setScramble] = useState(() => getDailyScramble());
+  const [challengeDate, setChallengeDate] = useState(() => getTodayDate());
+  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isInspection, setIsInspection] = useState(false);
+  const [inspectionTime, setInspectionTime] = useState(15);
+
+  // Utiliser le hook pour la gestion des challenges
+  const {
+    attempts,
+    leaderboard,
+    stats,
+    loading,
+    saveAttempt,
+    applyPenalty,
+    resetAttempts,
+    loadLeaderboard,
+  } = useChallenge();
+
+  // Timer logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isRunning) {
+      interval = setInterval(() => {
+        setCurrentTime((prev) => {
+          const newTime = prev + 10;
+          if (newTime % 1000 === 0) {
+            // Log chaque seconde
+            console.log("Timer en cours:", newTime);
+          }
+          return newTime;
+        });
+      }, 10);
+    }
+
+    if (isInspection) {
+      interval = setInterval(() => {
+        setInspectionTime((prev) => {
+          if (prev <= 1) {
+            setIsInspection(false);
+            setIsRunning(true);
+            return 15;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+  }, [isRunning, isInspection]);
+
+  // Vérifier si la date a changé et mettre à jour le scramble
+  useEffect(() => {
+    const today = getTodayDate();
+    if (today !== challengeDate) {
+      setChallengeDate(today);
+      setScramble(getDailyScramble());
+      // Réinitialiser les tentatives pour le nouveau jour
+      if (attempts.length > 0) {
+        resetAttempts();
+      }
+    }
+  }, [challengeDate, attempts.length, resetAttempts]);
+
+  // Mettre à jour le temps restant chaque seconde (côté client uniquement)
+  useEffect(() => {
+    // Initialiser le temps restant côté client
+    setTimeRemaining(getTimeRemaining());
+    
+    const interval = setInterval(() => {
+      setTimeRemaining(getTimeRemaining());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const startTimer = () => {
+    if (attempts.length >= 3) return;
+    setCurrentTime(0); // Reset le timer avant de commencer
+    setIsInspection(true);
+    setInspectionTime(15);
+  };
+
+  const stopTimer = async () => {
+    if (!isRunning) return;
+    console.log("Arrêt du timer - currentTime:", currentTime); // Debug
+    setIsRunning(false);
+
+    // Sauvegarder le temps AVANT de le réinitialiser
+    const timeToSave = currentTime;
+    console.log("Temps à sauvegarder:", timeToSave); // Debug
+
+    try {
+      await saveAttempt(timeToSave, "none");
+      // Recharger le classement après une nouvelle tentative
+      await loadLeaderboard();
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
+      // Optionnel : afficher un toast d'erreur
+    }
+  };
+
+  const handleApplyPenalty = async (
+    attemptId: string,
+    penalty: "plus2" | "dnf"
+  ) => {
+    try {
+      await applyPenalty(attemptId, penalty);
+      // Recharger le classement après modification
+      await loadLeaderboard();
+    } catch (error) {
+      console.error("Erreur lors de l'application de la pénalité:", error);
+    }
+  };
+
+  const getBestTime = () => {
+    if (attempts.length === 0) return null;
+    const validAttempts = attempts.filter((a) => a.penalty !== "dnf");
+    if (validAttempts.length === 0) return null;
+
+    const timesWithPenalties = validAttempts.map((a) =>
+      a.penalty === "plus2" ? a.time + 2000 : a.time
+    );
+    return Math.min(...timesWithPenalties);
+  };
+
+  const handleResetAttempts = async () => {
+    try {
+      await resetAttempts();
+      // Recharger le classement après réinitialisation
+      await loadLeaderboard();
+    } catch (error) {
+      console.error("Erreur lors de la réinitialisation:", error);
+    }
+  };
+
+  // Gestion des touches clavier
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+
+        if (!isRunning && !isInspection && attempts.length < 3) {
+          startTimer();
+        } else if (isInspection) {
+          // Lancer le timer directement pendant l'inspection
+          setIsInspection(false);
+          setCurrentTime(0); // Reset le timer
+          setIsRunning(true);
+        } else if (isRunning) {
+          stopTimer();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [
+    isRunning,
+    isInspection,
+    attempts.length,
+    currentTime,
+    startTimer,
+    stopTimer,
+  ]);
+
   return (
     <div className="min-h-screen bg-background pt-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
@@ -19,12 +196,18 @@ export default function ChallengePage() {
             3 tentatives. 24h. Montre ce que tu vaux.
           </p>
           <div className="flex items-center justify-center gap-4 text-sm">
-            <Badge variant="outline">Temps restant: 12h 30m</Badge>
-            <Badge variant="outline">0/3 tentatives</Badge>
+            <Badge variant="outline">
+              Challenge du {new Date(challengeDate).toLocaleDateString("fr-FR")}
+            </Badge>
+            <Badge variant="outline">{attempts.length}/3 tentatives</Badge>
+            <Badge variant="outline" className="text-orange-500">
+              {timeRemaining.hours}h {timeRemaining.minutes}m{" "}
+              {timeRemaining.seconds}s
+            </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           {/* Timer Section */}
           <Card className="mb-6">
             <CardHeader>
@@ -38,24 +221,206 @@ export default function ChallengePage() {
               <div>
                 <h3 className="text-sm font-medium mb-2">Scramble du jour</h3>
                 <div className="bg-muted p-4 rounded-lg font-mono text-lg text-center mb-4">
-                  R U R' U' R' F R2 U' R' U' R U R' F'
+                  {scramble}
+                </div>
+
+                {/* Visualisation du cube */}
+                <div className="h-48 sm:h-56 lg:h-64 bg-muted/30 rounded-lg border overflow-hidden">
+                  <CubeViewer
+                    key={`${challengeDate}-${scramble}`} // Force le re-render quand la date ou le scramble change
+                    puzzleType="333"
+                    scramble={scramble}
+                    onReset={() => {}}
+                    showControls={false}
+                  />
                 </div>
               </div>
 
               {/* Timer Display */}
               <div className="text-center">
-                <div className="space-y-2">
-                  <div className="text-4xl font-mono font-bold">00.00</div>
-                  <div className="text-sm text-muted-foreground">Prêt</div>
-                </div>
+                {isInspection ? (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-mono text-orange-500">
+                      {inspectionTime}s
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Inspection en cours...
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-3xl sm:text-4xl lg:text-5xl font-mono font-bold">
+                      {formatTime(currentTime)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {isRunning ? "En cours..." : "Prêt"}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Controls */}
               <div className="space-y-4">
-                <Button className="flex-1" size="lg">
-                  Commencer
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {!isRunning && !isInspection && attempts.length < 3 ? (
+                    <Button
+                      onClick={startTimer}
+                      className="flex-1"
+                      size="lg"
+                      disabled={loading}
+                    >
+                      <Zap className="h-4 w-4 mr-2" />
+                      {loading ? "..." : "Commencer"}
+                    </Button>
+                  ) : isRunning ? (
+                    <Button
+                      onClick={stopTimer}
+                      variant="destructive"
+                      className="flex-1"
+                      size="lg"
+                      disabled={loading}
+                    >
+                      {loading ? "..." : "Arrêter"}
+                    </Button>
+                  ) : (
+                    <Button disabled className="flex-1" size="lg">
+                      {attempts.length >= 3 ? "Tentatives épuisées" : "Prêt"}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Indication touche espace */}
+                {!isRunning && !isInspection && attempts.length < 3 && (
+                  <div className="text-center text-xs text-muted-foreground">
+                    Appuie sur{" "}
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      Espace
+                    </kbd>{" "}
+                    pour commencer
+                  </div>
+                )}
+                {isInspection && (
+                  <div className="text-center text-xs text-orange-500">
+                    Appuie sur{" "}
+                    <kbd className="px-1 py-0.5 bg-orange-500/20 rounded text-xs">
+                      Espace
+                    </kbd>{" "}
+                    pour lancer maintenant
+                  </div>
+                )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Attempts */}
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Mes tentatives</CardTitle>
+                {attempts.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetAttempts}
+                    className="text-xs"
+                    disabled={loading}
+                  >
+                    {loading ? "..." : "Réinitialiser"}
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {attempts.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground mb-2">
+                    Aucune tentative pour l'instant
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vos tentatives seront sauvegardées automatiquement
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {attempts.map((attempt, index) => (
+                    <div
+                      key={attempt.id}
+                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
+                          {index + 1}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-mono text-lg font-bold">
+                            {attempt.penalty === "dnf"
+                              ? "DNF"
+                              : attempt.penalty === "plus2"
+                              ? `${formatTime(attempt.time + 2000)}`
+                              : formatTime(attempt.time)}
+                          </span>
+                          {attempt.penalty === "plus2" && (
+                            <span className="text-xs text-orange-500 font-medium">
+                              +2 secondes
+                            </span>
+                          )}
+                          {attempt.penalty === "dnf" && (
+                            <span className="text-xs text-red-500 font-medium">
+                              Did Not Finish
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {attempt.penalty === "dnf" ? (
+                          <Badge variant="destructive" className="text-xs">
+                            DNF
+                          </Badge>
+                        ) : attempt.penalty === "plus2" ? (
+                          <Badge variant="secondary" className="text-xs">
+                            +2
+                          </Badge>
+                        ) : (
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() =>
+                                handleApplyPenalty(attempt.id, "plus2")
+                              }
+                              disabled={loading}
+                            >
+                              +2
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 text-xs"
+                              onClick={() =>
+                                handleApplyPenalty(attempt.id, "dnf")
+                              }
+                              disabled={loading}
+                            >
+                              DNF
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {getBestTime() && (
+                <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded">
+                  <div className="text-sm text-green-600 font-medium">
+                    Meilleur temps
+                  </div>
+                  <div className="text-xl font-mono font-bold text-green-600">
+                    {formatTime(getBestTime()!)}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -68,27 +433,65 @@ export default function ChallengePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-yellow-500 text-white">
-                      1
-                    </div>
-                    <div>
-                      <div className="font-medium">thomas</div>
-                      <div className="text-sm text-muted-foreground">
-                        3 tentatives
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono font-bold">12.50</div>
-                    <div className="text-xs text-muted-foreground">
-                      Aujourd'hui
-                    </div>
+              {loading ? (
+                <div className="text-center py-4">
+                  <div className="text-muted-foreground">Chargement...</div>
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="text-muted-foreground">
+                    Aucun participant pour l'instant
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  {leaderboard.map((entry, index) => (
+                    <div
+                      key={entry.user_id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        index === 0
+                          ? "bg-yellow-500/10 border-yellow-500/20"
+                          : index === 1
+                          ? "bg-gray-500/10 border-gray-500/20"
+                          : index === 2
+                          ? "bg-orange-500/10 border-orange-500/20"
+                          : "bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                            index === 0
+                              ? "bg-yellow-500"
+                              : index === 1
+                              ? "bg-gray-500"
+                              : index === 2
+                              ? "bg-orange-500"
+                              : "bg-muted"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium">{entry.username}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {entry.attempts_count} tentative
+                            {entry.attempts_count > 1 ? "s" : ""}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono font-bold">
+                          {formatTime(entry.best_time)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Aujourd'hui
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

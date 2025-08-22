@@ -99,7 +99,7 @@ export default function EditProfilePage() {
       await updateProfile({
         username: formData.username,
         bio: formData.bio,
-        wca_id: formData.wca_id || null,
+        wca_id: formData.wca_id || undefined,
         is_public: formData.is_public,
       });
       toast.success("Profil mis à jour avec succès !");
@@ -208,11 +208,11 @@ export default function EditProfilePage() {
                        variant="ghost"
                        size="sm"
                        onClick={async () => {
-                         try {
-                           await updateProfile({
-                             custom_avatar_url: null,
-                           });
-                           toast.success("Avatar par défaut restauré");
+                                                   try {
+                            await updateProfile({
+                              custom_avatar_url: undefined,
+                            });
+                            toast.success("Avatar par défaut restauré");
                          } catch (error) {
                            toast.error("Erreur lors de la suppression");
                          }
