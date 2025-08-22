@@ -80,8 +80,8 @@ export default function PublicProfilePage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Chargement du profil...</span>
+          <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+          <span className="text-sm sm:text-base">Chargement du profil...</span>
         </div>
       </div>
     );
@@ -90,13 +90,20 @@ export default function PublicProfilePage() {
   if (error || !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Profil non trouvé</h2>
-          <p className="text-muted-foreground mb-4">
+        <div className="text-center px-4">
+          <User className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-3 sm:mb-4" />
+          <h2 className="text-lg sm:text-xl font-semibold mb-2">
+            Profil non trouvé
+          </h2>
+          <p className="text-sm sm:text-base text-muted-foreground mb-4">
             {error || "Ce profil n'existe pas ou est privé."}
           </p>
-          <Button onClick={() => window.history.back()}>Retour</Button>
+          <Button
+            onClick={() => window.history.back()}
+            className="text-sm sm:text-base"
+          >
+            Retour
+          </Button>
         </div>
       </div>
     );
@@ -152,11 +159,11 @@ export default function PublicProfilePage() {
   const stats = getStats();
 
   return (
-    <div className="min-h-screen bg-background py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        {/* Header du profil */}
-        <div className="mb-8">
-          <div className="flex items-center gap-6">
+    <div className="min-h-screen bg-background py-4 sm:py-6 lg:py-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 lg:px-6">
+        {/* Header du profil - Responsive */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
             <img
               src={
                 profile.custom_avatar_url ||
@@ -164,24 +171,28 @@ export default function PublicProfilePage() {
                 "/default-avatar.png"
               }
               alt={profile.username || "Avatar"}
-              className="w-20 h-20 rounded-full object-cover"
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover mx-auto sm:mx-0"
             />
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-foreground">
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                   {profile.username}
                 </h1>
                 {user && profile.id === user.id && (
                   <Link href="/profile/edit">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4 mr-2" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs sm:text-sm"
+                    >
+                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                       Modifier
                     </Button>
                   </Link>
                 )}
               </div>
               {profile.wca_id && (
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 sm:mt-1">
                   <Badge variant="outline" className="text-xs">
                     WCA ID: {profile.wca_id}
                   </Badge>
@@ -194,14 +205,14 @@ export default function PublicProfilePage() {
                         "_blank"
                       )
                     }
-                    className="h-6 px-2"
+                    className="h-5 sm:h-6 px-1 sm:px-2"
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </Button>
                 </div>
               )}
               {profile.bio && (
-                <p className="text-muted-foreground mt-2 max-w-2xl">
+                <p className="text-sm sm:text-base text-muted-foreground mt-2 max-w-2xl">
                   {profile.bio}
                 </p>
               )}

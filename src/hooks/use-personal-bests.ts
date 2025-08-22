@@ -72,25 +72,24 @@ export function usePersonalBests(userId?: string) {
             ? existingPB.time + 2000
             : existingPB.time;
 
-        if (newTimeWithPenalty < oldTimeWithPenalty) {
-          const { data, error } = await supabase
-            .from("personal_bests")
-            .update({
-              time,
-              penalty,
-              scramble,
-            })
-            .eq("id", existingPB.id)
-            .select()
-            .single();
+        // Toujours mettre à jour pour synchroniser avec les solves actuels
+        const { data, error } = await supabase
+          .from("personal_bests")
+          .update({
+            time,
+            penalty,
+            scramble,
+          })
+          .eq("id", existingPB.id)
+          .select()
+          .single();
 
-          if (error) throw error;
+        if (error) throw error;
 
-          setPersonalBests((prev) =>
-            prev.map((pb) => (pb.id === existingPB.id ? data : pb))
-          );
-          return data;
-        }
+        setPersonalBests((prev) =>
+          prev.map((pb) => (pb.id === existingPB.id ? data : pb))
+        );
+        return data;
       } else {
         // Créer un nouveau PB
         const { data, error } = await supabase
@@ -112,12 +111,38 @@ export function usePersonalBests(userId?: string) {
       }
     } catch (err) {
       console.error("Erreur lors de la mise à jour du PB:", err);
-      throw err;
+      throw new Error(`Erreur lors de la mise à jour du PB: ${err}`);
     }
   };
 
   const getPersonalBest = (puzzleType: string) => {
     return personalBests.find((pb) => pb.puzzle_type === puzzleType);
+  };
+
+  const deletePersonalBest = async (puzzleType: string) => {
+    if (!user) return;
+
+    try {
+      const existingPB = personalBests.find(
+        (pb) => pb.puzzle_type === puzzleType
+      );
+
+      if (existingPB) {
+        const { error } = await supabase
+          .from("personal_bests")
+          .delete()
+          .eq("id", existingPB.id);
+
+        if (error) throw error;
+
+        setPersonalBests((prev) =>
+          prev.filter((pb) => pb.id !== existingPB.id)
+        );
+      }
+    } catch (err) {
+      console.error("Erreur lors de la suppression du PB:", err);
+      throw err;
+    }
   };
 
   const formatTime = (ms: number) => {
@@ -139,6 +164,7 @@ export function usePersonalBests(userId?: string) {
     loading,
     error,
     updateOrCreatePersonalBest,
+    deletePersonalBest,
     getPersonalBest,
     formatTime,
     refresh: loadPersonalBests,

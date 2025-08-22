@@ -24,7 +24,6 @@ export function useSupabaseSolves(userId?: string) {
 
     try {
       setLoading(true);
-      console.log("Chargement des solves pour user:", targetUserId);
 
       const { data, error } = await supabase
         .from("solves")
@@ -36,7 +35,6 @@ export function useSupabaseSolves(userId?: string) {
         console.error("Erreur lors du chargement des solves:", error);
         setError(error.message);
       } else {
-        console.log("Solves chargés:", data?.length || 0);
         setSolves(data || []);
       }
     } catch (err) {
@@ -63,8 +61,6 @@ export function useSupabaseSolves(userId?: string) {
         user_id: user.id,
       };
 
-      console.log("Tentative d'ajout du solve:", newSolve);
-
       const { data, error } = await supabase
         .from("solves")
         .insert(newSolve)
@@ -82,7 +78,6 @@ export function useSupabaseSolves(userId?: string) {
         throw error;
       }
 
-      console.log("Solve ajouté avec succès:", data);
       setSolves((prev) => [data, ...prev]);
       return data;
     } catch (err) {

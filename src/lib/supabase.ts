@@ -114,6 +114,79 @@ export interface Database {
           created_at?: string;
         };
       };
+      algorithms: {
+        Row: {
+          id: string;
+          name: string;
+          notation: string;
+          puzzle_type: string;
+          method: string;
+          set_name: string;
+          difficulty: "beginner" | "intermediate" | "advanced" | "expert";
+          description: string;
+          scramble: string;
+          solution: string;
+          fingertricks?: string;
+          notes?: string;
+          alternatives?: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          notation: string;
+          puzzle_type: string;
+          method: string;
+          set_name: string;
+          difficulty: "beginner" | "intermediate" | "advanced" | "expert";
+          description: string;
+          scramble: string;
+          solution: string;
+          fingertricks?: string;
+          notes?: string;
+          alternatives?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          notation?: string;
+          puzzle_type?: string;
+          method?: string;
+          set_name?: string;
+          difficulty?: "beginner" | "intermediate" | "advanced" | "expert";
+          description?: string;
+          scramble?: string;
+          solution?: string;
+          fingertricks?: string;
+          notes?: string;
+          alternatives?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      algorithm_favorites: {
+        Row: {
+          id: string;
+          user_id: string;
+          algorithm_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          algorithm_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          algorithm_id?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 }

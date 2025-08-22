@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { RotateCcw, Eye, EyeOff } from "lucide-react";
 import { PuzzleType } from "./puzzle-selector";
 
 interface CubeViewerProps {
   puzzleType: PuzzleType;
   scramble: string;
   onReset: () => void;
+  onViewerReady?: (viewer: any) => void;
+  showControls?: boolean; // Par défaut false
+  algorithm?: string; // Pour le reset, si différent du scramble
 }
 
 // Mapping our puzzle IDs to cubing.js puzzle names
@@ -232,17 +232,24 @@ function ClockViewer({ scramble }: { scramble: string }) {
   );
 }
 
-export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
+export function CubeViewer({
+  puzzleType,
+  scramble,
+  onReset,
+  onViewerReady,
+  showControls = false, // Par défaut, pas de contrôles
+  algorithm,
+}: CubeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
-  const [isVisible, setIsVisible] = useState(true);
   const [isReady, setIsReady] = useState(false);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
   useEffect(() => {
     // reset le ready state à chaque changement
     setIsReady(false);
 
-    if (!containerRef.current || !scramble) return;
+    if (!containerRef.current) return;
 
     const initViewer = async () => {
       try {
@@ -258,19 +265,26 @@ export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
 
         const puzzleName = puzzleNameMap[puzzleType] ?? "3x3x3";
 
+        // Configuration simple du viewer
         const viewer = new TwistyPlayer({
-          puzzle: puzzleName as any, // Type assertion pour éviter l'erreur
-          alg: scramble,
+          puzzle: puzzleName as any,
+          alg: scramble || "",
           background: "none",
           controlPanel: "none",
+          viewerLink: "none",
         });
 
         containerRef.current?.appendChild(viewer);
         viewerRef.current = viewer;
-        viewer.alg = scramble;
+
+        // Reset l'index des mouvements
+        setCurrentMoveIndex(0);
 
         // Marquer comme prêt après insertion
         setIsReady(true);
+
+        // Notifier le parent que le viewer est prêt
+        onViewerReady?.(viewer);
       } catch (error) {
         console.error("Erreur lors de l'initialisation du viewer:", error);
       }
@@ -288,119 +302,134 @@ export function CubeViewer({ puzzleType, scramble, onReset }: CubeViewerProps) {
     };
   }, [puzzleType, scramble]);
 
-  const toggleVisibility = () => {
-    setIsVisible(!isVisible);
-  };
-
-  const handleLocalReset = () => {
-    if (viewerRef.current) {
-      try {
-        viewerRef.current.alg = "";
-      } catch {}
+  // Mettre à jour le scramble quand il change
+  useEffect(() => {
+    if (viewerRef.current && scramble) {
+      viewerRef.current.alg = scramble;
     }
-    onReset?.();
-  };
-
-  if (!isVisible) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <div className="space-y-4">
-            <div className="text-muted-foreground">
-              <EyeOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Visualiseur masqué</p>
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" size="sm" onClick={toggleVisibility}>
-                <Eye className="h-4 w-4 mr-1" />
-                Afficher le cube
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLocalReset}>
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  }, [scramble]);
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Visualiseur 3D</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={toggleVisibility}>
-                <EyeOff className="h-4 w-4 mr-1" />
-                Masquer
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLocalReset}>
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
-            </div>
+    <div className="w-full h-full flex flex-col">
+      {/* Visualiseur spécifique pour le Clock */}
+      {puzzleType === "clock" ? (
+        <ClockViewer scramble={scramble} />
+      ) : (
+        <>
+          <div
+            ref={containerRef}
+            className={`flex-1 flex items-center justify-center ${
+              !showControls ? "twisty-no-controls" : ""
+            }`}
+          >
+            {!isReady && (
+              <div className="text-muted-foreground text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p>Chargement du visualiseur...</p>
+              </div>
+            )}
           </div>
 
-          {/* Affichage du scramble */}
-          <div className="bg-muted p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Scramble actuel
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {puzzleType === "333"
-                  ? "3x3x3"
-                  : puzzleType === "222"
-                  ? "2x2x2"
-                  : puzzleType === "444"
-                  ? "4x4x4"
-                  : puzzleType === "555"
-                  ? "5x5x5"
-                  : puzzleType === "666"
-                  ? "6x6x6"
-                  : puzzleType === "777"
-                  ? "7x7x7"
-                  : puzzleType === "pyram"
-                  ? "Pyraminx"
-                  : puzzleType === "skewb"
-                  ? "Skewb"
-                  : puzzleType === "sq1"
-                  ? "Square-1"
-                  : puzzleType === "clock"
-                  ? "Clock"
-                  : puzzleType === "minx"
-                  ? "Megaminx"
-                  : "3x3x3"}
-              </span>
-            </div>
-            <div className="font-mono text-sm break-all">{scramble}</div>
-          </div>
+          {/* Contrôles personnalisés */}
+          {showControls && isReady && viewerRef.current && (
+            <div className="flex items-center justify-center gap-2 p-4 bg-muted/30 rounded-lg mt-4">
+              <button
+                onClick={() => {
+                  if (viewerRef.current) {
+                    // Aller au début (cube résolu)
+                    viewerRef.current.alg = "";
+                    setCurrentMoveIndex(0);
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Début - Cube résolu"
+              >
+                ⏮️
+              </button>
+              <button
+                onClick={() => {
+                  if (viewerRef.current) {
+                    // Animation manuelle avec délais plus longs pour voir les mouvements
+                    const moves = (algorithm || scramble).split(" ");
+                    let currentIndex = 0;
+                    let isPlaying = true;
 
-          {/* Visualiseur spécifique pour le Clock */}
-          {puzzleType === "clock" ? (
-            <ClockViewer scramble={scramble} />
-          ) : (
-            <div
-              ref={containerRef}
-              className="w-full h-[300px] bg-muted rounded-lg flex items-center justify-center"
-            >
-              {!isReady && (
-                <div className="text-muted-foreground text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p>Chargement du visualiseur...</p>
-                </div>
-              )}
+                    // Fonction pour arrêter l'animation
+                    const stopAnimation = () => {
+                      isPlaying = false;
+                    };
+
+                    // Stocker la fonction d'arrêt
+                    (window as any).stopCubeAnimation = stopAnimation;
+
+                    const animateMove = () => {
+                      if (!isPlaying || currentIndex >= moves.length) {
+                        return;
+                      }
+
+                      // Appliquer le mouvement actuel
+                      const currentMoves = moves
+                        .slice(0, currentIndex + 1)
+                        .join(" ");
+
+                      // Forcer le rendu avec un délai pour voir l'animation
+                      viewerRef.current.alg = currentMoves;
+                      setCurrentMoveIndex(currentIndex + 1);
+
+                      currentIndex++;
+
+                      // Délai plus long pour voir l'animation des pièces
+                      setTimeout(animateMove, 800); // 800ms entre chaque mouvement
+                    };
+
+                    // Commencer par le cube résolu (sauf si on a déjà un scramble)
+                    if (!scramble) {
+                      viewerRef.current.alg = "";
+                      setCurrentMoveIndex(0);
+                    }
+
+                    // Démarrer l'animation après un délai
+                    setTimeout(animateMove, 800);
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Play - Voir l'algorithme en action"
+              >
+                ▶️
+              </button>
+
+              <button
+                onClick={() => {
+                  // Arrêter l'animation en cours
+                  if ((window as any).stopCubeAnimation) {
+                    (window as any).stopCubeAnimation();
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Stop - Arrêter l'animation"
+              >
+                ⏸️
+              </button>
+
+              <button
+                onClick={() => {
+                  if (viewerRef.current) {
+                    // Aller à la fin (algorithme terminé)
+                    viewerRef.current.alg = algorithm || scramble;
+                    setCurrentMoveIndex(
+                      (algorithm || scramble).split(" ").length
+                    );
+                  }
+                }}
+                className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-foreground transition-colors"
+                title="Fin - Algorithme terminé"
+              >
+                ⏭️
+              </button>
             </div>
           )}
-
-          <div className="text-xs text-muted-foreground text-center">
-            Utilisez la souris pour faire tourner le cube
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </>
+      )}
+    </div>
   );
 }

@@ -22,7 +22,6 @@ export function useProfile() {
 
     try {
       setLoading(true);
-      console.log("Chargement du profil pour user:", user.id);
 
       const { data, error } = await supabase
         .from("profiles")
@@ -36,10 +35,9 @@ export function useProfile() {
         setError(error.message);
       } else if (error && error.code === "PGRST116") {
         // Profil n'existe pas, le créer
-        console.log("Profil inexistant, création...");
+
         await createProfile();
       } else {
-        console.log("Profil chargé:", data);
         setProfile(data);
       }
     } catch (err) {
@@ -64,8 +62,6 @@ export function useProfile() {
         bio: "",
       };
 
-      console.log("Création du profil:", newProfile);
-
       const { data, error } = await supabase
         .from("profiles")
         .insert(newProfile)
@@ -77,7 +73,6 @@ export function useProfile() {
         throw error;
       }
 
-      console.log("Profil créé avec succès:", data);
       setProfile(data);
       return data;
     } catch (err) {
@@ -102,7 +97,6 @@ export function useProfile() {
         throw error;
       }
 
-      console.log("Profil mis à jour:", data);
       setProfile(data);
       return data;
     } catch (err) {

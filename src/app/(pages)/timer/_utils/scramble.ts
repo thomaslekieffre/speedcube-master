@@ -40,3 +40,22 @@ export function generate333Scramble(length = 25): string {
   }
   return moves.join(" ");
 }
+
+// Fonction de test pour vérifier l'orientation WCA
+export function generateTestScramble(): string {
+  // Scramble simple pour tester l'orientation : R U R' U'
+  return "R U R' U'";
+}
+
+// Scramble encore plus simple pour tester l'orientation
+export function generateSimpleTestScramble(): string {
+  // Juste un R pour voir l'orientation
+  return "R";
+}
+
+// Fonction pour convertir un scramble en setup WCA
+export function scrambleToWCASetup(scramble: string): string {
+  // Pour forcer l'orientation WCA : blanc en haut, vert devant
+  // On utilise un setup explicite
+  return scramble;
+}
