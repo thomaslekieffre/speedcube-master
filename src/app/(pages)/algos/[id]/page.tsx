@@ -10,9 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   Star,
-  Play,
-  Pause,
-  RotateCcw,
   Copy,
   Check,
   BookOpen,
@@ -21,7 +18,6 @@ import {
   Clock,
   Target,
 } from "lucide-react";
-import { CubeViewer } from "@/components/cube-viewer";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
@@ -31,6 +27,10 @@ export default function AlgorithmDetailPage() {
   const router = useRouter();
   const [algorithm, setAlgorithm] = useState<Algorithm | null>(null);
   const [copied, setCopied] = useState(false);
+  const cubeContainerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<any>(null);
+  const initializedRef = useRef(false);
+  const currentAlgoIdRef = useRef<string | null>(null);
 
   const {
     isFavorite,
@@ -39,7 +39,7 @@ export default function AlgorithmDetailPage() {
   } = useFavorites();
   const { getAlgorithmById } = useAlgorithms();
 
-  // Charger l'algorithme par ID
+  // Charger l'algorithme par ID et initialiser le cube
   useEffect(() => {
     const loadAlgorithm = async () => {
       if (params.id) {
@@ -49,6 +49,34 @@ export default function AlgorithmDetailPage() {
     };
     loadAlgorithm();
   }, [params.id, getAlgorithmById]);
+
+  // Initialiser le TwistyPlayer quand l'algorithme est chargé
+  useEffect(() => {
+    if (
+      algorithm &&
+      cubeContainerRef.current &&
+      currentAlgoIdRef.current !== algorithm.id
+    ) {
+      currentAlgoIdRef.current = algorithm.id;
+
+      // Nettoyer le conteneur
+      cubeContainerRef.current.innerHTML = "";
+
+      // Importer et créer le TwistyPlayer dynamiquement
+      import("cubing/twisty").then(({ TwistyPlayer }) => {
+        const viewer = new TwistyPlayer({
+          puzzle: "3x3x3",
+          alg: algorithm.notation,
+          background: "none",
+          controlPanel: "auto", // Contrôles automatiques
+          viewerLink: "none",
+        });
+
+        cubeContainerRef.current?.appendChild(viewer);
+        viewerRef.current = viewer;
+      });
+    }
+  }, [algorithm]);
 
   const handleToggleFavorite = async () => {
     if (algorithm) {
@@ -196,15 +224,17 @@ export default function AlgorithmDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-96 bg-muted/30 rounded-lg border">
-                  <CubeViewer
-                    puzzleType={algorithm.puzzle_type as any}
-                    scramble=""
-                    onReset={() => {}}
-                    showControls={true}
-                    algorithm={algorithm.notation}
-                  />
+                <div
+                  ref={cubeContainerRef}
+                  className="h-96 bg-muted/30 rounded-lg border flex items-center justify-center"
+                >
+                  {!algorithm && (
+                    <div className="text-muted-foreground">
+                      Chargement de la visualisation...
+                    </div>
+                  )}
                 </div>
+
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   Utilisez les contrôles pour voir l'algorithme en action
                 </p>
