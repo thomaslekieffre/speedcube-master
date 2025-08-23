@@ -16,8 +16,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Save, ArrowLeft } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
+import { useAlgorithms } from "@/hooks/use-algorithms";
+import { toast } from "sonner";
 
 interface AlgorithmForm {
   name: string;
@@ -87,6 +88,7 @@ const DIFFICULTIES = [
 export default function CreateAlgorithmPage() {
   const router = useRouter();
   const { user } = useUser();
+  const { createAlgorithm } = useAlgorithms();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<AlgorithmForm>({
     name: "",
@@ -136,30 +138,28 @@ export default function CreateAlgorithmPage() {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("algorithms")
-        .insert({
-          name: form.name,
-          notation: form.notation,
-          puzzle_type: form.puzzle_type,
-          method: form.method,
-          set_name: form.set_name,
-          difficulty: form.difficulty,
-          description: form.description,
-          scramble: form.scramble,
-          solution: form.solution,
-          fingertricks: form.fingertricks,
-          notes: form.notes,
-          alternatives: form.alternatives,
-        })
-        .select()
-        .single();
+      const data = await createAlgorithm({
+        name: form.name,
+        notation: form.notation,
+        puzzle_type: form.puzzle_type,
+        method: form.method,
+        set_name: form.set_name,
+        difficulty: form.difficulty,
+        description: form.description,
+        scramble: form.scramble,
+        solution: form.solution,
+        fingertricks: form.fingertricks,
+        notes: form.notes,
+        alternatives: form.alternatives,
+      });
 
-      if (error) throw error;
-
+      toast.success(
+        "Algorithme créé ! Il sera visible après approbation par un modérateur."
+      );
       router.push(`/algos/${data.id}`);
     } catch (error) {
       console.error("Erreur lors de la création de l'algorithme:", error);
+      toast.error("Erreur lors de la création de l'algorithme");
     } finally {
       setLoading(false);
     }

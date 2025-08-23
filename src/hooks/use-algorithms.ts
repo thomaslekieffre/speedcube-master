@@ -18,6 +18,11 @@ export interface Algorithm {
   fingertricks: string;
   notes: string;
   alternatives: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  created_by: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  rejection_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -36,16 +41,35 @@ export function useAlgorithms() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Charger tous les algorithmes
+  // Charger tous les algorithmes (seulement les approuvés pour les utilisateurs normaux)
   const loadAlgorithms = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("algorithms")
         .select("*")
         .order("created_at", { ascending: false });
+
+      // Si l'utilisateur n'est pas modérateur, ne montrer que les algorithmes approuvés
+      if (!user) {
+        query = query.eq("status", "approved");
+      } else {
+        // Pour les modérateurs, montrer tous les algorithmes
+        // Pour les utilisateurs normaux, montrer les approuvés + leurs propres en attente
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+
+        if (!roleData || (roleData.role !== "moderator" && roleData.role !== "admin")) {
+          query = query.or(`status.eq.approved,and(created_by.eq.${user.id},status.eq.pending)`);
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setAlgorithms(data || []);
@@ -110,12 +134,18 @@ export function useAlgorithms() {
 
   // Créer un nouvel algorithme
   const createAlgorithm = async (
-    algorithmData: Omit<Algorithm, "id" | "created_at" | "updated_at">
+    algorithmData: Omit<Algorithm, "id" | "created_at" | "updated_at" | "status" | "created_by">
   ) => {
+    if (!user) throw new Error("Utilisateur non connecté");
+
     try {
       const { data, error } = await supabase
         .from("algorithms")
-        .insert(algorithmData)
+        .insert({
+          ...algorithmData,
+          status: "pending",
+          created_by: user.id,
+        })
         .select()
         .single();
 
@@ -182,6 +212,75 @@ export function useAlgorithms() {
     }
   };
 
+  // Fonctions de modération (pour les modérateurs)
+  const approveAlgorithm = async (algorithmId: string) => {
+    if (!user) throw new Error("Utilisateur non connecté");
+
+    try {
+      const { data, error } = await supabase
+        .from("algorithms")
+        .update({
+          status: "approved",
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", algorithmId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAlgorithms(prev => prev.map(algo => algo.id === algorithmId ? data : algo));
+      return data;
+    } catch (err) {
+      console.error("Erreur lors de l'approbation de l'algorithme:", err);
+      throw err;
+    }
+  };
+
+  const rejectAlgorithm = async (algorithmId: string, reason: string) => {
+    if (!user) throw new Error("Utilisateur non connecté");
+
+    try {
+      const { data, error } = await supabase
+        .from("algorithms")
+        .update({
+          status: "rejected",
+          reviewed_by: user.id,
+          reviewed_at: new Date().toISOString(),
+          rejection_reason: reason,
+        })
+        .eq("id", algorithmId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAlgorithms(prev => prev.map(algo => algo.id === algorithmId ? data : algo));
+      return data;
+    } catch (err) {
+      console.error("Erreur lors du rejet de l'algorithme:", err);
+      throw err;
+    }
+  };
+
+  // Charger les algorithmes en attente de modération
+  const loadPendingAlgorithms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("algorithms")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error("Erreur lors du chargement des algorithmes en attente:", err);
+      throw err;
+    }
+  };
+
   return {
     algorithms,
     loading,
@@ -192,5 +291,8 @@ export function useAlgorithms() {
     updateAlgorithm,
     deleteAlgorithm,
     getAlgorithmById,
+    approveAlgorithm,
+    rejectAlgorithm,
+    loadPendingAlgorithms,
   };
 }

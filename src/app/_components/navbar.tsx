@@ -10,11 +10,13 @@ import {
   LogOut,
   Settings,
   Heart,
+  Shield,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { useProfile } from "@/hooks/use-profile";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useUserRole } from "@/hooks/use-user-role";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +29,7 @@ export function Navbar() {
   const { isSignedIn, user } = useUser();
   const { profile, loading: profileLoading } = useProfile();
   const { favorites } = useFavorites();
+  const { isModerator } = useUserRole();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -87,6 +90,15 @@ export function Navbar() {
               <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Défi</span>
             </Link>
+            {isSignedIn && isModerator() && (
+              <Link
+                href="/algos/moderate"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
+              >
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Modération</span>
+              </Link>
+            )}
             {isSignedIn && (
               <Link
                 href={`/profile/${profile?.username || "me"}`}
