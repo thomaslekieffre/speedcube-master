@@ -14,15 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Star, Eye, BookOpen, Zap } from "lucide-react";
+import { Search, Filter, Star, Eye, BookOpen, Zap, Plus } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { PUZZLES } from "@/components/puzzle-selector";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
-
-
-
-
 
 // Méthodes disponibles
 const METHODS = [
@@ -52,20 +48,24 @@ export default function AlgorithmsPage() {
   const [selectedSet, setSelectedSet] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  
+
   const {
     favorites,
     loading: favoritesLoading,
     toggleFavorite,
     isFavorite,
   } = useFavorites();
-  
-  const { algorithms, loading: algorithmsLoading, filterAlgorithms } = useAlgorithms();
+
+  const {
+    algorithms,
+    loading: algorithmsLoading,
+    filterAlgorithms,
+  } = useAlgorithms();
 
   // Filtrer les algorithmes
   const filteredAlgorithms = useMemo(() => {
     if (algorithmsLoading) return [];
-    
+
     const filtered = filterAlgorithms(algorithms, {
       puzzle_type: selectedPuzzle === "all" ? undefined : selectedPuzzle,
       method: selectedMethod === "all" ? undefined : selectedMethod,
@@ -133,12 +133,23 @@ export default function AlgorithmsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Algorithmes
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Explorez et maîtrisez les algorithmes pour tous les puzzles WCA
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+                Algorithmes
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Explorez et maîtrisez les algorithmes pour tous les puzzles WCA
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push("/algos/create")}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Créer un algorithme
+            </Button>
+          </div>
         </motion.div>
 
         {/* Filtres */}
@@ -311,9 +322,9 @@ export default function AlgorithmsPage() {
                             <Badge variant="outline" className="text-xs">
                               {algo.method.toUpperCase()}
                             </Badge>
-                                                       <Badge variant="outline" className="text-xs">
-                             {algo.set_name.toUpperCase()}
-                           </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {algo.set_name.toUpperCase()}
+                            </Badge>
                             <Badge
                               className={`text-xs text-white ${getDifficultyColor(
                                 algo.difficulty
