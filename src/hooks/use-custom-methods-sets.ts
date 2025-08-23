@@ -114,6 +114,8 @@ export function useCustomMethodsSets() {
     if (!user) throw new Error("Utilisateur non connecté");
 
     try {
+      console.log("Création méthode:", { name, puzzleType, userId: user.id });
+
       const { data, error } = await supabase
         .from("custom_methods")
         .insert({
@@ -124,7 +126,12 @@ export function useCustomMethodsSets() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur Supabase:", error);
+        throw error;
+      }
+
+      console.log("Méthode créée:", data);
       await loadCustomMethods(puzzleType);
       return data;
     } catch (error) {
@@ -155,13 +162,26 @@ export function useCustomMethodsSets() {
         insertData.method_id = methodId;
       }
 
+      console.log("Création set:", {
+        name,
+        methodName,
+        methodId,
+        userId: user.id,
+        insertData,
+      });
+
       const { data, error } = await supabase
         .from("custom_sets")
         .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erreur Supabase:", error);
+        throw error;
+      }
+
+      console.log("Set créé:", data);
       await loadCustomSets(methodName);
       return data;
     } catch (error) {
