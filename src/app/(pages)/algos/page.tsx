@@ -282,8 +282,8 @@ export default function AlgorithmsPage() {
               {filteredAlgorithms.length !== 1 ? "s" : ""} trouvé
               {filteredAlgorithms.length !== 1 ? "s" : ""}
             </h2>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="flex items-center gap-2"
               onClick={() => router.push("/algos/create")}
             >
@@ -337,13 +337,11 @@ export default function AlgorithmsPage() {
                               {getDifficultyText(algo.difficulty)}
                             </Badge>
                             {algo.status === "pending" && (
-                              <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-600">
+                              <Badge
+                                variant="outline"
+                                className="text-xs text-yellow-600 border-yellow-600"
+                              >
                                 En attente
-                              </Badge>
-                            )}
-                            {algo.status === "rejected" && (
-                              <Badge variant="outline" className="text-xs text-red-600 border-red-600">
-                                Rejeté
                               </Badge>
                             )}
                           </div>

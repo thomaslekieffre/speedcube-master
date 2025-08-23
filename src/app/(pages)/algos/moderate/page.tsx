@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
+import { useModerationBadge } from "@/hooks/use-moderation-badge";
 import { toast } from "sonner";
 
 export default function ModerateAlgorithmsPage() {
@@ -32,6 +33,7 @@ export default function ModerateAlgorithmsPage() {
   const { isModerator, loading: roleLoading } = useUserRole();
   const { loadPendingAlgorithms, approveAlgorithm, rejectAlgorithm } =
     useAlgorithms();
+  const { loadPendingCount } = useModerationBadge();
   const [pendingAlgorithms, setPendingAlgorithms] = useState<Algorithm[]>([]);
   const [loading, setLoading] = useState(true);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -72,6 +74,7 @@ export default function ModerateAlgorithmsPage() {
       await approveAlgorithm(algorithm.id);
       toast.success("Algorithme approuvé !");
       loadPending(); // Recharger la liste
+      loadPendingCount(); // Mettre à jour le badge
     } catch (error) {
       console.error("Erreur lors de l'approbation:", error);
       toast.error("Erreur lors de l'approbation");
@@ -91,6 +94,7 @@ export default function ModerateAlgorithmsPage() {
       setSelectedAlgorithm(null);
       setRejectionReason("");
       loadPending(); // Recharger la liste
+      loadPendingCount(); // Mettre à jour le badge
     } catch (error) {
       console.error("Erreur lors du rejet:", error);
       toast.error("Erreur lors du rejet");

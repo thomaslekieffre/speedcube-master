@@ -52,19 +52,23 @@ export function useAlgorithms() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      // Si l'utilisateur n'est pas modérateur, ne montrer que les algorithmes approuvés
+      // Si l'utilisateur n'est pas connecté, ne montrer que les algorithmes approuvés
       if (!user) {
         query = query.eq("status", "approved");
       } else {
-        // Pour les modérateurs, montrer tous les algorithmes
-        // Pour les utilisateurs normaux, montrer les approuvés + leurs propres en attente
+        // Vérifier le rôle de l'utilisateur
         const { data: roleData } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
           .single();
 
-        if (!roleData || (roleData.role !== "moderator" && roleData.role !== "admin")) {
+        if (roleData?.role === "moderator" || roleData?.role === "admin") {
+          // Les modérateurs voient tous les algorithmes SAUF les rejetés
+          query = query.neq("status", "rejected");
+        } else {
+          // Les utilisateurs normaux ne voient que les algorithmes approuvés
+          // ET leurs propres algorithmes en attente (mais pas les rejetés)
           query = query.or(`status.eq.approved,and(created_by.eq.${user.id},status.eq.pending)`);
         }
       }
@@ -281,6 +285,22 @@ export function useAlgorithms() {
     }
   };
 
+  // Compter les algorithmes en attente (pour le badge de modération)
+  const countPendingAlgorithms = async (): Promise<number> => {
+    try {
+      const { count, error } = await supabase
+        .from("algorithms")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+
+      if (error) throw error;
+      return count || 0;
+    } catch (err) {
+      console.error("Erreur lors du comptage des algorithmes en attente:", err);
+      return 0;
+    }
+  };
+
   return {
     algorithms,
     loading,
@@ -294,5 +314,6 @@ export function useAlgorithms() {
     approveAlgorithm,
     rejectAlgorithm,
     loadPendingAlgorithms,
+    countPendingAlgorithms,
   };
 }
