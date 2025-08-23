@@ -20,6 +20,7 @@ export interface Algorithm {
   alternatives: string[];
   status: "pending" | "approved" | "rejected";
   created_by: string;
+  creator_username?: string;
   reviewed_by?: string;
   reviewed_at?: string;
   rejection_reason?: string;
@@ -208,14 +209,44 @@ export function useAlgorithms() {
   // Obtenir un algorithme par ID
   const getAlgorithmById = async (id: string): Promise<Algorithm | null> => {
     try {
-      const { data, error } = await supabase
+      // D'abord récupérer l'algorithme
+      const { data: algorithm, error: algorithmError } = await supabase
         .from("algorithms")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) throw error;
-      return data;
+      if (algorithmError) throw algorithmError;
+
+      // Ensuite récupérer le nom d'utilisateur depuis profiles
+      let creatorUsername = "Utilisateur";
+      if (algorithm.created_by) {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", algorithm.created_by)
+            .single();
+
+          if (!profileError && profileData?.username) {
+            creatorUsername = profileData.username;
+          } else {
+            // Fallback vers l'ID si pas de nom trouvé
+            creatorUsername = algorithm.created_by.substring(0, 8);
+          }
+        } catch (profileErr) {
+          console.warn("Impossible de récupérer le nom d'utilisateur:", profileErr);
+          creatorUsername = algorithm.created_by.substring(0, 8);
+        }
+      }
+
+      // Ajouter le nom d'utilisateur
+      const algorithmWithUsername = {
+        ...algorithm,
+        creator_username: creatorUsername,
+      };
+
+      return algorithmWithUsername;
     } catch (err) {
       console.error("Erreur lors de la récupération de l'algorithme:", err);
       return null;

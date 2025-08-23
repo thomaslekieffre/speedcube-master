@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { CubeViewer } from "@/components/cube-viewer";
 import { PUZZLES } from "@/components/puzzle-selector";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
+import { useCustomMethodsSets } from "@/hooks/use-custom-methods-sets";
 
 // Méthodes disponibles
 const METHODS = [
@@ -49,12 +50,21 @@ export default function AlgorithmsPage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
 
+  const { customMethods, customSets, loadCustomMethods, loadCustomSets } =
+    useCustomMethodsSets();
+
   const {
     favorites,
     loading: favoritesLoading,
     toggleFavorite,
     isFavorite,
   } = useFavorites();
+
+  // Charger les méthodes et sets personnalisés
+  useEffect(() => {
+    loadCustomMethods();
+    loadCustomSets();
+  }, [loadCustomMethods, loadCustomSets]);
 
   const {
     algorithms,
@@ -142,7 +152,6 @@ export default function AlgorithmsPage() {
                 Explorez et maîtrisez les algorithmes pour tous les puzzles WCA
               </p>
             </div>
-
           </div>
         </motion.div>
 
@@ -210,6 +219,22 @@ export default function AlgorithmsPage() {
                         {method.name}
                       </SelectItem>
                     ))}
+                    {customMethods
+                      .filter(
+                        (m) =>
+                          selectedPuzzle === "all" ||
+                          m.puzzle_type === selectedPuzzle
+                      )
+                      .map((method) => (
+                        <SelectItem key={method.id} value={method.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{method.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              par {method.creator_username}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
 
@@ -228,6 +253,22 @@ export default function AlgorithmsPage() {
                         {set.name}
                       </SelectItem>
                     ))}
+                    {customSets
+                      .filter(
+                        (s) =>
+                          selectedMethod === "all" ||
+                          s.method_id === selectedMethod
+                      )
+                      .map((set) => (
+                        <SelectItem key={set.id} value={set.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{set.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              par {set.creator_username}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
 

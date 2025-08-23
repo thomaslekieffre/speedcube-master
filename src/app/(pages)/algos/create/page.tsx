@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, Save, ArrowLeft } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useAlgorithms } from "@/hooks/use-algorithms";
+import { useCustomMethodsSets } from "@/hooks/use-custom-methods-sets";
 import { toast } from "sonner";
 
 interface AlgorithmForm {
@@ -91,6 +92,14 @@ export default function CreateAlgorithmPage() {
   const router = useRouter();
   const { user } = useUser();
   const { createAlgorithm } = useAlgorithms();
+  const {
+    customMethods,
+    customSets,
+    createCustomMethod,
+    createCustomSet,
+    loadCustomMethods,
+    loadCustomSets,
+  } = useCustomMethodsSets();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<AlgorithmForm>({
     name: "",
@@ -112,12 +121,24 @@ export default function CreateAlgorithmPage() {
   const [customSet, setCustomSet] = useState("");
   const [showCustomMethod, setShowCustomMethod] = useState(false);
   const [showCustomSet, setShowCustomSet] = useState(false);
+  const [isCreatingMethod, setIsCreatingMethod] = useState(false);
+  const [isCreatingSet, setIsCreatingSet] = useState(false);
 
   const handleInputChange = (
     field: keyof AlgorithmForm,
     value: string | string[]
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+
+    // Charger les méthodes personnalisées quand le puzzle change
+    if (field === "puzzle_type") {
+      loadCustomMethods(value as string);
+    }
+
+    // Charger les sets personnalisés quand la méthode change
+    if (field === "method") {
+      loadCustomSets(value as string);
+    }
   };
 
   const addAlternative = () => {
@@ -154,12 +175,40 @@ export default function CreateAlgorithmPage() {
     try {
       setLoading(true);
 
+      // Créer la méthode personnalisée si nécessaire
+      let finalMethod = form.method;
+      if (form.method === "custom" && customMethod.trim()) {
+        try {
+          await createCustomMethod(customMethod.trim(), form.puzzle_type);
+          finalMethod = customMethod.trim();
+          toast.success(`Méthode "${customMethod.trim()}" créée et partagée !`);
+        } catch (error) {
+          console.error("Erreur création méthode:", error);
+          // Si la méthode existe déjà, on l'utilise
+          finalMethod = customMethod.trim();
+        }
+      }
+
+      // Créer le set personnalisé si nécessaire
+      let finalSet = form.set_name;
+      if (form.set_name === "custom" && customSet.trim()) {
+        try {
+          await createCustomSet(customSet.trim(), finalMethod);
+          finalSet = customSet.trim();
+          toast.success(`Set "${customSet.trim()}" créé et partagé !`);
+        } catch (error) {
+          console.error("Erreur création set:", error);
+          // Si le set existe déjà, on l'utilise
+          finalSet = customSet.trim();
+        }
+      }
+
       const data = await createAlgorithm({
         name: form.name,
         notation: form.notation,
         puzzle_type: form.puzzle_type,
-        method: form.method === "custom" ? customMethod : form.method,
-        set_name: form.set_name === "custom" ? customSet : form.set_name,
+        method: finalMethod,
+        set_name: finalSet,
         difficulty: form.difficulty,
         description: form.description,
         scramble: form.scramble,
@@ -277,6 +326,23 @@ export default function CreateAlgorithmPage() {
                           {method.label}
                         </SelectItem>
                       ))}
+                      {customMethods.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                            Méthodes personnalisées
+                          </div>
+                          {customMethods.map((method) => (
+                            <SelectItem key={method.id} value={method.name}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{method.name}</span>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  par {method.creator_username}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                   {showCustomMethod && (
@@ -307,6 +373,23 @@ export default function CreateAlgorithmPage() {
                           {set.label}
                         </SelectItem>
                       ))}
+                      {customSets.length > 0 && (
+                        <>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                            Sets personnalisés
+                          </div>
+                          {customSets.map((set) => (
+                            <SelectItem key={set.id} value={set.name}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{set.name}</span>
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  par {set.creator_username}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                   {showCustomSet && (
@@ -367,7 +450,9 @@ export default function CreateAlgorithmPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="scramble">Scramble (pour obtenir le cas)</Label>
+                  <Label htmlFor="scramble">
+                    Scramble (pour obtenir le cas)
+                  </Label>
                   <Input
                     id="scramble"
                     value={form.scramble}

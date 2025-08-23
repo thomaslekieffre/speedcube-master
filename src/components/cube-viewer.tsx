@@ -11,6 +11,7 @@ interface CubeViewerProps {
   showControls?: boolean; // Par défaut false
   algorithm?: string; // Pour le reset, si différent du scramble
   fallbackOnly?: boolean; // Pour forcer l'utilisation du fallback
+  showScrambleFirst?: boolean; // Afficher d'abord le scramble, puis l'algorithme
 }
 
 // Mapping our puzzle IDs to cubing.js puzzle names
@@ -241,12 +242,15 @@ export function CubeViewer({
   showControls = false, // Par défaut, pas de contrôles
   algorithm,
   fallbackOnly = false, // Par défaut, utiliser le visualiseur 3D
+  showScrambleFirst = false,
 }: CubeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [hasError, setHasError] = useState(false);
+  const [currentSequence, setCurrentSequence] = useState<string>("");
+  const [isShowingScramble, setIsShowingScramble] = useState(false);
   const initRef = useRef(false);
 
   useEffect(() => {
@@ -329,11 +333,30 @@ export function CubeViewer({
 
   // Mettre à jour le scramble quand il change (avec debounce)
   useEffect(() => {
-    if (viewerRef.current && scramble && isReady) {
+    if (viewerRef.current && isReady) {
       // Utiliser un timeout pour éviter les mises à jour trop fréquentes
       const timeoutId = setTimeout(() => {
         try {
-          viewerRef.current.alg = scramble;
+          if (showScrambleFirst && scramble) {
+            // Afficher d'abord le scramble
+            viewerRef.current.alg = scramble;
+            setCurrentSequence(scramble);
+            setIsShowingScramble(true);
+
+            // Après 3 secondes, afficher l'algorithme
+            setTimeout(() => {
+              if (algorithm) {
+                viewerRef.current.alg = algorithm;
+                setCurrentSequence(algorithm);
+                setIsShowingScramble(false);
+              }
+            }, 3000);
+          } else {
+            // Comportement normal
+            viewerRef.current.alg = scramble;
+            setCurrentSequence(scramble);
+            setIsShowingScramble(false);
+          }
         } catch (error) {
           console.warn("Erreur lors de la mise à jour du scramble:", error);
         }
@@ -341,17 +364,26 @@ export function CubeViewer({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [scramble, isReady]);
+  }, [scramble, algorithm, isReady, showScrambleFirst]);
 
   // Composant de fallback simple
   const FallbackViewer = () => (
     <div className="flex items-center justify-center h-full text-muted-foreground">
       <div className="text-center">
         <div className="text-2xl mb-2">🎲</div>
-        <p className="text-sm font-medium">Notation</p>
-        <p className="text-xs mt-1 font-mono bg-muted px-2 py-1 rounded">
-          {scramble || "Aucun scramble"}
+        <p className="text-sm font-medium">
+          {showScrambleFirst && isShowingScramble ? "Scramble" : "Notation"}
         </p>
+        <p className="text-xs mt-1 font-mono bg-muted px-2 py-1 rounded">
+          {currentSequence || scramble || "Aucun scramble"}
+        </p>
+        {showScrambleFirst && algorithm && (
+          <p className="text-xs mt-1 text-blue-500">
+            {isShowingScramble
+              ? "→ Algorithme dans 3s"
+              : "→ Algorithme affiché"}
+          </p>
+        )}
         <p className="text-xs mt-2 text-muted-foreground">
           {puzzleNameMap[puzzleType] || puzzleType}
         </p>
