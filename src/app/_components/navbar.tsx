@@ -18,6 +18,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useModerationBadge } from "@/hooks/use-moderation-badge";
+import { AlgorithmNotifications } from "@/components/algorithm-notifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +79,7 @@ export function Navbar() {
                 )}
               </Link>
             )}
+            {isSignedIn && <AlgorithmNotifications />}
             <Link
               href="/dashboard"
               className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"

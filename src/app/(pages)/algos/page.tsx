@@ -336,14 +336,6 @@ export default function AlgorithmsPage() {
                             >
                               {getDifficultyText(algo.difficulty)}
                             </Badge>
-                            {algo.status === "pending" && (
-                              <Badge
-                                variant="outline"
-                                className="text-xs text-yellow-600 border-yellow-600"
-                              >
-                                En attente
-                              </Badge>
-                            )}
                           </div>
                         </div>
                         <Button

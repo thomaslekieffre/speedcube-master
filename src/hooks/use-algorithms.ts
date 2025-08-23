@@ -18,7 +18,7 @@ export interface Algorithm {
   fingertricks: string;
   notes: string;
   alternatives: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   created_by: string;
   reviewed_by?: string;
   reviewed_at?: string;
@@ -64,12 +64,15 @@ export function useAlgorithms() {
           .single();
 
         if (roleData?.role === "moderator" || roleData?.role === "admin") {
-          // Les modérateurs voient tous les algorithmes SAUF les rejetés
-          query = query.neq("status", "rejected");
+          // Les modérateurs ne voient que les algorithmes approuvés dans /algos
+          // (les algorithmes en attente sont visibles uniquement dans /algos/moderate)
+          query = query.eq("status", "approved");
         } else {
           // Les utilisateurs normaux ne voient que les algorithmes approuvés
           // ET leurs propres algorithmes en attente (mais pas les rejetés)
-          query = query.or(`status.eq.approved,and(created_by.eq.${user.id},status.eq.pending)`);
+          query = query.or(
+            `status.eq.approved,and(created_by.eq.${user.id},status.eq.pending)`
+          );
         }
       }
 
@@ -138,7 +141,10 @@ export function useAlgorithms() {
 
   // Créer un nouvel algorithme
   const createAlgorithm = async (
-    algorithmData: Omit<Algorithm, "id" | "created_at" | "updated_at" | "status" | "created_by">
+    algorithmData: Omit<
+      Algorithm,
+      "id" | "created_at" | "updated_at" | "status" | "created_by"
+    >
   ) => {
     if (!user) throw new Error("Utilisateur non connecté");
 
@@ -234,7 +240,9 @@ export function useAlgorithms() {
 
       if (error) throw error;
 
-      setAlgorithms(prev => prev.map(algo => algo.id === algorithmId ? data : algo));
+      setAlgorithms((prev) =>
+        prev.map((algo) => (algo.id === algorithmId ? data : algo))
+      );
       return data;
     } catch (err) {
       console.error("Erreur lors de l'approbation de l'algorithme:", err);
@@ -260,7 +268,9 @@ export function useAlgorithms() {
 
       if (error) throw error;
 
-      setAlgorithms(prev => prev.map(algo => algo.id === algorithmId ? data : algo));
+      setAlgorithms((prev) =>
+        prev.map((algo) => (algo.id === algorithmId ? data : algo))
+      );
       return data;
     } catch (err) {
       console.error("Erreur lors du rejet de l'algorithme:", err);
@@ -280,7 +290,10 @@ export function useAlgorithms() {
       if (error) throw error;
       return data || [];
     } catch (err) {
-      console.error("Erreur lors du chargement des algorithmes en attente:", err);
+      console.error(
+        "Erreur lors du chargement des algorithmes en attente:",
+        err
+      );
       throw err;
     }
   };
