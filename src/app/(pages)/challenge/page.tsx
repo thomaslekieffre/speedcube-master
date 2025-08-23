@@ -4,24 +4,33 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Timer, Trophy, Users, Zap } from "lucide-react";
+import { Timer, Trophy, Users, Zap, RefreshCw } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { formatTime } from "@/lib/time";
 import { useChallenge } from "@/hooks/use-challenge";
-import {
-  getTodayDate,
-  getTimeRemaining,
-  getDailyScramble,
-} from "@/lib/daily-scramble";
+import { useDailyScramble } from "@/hooks/use-daily-scramble";
+import { getTodayDate, getTimeRemaining } from "@/lib/daily-scramble";
 
 export default function ChallengePage() {
-  const [scramble, setScramble] = useState(() => getDailyScramble());
-  const [challengeDate, setChallengeDate] = useState(() => getTodayDate());
-  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [timeRemaining, setTimeRemaining] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isInspection, setIsInspection] = useState(false);
   const [inspectionTime, setInspectionTime] = useState(15);
+
+  // Utiliser le hook pour les mélanges quotidiens
+  const {
+    scramble,
+    date: challengeDate,
+    loading: scrambleLoading,
+    error: scrambleError,
+    loadDailyScramble,
+    regenerateScramble,
+  } = useDailyScramble();
 
   // Utiliser le hook pour la gestion des challenges
   const {
@@ -68,16 +77,11 @@ export default function ChallengePage() {
     return () => clearInterval(interval);
   }, [isRunning, isInspection]);
 
-  // Vérifier si la date a changé et mettre à jour le scramble
+  // Réinitialiser les tentatives quand la date change
   useEffect(() => {
     const today = getTodayDate();
-    if (today !== challengeDate) {
-      setChallengeDate(today);
-      setScramble(getDailyScramble());
-      // Réinitialiser les tentatives pour le nouveau jour
-      if (attempts.length > 0) {
-        resetAttempts();
-      }
+    if (challengeDate && today !== challengeDate && attempts.length > 0) {
+      resetAttempts();
     }
   }, [challengeDate, attempts.length, resetAttempts]);
 
@@ -85,7 +89,7 @@ export default function ChallengePage() {
   useEffect(() => {
     // Initialiser le temps restant côté client
     setTimeRemaining(getTimeRemaining());
-    
+
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining());
     }, 1000);
@@ -219,20 +223,52 @@ export default function ChallengePage() {
             <CardContent className="space-y-6">
               {/* Scramble */}
               <div>
-                <h3 className="text-sm font-medium mb-2">Scramble du jour</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium">Scramble du jour</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={regenerateScramble}
+                    disabled={scrambleLoading}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <RefreshCw
+                      className={`h-3 w-3 mr-1 ${
+                        scrambleLoading ? "animate-spin" : ""
+                      }`}
+                    />
+                    Régénérer
+                  </Button>
+                </div>
                 <div className="bg-muted p-4 rounded-lg font-mono text-lg text-center mb-4">
-                  {scramble}
+                  {scrambleLoading ? (
+                    <div className="text-muted-foreground">
+                      Chargement du scramble...
+                    </div>
+                  ) : scrambleError ? (
+                    <div className="text-red-500">Erreur: {scrambleError}</div>
+                  ) : (
+                    scramble
+                  )}
                 </div>
 
                 {/* Visualisation du cube */}
                 <div className="h-48 sm:h-56 lg:h-64 bg-muted/30 rounded-lg border overflow-hidden">
-                  <CubeViewer
-                    key={`${challengeDate}-${scramble}`} // Force le re-render quand la date ou le scramble change
-                    puzzleType="333"
-                    scramble={scramble}
-                    onReset={() => {}}
-                    showControls={false}
-                  />
+                  {scramble && !scrambleLoading && !scrambleError ? (
+                    <CubeViewer
+                      key={`${challengeDate}-${scramble}`} // Force le re-render quand la date ou le scramble change
+                      puzzleType="333"
+                      scramble={scramble}
+                      onReset={() => {}}
+                      showControls={false}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      {scrambleLoading
+                        ? "Chargement..."
+                        : "Scramble non disponible"}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -267,7 +303,7 @@ export default function ChallengePage() {
                       onClick={startTimer}
                       className="flex-1"
                       size="lg"
-                      disabled={loading}
+                      disabled={loading || scrambleLoading || !scramble}
                     >
                       <Zap className="h-4 w-4 mr-2" />
                       {loading ? "..." : "Commencer"}
@@ -290,15 +326,19 @@ export default function ChallengePage() {
                 </div>
 
                 {/* Indication touche espace */}
-                {!isRunning && !isInspection && attempts.length < 3 && (
-                  <div className="text-center text-xs text-muted-foreground">
-                    Appuie sur{" "}
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      Espace
-                    </kbd>{" "}
-                    pour commencer
-                  </div>
-                )}
+                {!isRunning &&
+                  !isInspection &&
+                  attempts.length < 3 &&
+                  !scrambleLoading &&
+                  scramble && (
+                    <div className="text-center text-xs text-muted-foreground">
+                      Appuie sur{" "}
+                      <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                        Espace
+                      </kbd>{" "}
+                      pour commencer
+                    </div>
+                  )}
                 {isInspection && (
                   <div className="text-center text-xs text-orange-500">
                     Appuie sur{" "}
