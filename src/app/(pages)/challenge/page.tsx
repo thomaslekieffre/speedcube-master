@@ -146,16 +146,6 @@ export default function ChallengePage() {
     return Math.min(...timesWithPenalties);
   };
 
-  const handleResetAttempts = async () => {
-    try {
-      await resetAttempts();
-      // Recharger le classement après réinitialisation
-      await loadLeaderboard();
-    } catch (error) {
-      console.error("Erreur lors de la réinitialisation:", error);
-    }
-  };
-
   // Gestion des touches clavier
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -202,7 +192,12 @@ export default function ChallengePage() {
             <Badge variant="outline">
               Challenge du {new Date(challengeDate).toLocaleDateString("fr-FR")}
             </Badge>
-            <Badge variant="outline">{attempts.length}/3 tentatives</Badge>
+            <Badge
+              variant="outline"
+              className={attempts.length >= 3 ? "text-red-500" : ""}
+            >
+              {attempts.length}/3 tentatives
+            </Badge>
             <Badge variant="outline" className="text-orange-500">
               {timeRemaining.hours}h {timeRemaining.minutes}m{" "}
               {timeRemaining.seconds}s
@@ -338,20 +333,7 @@ export default function ChallengePage() {
           {/* Attempts */}
           <Card className="mb-6">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Mes tentatives</CardTitle>
-                {attempts.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetAttempts}
-                    className="text-xs"
-                    disabled={loading}
-                  >
-                    {loading ? "..." : "Réinitialiser"}
-                  </Button>
-                )}
-              </div>
+              <CardTitle>Mes tentatives</CardTitle>
             </CardHeader>
             <CardContent>
               {attempts.length === 0 ? (
@@ -360,7 +342,7 @@ export default function ChallengePage() {
                     Aucune tentative pour l'instant
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Vos tentatives seront sauvegardées automatiquement
+                    Vous avez 3 tentatives pour aujourd'hui
                   </p>
                 </div>
               ) : (
@@ -432,6 +414,13 @@ export default function ChallengePage() {
                       </div>
                     </div>
                   ))}
+                  {attempts.length >= 3 && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <div className="text-sm text-red-600 font-medium text-center">
+                        Toutes vos tentatives sont épuisées pour aujourd'hui
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {getBestTime() && (

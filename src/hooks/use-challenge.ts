@@ -7,8 +7,19 @@ import {
   ChallengeStats,
 } from "@/types/challenge";
 
+// Fonction pour récupérer le username depuis Clerk
+const getUserDisplayName = (user: any) => {
+  return (
+    user?.username ||
+    user?.firstName ||
+    user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] ||
+    "User"
+  );
+};
+
 export function useChallenge() {
   const { user } = useUser();
+  const { client } = useClerk();
   const [attempts, setAttempts] = useState<ChallengeAttempt[]>([]);
   const [leaderboard, setLeaderboard] = useState<ChallengeLeaderboardEntry[]>(
     []
@@ -69,10 +80,10 @@ export function useChallenge() {
       if (error) throw error;
 
       setAttempts((prev) => [...prev, data]);
-      
+
       // Mettre à jour le classement après chaque nouvelle tentative
       await updateLeaderboard();
-      
+
       return data;
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
@@ -178,6 +189,21 @@ export function useChallenge() {
         .filter(Boolean)
         .sort((a, b) => a!.best_time - b!.best_time);
 
+      // Récupérer les usernames depuis la table profiles
+      const userIds = userBestTimes.map((entry) => entry!.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Créer un map des usernames
+      const usernameMap = new Map();
+      profiles?.forEach((profile) => {
+        usernameMap.set(profile.id, profile.username);
+      });
+
       // Supprimer l'ancien classement pour aujourd'hui
       await supabase
         .from("daily_challenge_tops")
@@ -190,7 +216,9 @@ export function useChallenge() {
         const leaderboardEntries = top5.map((entry, index) => ({
           challenge_date: challengeDate,
           user_id: entry!.user_id,
-          username: `User ${entry!.user_id.slice(0, 8)}`, // Username temporaire
+          username:
+            usernameMap.get(entry!.user_id) ||
+            `User ${entry!.user_id.slice(0, 8)}`,
           best_time: entry!.best_time,
           rank: index + 1,
         }));
@@ -243,6 +271,9 @@ export function useChallenge() {
 
       if (error) throw error;
       setAttempts([]);
+
+      // Mettre à jour le classement après suppression des tentatives
+      await updateLeaderboard();
     } catch (error) {
       console.error("Erreur lors de la réinitialisation:", error);
       throw error;
@@ -251,12 +282,14 @@ export function useChallenge() {
     }
   };
 
-  // Charger les données au montage du composant
+  // Charger les données au montage du composant et quand l'utilisateur change
   useEffect(() => {
-    loadUserAttempts();
-    loadLeaderboard();
-    // loadStats(); // Désactivé pour l'instant
-  }, []);
+    if (user) {
+      loadUserAttempts();
+      loadLeaderboard();
+      // loadStats(); // Désactivé pour l'instant
+    }
+  }, [user]);
 
   return {
     attempts,
