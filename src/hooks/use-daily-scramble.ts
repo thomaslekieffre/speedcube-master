@@ -37,36 +37,6 @@ export function useDailyScramble() {
     }
   };
 
-  // Forcer la régénération du scramble
-  const regenerateScramble = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch("/api/daily-scramble", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ force: true }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la régénération du scramble");
-      }
-
-      const data: DailyScrambleData = await response.json();
-
-      setScramble(data.scramble);
-      setDate(data.date);
-    } catch (err) {
-      console.error("Erreur lors de la régénération du scramble:", err);
-      setError(err instanceof Error ? err.message : "Erreur inconnue");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Vérifier si la date a changé
   const checkDateChange = () => {
     const today = getTodayDate();
@@ -93,6 +63,5 @@ export function useDailyScramble() {
     loading,
     error,
     loadDailyScramble,
-    regenerateScramble,
   };
 }

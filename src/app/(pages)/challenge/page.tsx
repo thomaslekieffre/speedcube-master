@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Timer, Trophy, Users, Zap, RefreshCw } from "lucide-react";
+import { Timer, Trophy, Users, Zap } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { formatTime } from "@/lib/time";
 import { useChallenge } from "@/hooks/use-challenge";
@@ -29,7 +29,6 @@ export default function ChallengePage() {
     loading: scrambleLoading,
     error: scrambleError,
     loadDailyScramble,
-    regenerateScramble,
   } = useDailyScramble();
 
   // Utiliser le hook pour la gestion des challenges
@@ -223,23 +222,7 @@ export default function ChallengePage() {
             <CardContent className="space-y-6">
               {/* Scramble */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium">Scramble du jour</h3>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={regenerateScramble}
-                    disabled={scrambleLoading}
-                    className="h-6 px-2 text-xs"
-                  >
-                    <RefreshCw
-                      className={`h-3 w-3 mr-1 ${
-                        scrambleLoading ? "animate-spin" : ""
-                      }`}
-                    />
-                    Régénérer
-                  </Button>
-                </div>
+                <h3 className="text-sm font-medium mb-2">Scramble du jour</h3>
                 <div className="bg-muted p-4 rounded-lg font-mono text-lg text-center mb-4">
                   {scrambleLoading ? (
                     <div className="text-muted-foreground">

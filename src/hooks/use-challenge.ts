@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import {
   ChallengeAttempt,
   ChallengeLeaderboardEntry,
@@ -69,6 +69,10 @@ export function useChallenge() {
       if (error) throw error;
 
       setAttempts((prev) => [...prev, data]);
+      
+      // Mettre à jour le classement après chaque nouvelle tentative
+      await updateLeaderboard();
+      
       return data;
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
@@ -94,6 +98,9 @@ export function useChallenge() {
           attempt.id === attemptId ? { ...attempt, penalty } : attempt
         )
       );
+
+      // Mettre à jour le classement après modification de pénalité
+      await updateLeaderboard();
     } catch (error) {
       console.error("Erreur lors de l'application de la pénalité:", error);
       throw error;
@@ -108,28 +115,50 @@ export function useChallenge() {
       setLoading(true);
       const challengeDate = getChallengeDate();
 
-      // Requête directe sans fonction RPC pour l'instant
+      // Utiliser la table daily_challenge_tops pour le classement
       const { data, error } = await supabase
-        .from("challenge_attempts")
+        .from("daily_challenge_tops")
         .select("*")
         .eq("challenge_date", challengeDate)
-        .order("created_at", { ascending: true });
+        .order("rank", { ascending: true })
+        .limit(5);
 
       if (error) throw error;
 
-      // Traiter les données côté client pour le classement
-      const attemptsByUser = new Map();
+      setLeaderboard(data || []);
+    } catch (error) {
+      console.error("Erreur lors du chargement du classement:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      data?.forEach((attempt) => {
+  // Mettre à jour le classement après une nouvelle tentative
+  const updateLeaderboard = async () => {
+    try {
+      const challengeDate = getChallengeDate();
+
+      // Récupérer toutes les tentatives valides pour aujourd'hui
+      const { data: attempts, error: attemptsError } = await supabase
+        .from("challenge_attempts")
+        .select("*")
+        .eq("challenge_date", challengeDate);
+
+      if (attemptsError) throw attemptsError;
+
+      // Grouper par utilisateur et calculer le meilleur temps
+      const attemptsByUser = new Map();
+      attempts?.forEach((attempt) => {
         if (!attemptsByUser.has(attempt.user_id)) {
           attemptsByUser.set(attempt.user_id, []);
         }
         attemptsByUser.get(attempt.user_id).push(attempt);
       });
 
-      const leaderboardData = Array.from(attemptsByUser.entries())
-        .map(([user_id, attempts]) => {
-          const validAttempts = attempts.filter(
+      // Calculer le meilleur temps pour chaque utilisateur
+      const userBestTimes = Array.from(attemptsByUser.entries())
+        .map(([user_id, userAttempts]) => {
+          const validAttempts = userAttempts.filter(
             (a: any) => a.penalty !== "dnf"
           );
           if (validAttempts.length === 0) return null;
@@ -142,20 +171,41 @@ export function useChallenge() {
 
           return {
             user_id,
-            username: `User ${user_id.slice(0, 8)}`, // Username temporaire
             best_time: bestTime,
-            attempts_count: attempts.length,
-            created_at: attempts[0].created_at,
+            attempts_count: userAttempts.length,
           };
         })
         .filter(Boolean)
         .sort((a, b) => a!.best_time - b!.best_time);
 
-      setLeaderboard(leaderboardData);
+      // Supprimer l'ancien classement pour aujourd'hui
+      await supabase
+        .from("daily_challenge_tops")
+        .delete()
+        .eq("challenge_date", challengeDate);
+
+      // Insérer le nouveau classement (top 5)
+      const top5 = userBestTimes.slice(0, 5);
+      if (top5.length > 0) {
+        const leaderboardEntries = top5.map((entry, index) => ({
+          challenge_date: challengeDate,
+          user_id: entry!.user_id,
+          username: `User ${entry!.user_id.slice(0, 8)}`, // Username temporaire
+          best_time: entry!.best_time,
+          rank: index + 1,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("daily_challenge_tops")
+          .insert(leaderboardEntries);
+
+        if (insertError) throw insertError;
+      }
+
+      // Recharger le classement
+      await loadLeaderboard();
     } catch (error) {
-      console.error("Erreur lors du chargement du classement:", error);
-    } finally {
-      setLoading(false);
+      console.error("Erreur lors de la mise à jour du classement:", error);
     }
   };
 
@@ -218,5 +268,6 @@ export function useChallenge() {
     resetAttempts,
     loadLeaderboard,
     loadStats,
+    updateLeaderboard,
   };
 }
