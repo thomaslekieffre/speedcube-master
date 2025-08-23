@@ -142,13 +142,7 @@ export default function AlgorithmsPage() {
                 Explorez et maîtrisez les algorithmes pour tous les puzzles WCA
               </p>
             </div>
-            <Button
-              onClick={() => router.push("/algos/create")}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Créer un algorithme
-            </Button>
+
           </div>
         </motion.div>
 

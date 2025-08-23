@@ -62,6 +62,7 @@ const METHODS = [
   { value: "yau", label: "Yau" },
   { value: "hoya", label: "Hoya" },
   { value: "reduction", label: "Réduction" },
+  { value: "custom", label: "Personnalisé..." },
 ];
 
 const SETS = [
@@ -76,6 +77,7 @@ const SETS = [
   { value: "edges", label: "Edges" },
   { value: "parity", label: "Parity" },
   { value: "other", label: "Autre" },
+  { value: "custom", label: "Personnalisé..." },
 ];
 
 const DIFFICULTIES = [
@@ -106,6 +108,10 @@ export default function CreateAlgorithmPage() {
   });
 
   const [newAlternative, setNewAlternative] = useState("");
+  const [customMethod, setCustomMethod] = useState("");
+  const [customSet, setCustomSet] = useState("");
+  const [showCustomMethod, setShowCustomMethod] = useState(false);
+  const [showCustomSet, setShowCustomSet] = useState(false);
 
   const handleInputChange = (
     field: keyof AlgorithmForm,
@@ -135,6 +141,16 @@ export default function CreateAlgorithmPage() {
     e.preventDefault();
     if (!user) return;
 
+    // Validation des champs personnalisés
+    if (form.method === "custom" && !customMethod.trim()) {
+      toast.error("Veuillez saisir une méthode personnalisée");
+      return;
+    }
+    if (form.set_name === "custom" && !customSet.trim()) {
+      toast.error("Veuillez saisir un set personnalisé");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -142,8 +158,8 @@ export default function CreateAlgorithmPage() {
         name: form.name,
         notation: form.notation,
         puzzle_type: form.puzzle_type,
-        method: form.method,
-        set_name: form.set_name,
+        method: form.method === "custom" ? customMethod : form.method,
+        set_name: form.set_name === "custom" ? customSet : form.set_name,
         difficulty: form.difficulty,
         description: form.description,
         scramble: form.scramble,
@@ -247,9 +263,10 @@ export default function CreateAlgorithmPage() {
                   <Label htmlFor="method">Méthode</Label>
                   <Select
                     value={form.method}
-                    onValueChange={(value) =>
-                      handleInputChange("method", value)
-                    }
+                    onValueChange={(value) => {
+                      handleInputChange("method", value);
+                      setShowCustomMethod(value === "custom");
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -262,15 +279,24 @@ export default function CreateAlgorithmPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {showCustomMethod && (
+                    <Input
+                      value={customMethod}
+                      onChange={(e) => setCustomMethod(e.target.value)}
+                      placeholder="Saisissez votre méthode personnalisée"
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="set_name">Set</Label>
                   <Select
                     value={form.set_name}
-                    onValueChange={(value) =>
-                      handleInputChange("set_name", value)
-                    }
+                    onValueChange={(value) => {
+                      handleInputChange("set_name", value);
+                      setShowCustomSet(value === "custom");
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -283,6 +309,14 @@ export default function CreateAlgorithmPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {showCustomSet && (
+                    <Input
+                      value={customSet}
+                      onChange={(e) => setCustomSet(e.target.value)}
+                      placeholder="Saisissez votre set personnalisé"
+                      className="mt-2"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -333,14 +367,14 @@ export default function CreateAlgorithmPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="scramble">Scramble</Label>
+                  <Label htmlFor="scramble">Scramble (pour obtenir le cas)</Label>
                   <Input
                     id="scramble"
                     value={form.scramble}
                     onChange={(e) =>
                       handleInputChange("scramble", e.target.value)
                     }
-                    placeholder="Scramble qui mène à ce cas"
+                    placeholder="Ex: R U R' U' R' F R F' (pour obtenir le cas)"
                   />
                 </div>
                 <div className="space-y-2">

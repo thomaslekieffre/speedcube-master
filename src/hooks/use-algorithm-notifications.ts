@@ -6,18 +6,16 @@ export interface AlgorithmNotification {
   id: string;
   algorithm_id: string;
   algorithm_name: string;
-  type: "rejected";
+  type: "rejected" | "approved";
   message: string;
-  rejection_reason: string;
+  rejection_reason?: string;
   created_at: string;
   read: boolean;
 }
 
 export function useAlgorithmNotifications() {
   const { user } = useUser();
-  const [notifications, setNotifications] = useState<AlgorithmNotification[]>(
-    []
-  );
+  const [notifications, setNotifications] = useState<AlgorithmNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -33,32 +31,40 @@ export function useAlgorithmNotifications() {
     try {
       setLoading(true);
 
-      // Récupérer les algorithmes rejetés de l'utilisateur
-      const { data: rejectedAlgorithms, error } = await supabase
+      // Récupérer les algorithmes rejetés ET approuvés de l'utilisateur
+      const { data: algorithms, error } = await supabase
         .from("algorithms")
-        .select("id, name, rejection_reason, updated_at")
+        .select("id, name, status, rejection_reason, reviewed_at")
         .eq("created_by", user.id)
-        .eq("status", "rejected")
-        .order("updated_at", { ascending: false });
+        .in("status", ["rejected", "approved"])
+        .order("reviewed_at", { ascending: false });
 
       if (error) throw error;
 
       // Transformer en notifications
-      const algorithmNotifications: AlgorithmNotification[] = (
-        rejectedAlgorithms || []
-      ).map((algo) => ({
-        id: algo.id,
-        algorithm_id: algo.id,
-        algorithm_name: algo.name,
-        type: "rejected" as const,
-        message: `Votre algorithme "${algo.name}" a été rejeté`,
-        rejection_reason: algo.rejection_reason || "Aucune raison fournie",
-        created_at: algo.updated_at,
-        read: false, // On considère que les nouvelles notifications sont non lues
-      }));
+      const algorithmNotifications: AlgorithmNotification[] = (algorithms || [])
+        .filter(algo => algo.reviewed_at) // Seulement ceux qui ont été modérés
+        .map((algo) => ({
+          id: `notification_${algo.id}_${algo.status}`,
+          algorithm_id: algo.id,
+          algorithm_name: algo.name,
+          type: algo.status as "rejected" | "approved",
+          message: algo.status === "rejected" 
+            ? `Votre algorithme "${algo.name}" a été rejeté`
+            : `Votre algorithme "${algo.name}" a été approuvé !`,
+          rejection_reason: algo.rejection_reason,
+          created_at: algo.reviewed_at,
+          read: false, // Toujours non lu au début
+        }));
 
-      setNotifications(algorithmNotifications);
-      setUnreadCount(algorithmNotifications.length);
+      // Filtrer les notifications déjà marquées comme lues (stockage local)
+      const readNotifications = JSON.parse(localStorage.getItem(`read_notifications_${user.id}`) || '[]');
+      const filteredNotifications = algorithmNotifications.filter(
+        notif => !readNotifications.includes(notif.id)
+      );
+
+      setNotifications(filteredNotifications);
+      setUnreadCount(filteredNotifications.length);
     } catch (error) {
       console.error("Erreur lors du chargement des notifications:", error);
       setNotifications([]);
@@ -68,19 +74,34 @@ export function useAlgorithmNotifications() {
     }
   };
 
-  // Marquer une notification comme lue
+  // Marquer une notification comme lue (persistant)
   const markAsRead = async (notificationId: string) => {
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      )
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+    if (!user) return;
+
+    // Ajouter à la liste des notifications lues dans localStorage
+    const readNotifications = JSON.parse(localStorage.getItem(`read_notifications_${user.id}`) || '[]');
+    if (!readNotifications.includes(notificationId)) {
+      readNotifications.push(notificationId);
+      localStorage.setItem(`read_notifications_${user.id}`, JSON.stringify(readNotifications));
+    }
+
+    // Mettre à jour l'état local
+    setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    setUnreadCount(prev => Math.max(0, prev - 1));
   };
 
-  // Marquer toutes les notifications comme lues
+  // Marquer toutes les notifications comme lues (persistant)
   const markAllAsRead = async () => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+    if (!user) return;
+
+    // Ajouter toutes les notifications actuelles à la liste des lues
+    const readNotifications = JSON.parse(localStorage.getItem(`read_notifications_${user.id}`) || '[]');
+    const currentNotificationIds = notifications.map(notif => notif.id);
+    const newReadNotifications = [...new Set([...readNotifications, ...currentNotificationIds])];
+    localStorage.setItem(`read_notifications_${user.id}`, JSON.stringify(newReadNotifications));
+
+    // Vider l'état local
+    setNotifications([]);
     setUnreadCount(0);
   };
 

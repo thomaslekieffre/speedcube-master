@@ -72,33 +72,50 @@ export function AlgorithmNotifications() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card
-                  className={`border-l-4 border-l-red-500 ${
-                    !notification.read ? "bg-red-50/50" : ""
-                  }`}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                        <CardTitle className="text-sm font-medium">
-                          Algorithme rejeté
-                        </CardTitle>
-                      </div>
-                      {!notification.read && (
-                        <Badge variant="destructive" className="text-xs">
-                          Nouveau
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-sm font-medium mb-2">
-                      {notification.algorithm_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      {notification.rejection_reason}
-                    </p>
+                                 <Card
+                   className={`border-l-4 ${
+                     notification.type === "rejected" 
+                       ? "border-l-red-500" 
+                       : "border-l-green-500"
+                   } ${
+                     !notification.read 
+                       ? notification.type === "rejected" 
+                         ? "bg-red-50/50" 
+                         : "bg-green-50/50"
+                       : ""
+                   }`}
+                 >
+                   <CardHeader className="pb-2">
+                     <div className="flex items-start justify-between">
+                       <div className="flex items-center gap-2">
+                         {notification.type === "rejected" ? (
+                           <AlertTriangle className="h-4 w-4 text-red-500" />
+                         ) : (
+                           <CheckCircle className="h-4 w-4 text-green-500" />
+                         )}
+                         <CardTitle className="text-sm font-medium">
+                           {notification.type === "rejected" ? "Algorithme rejeté" : "Algorithme approuvé"}
+                         </CardTitle>
+                       </div>
+                       {!notification.read && (
+                         <Badge 
+                           variant={notification.type === "rejected" ? "destructive" : "default"}
+                           className="text-xs"
+                         >
+                           Nouveau
+                         </Badge>
+                       )}
+                     </div>
+                   </CardHeader>
+                   <CardContent className="pt-0">
+                     <p className="text-sm font-medium mb-2">
+                       {notification.algorithm_name}
+                     </p>
+                     {notification.type === "rejected" && notification.rejection_reason && (
+                       <p className="text-xs text-muted-foreground mb-3">
+                         {notification.rejection_reason}
+                       </p>
+                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {new Date(notification.created_at).toLocaleDateString(
