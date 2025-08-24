@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,15 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, Star, Eye, BookOpen, Zap } from "lucide-react";
+import { Search, Filter, Star, Eye, BookOpen, Zap, Plus } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { PUZZLES } from "@/components/puzzle-selector";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
-
-
-
-
+import { useCustomMethodsSets } from "@/hooks/use-custom-methods-sets";
 
 // Méthodes disponibles
 const METHODS = [
@@ -52,20 +49,33 @@ export default function AlgorithmsPage() {
   const [selectedSet, setSelectedSet] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  
+
+  const { customMethods, customSets, loadCustomMethods, loadCustomSets } =
+    useCustomMethodsSets();
+
   const {
     favorites,
     loading: favoritesLoading,
     toggleFavorite,
     isFavorite,
   } = useFavorites();
-  
-  const { algorithms, loading: algorithmsLoading, filterAlgorithms } = useAlgorithms();
+
+  // Charger les méthodes et sets personnalisés
+  useEffect(() => {
+    loadCustomMethods();
+    loadCustomSets();
+  }, [loadCustomMethods, loadCustomSets]);
+
+  const {
+    algorithms,
+    loading: algorithmsLoading,
+    filterAlgorithms,
+  } = useAlgorithms();
 
   // Filtrer les algorithmes
   const filteredAlgorithms = useMemo(() => {
     if (algorithmsLoading) return [];
-    
+
     const filtered = filterAlgorithms(algorithms, {
       puzzle_type: selectedPuzzle === "all" ? undefined : selectedPuzzle,
       method: selectedMethod === "all" ? undefined : selectedMethod,
@@ -133,12 +143,16 @@ export default function AlgorithmsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Algorithmes
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Explorez et maîtrisez les algorithmes pour tous les puzzles WCA
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+                Algorithmes
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Explorez et maîtrisez les algorithmes pour tous les puzzles WCA
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         {/* Filtres */}
@@ -205,6 +219,22 @@ export default function AlgorithmsPage() {
                         {method.name}
                       </SelectItem>
                     ))}
+                    {customMethods
+                      .filter(
+                        (m) =>
+                          selectedPuzzle === "all" ||
+                          m.puzzle_type === selectedPuzzle
+                      )
+                      .map((method) => (
+                        <SelectItem key={method.id} value={method.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{method.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              par {method.creator_username}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
 
@@ -223,6 +253,22 @@ export default function AlgorithmsPage() {
                         {set.name}
                       </SelectItem>
                     ))}
+                    {customSets
+                      .filter(
+                        (s) =>
+                          selectedMethod === "all" ||
+                          s.method_id === selectedMethod
+                      )
+                      .map((set) => (
+                        <SelectItem key={set.id} value={set.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{set.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              par {set.creator_username}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
 
@@ -271,7 +317,11 @@ export default function AlgorithmsPage() {
               {filteredAlgorithms.length !== 1 ? "s" : ""} trouvé
               {filteredAlgorithms.length !== 1 ? "s" : ""}
             </h2>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => router.push("/algos/create")}
+            >
               <BookOpen className="h-4 w-4" />
               Créer un algorithme
             </Button>
@@ -311,9 +361,9 @@ export default function AlgorithmsPage() {
                             <Badge variant="outline" className="text-xs">
                               {algo.method.toUpperCase()}
                             </Badge>
-                                                       <Badge variant="outline" className="text-xs">
-                             {algo.set_name.toUpperCase()}
-                           </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {algo.set_name.toUpperCase()}
+                            </Badge>
                             <Badge
                               className={`text-xs text-white ${getDifficultyColor(
                                 algo.difficulty

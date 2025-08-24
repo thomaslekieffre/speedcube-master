@@ -1,54 +1,131 @@
+import { supabase } from "./supabase";
+import { generateScrambleSync } from "scrambled";
+
 // Fonction pour obtenir la date du jour au format YYYY-MM-DD
 export function getTodayDate(): string {
   return new Date().toISOString().split("T")[0];
 }
 
-// Scrambles de fallback valides pour 3x3
-const FALLBACK_SCRAMBLES = [
-  "R U R' U' R' F R2 U' R' U' R U R' F'",
-  "F R U R' U' F' R U R' U' R' F R F'",
-  "R U R' U R U2 R' F R U R' U' F'",
-  "R U R' U' R' F R F' R U R' U' R' F R F'",
-  "F R U R' U' F' U F R U R' U' F'",
-  "R U R' U' R' F R F' U2 R U R' U' R' F R F'",
-  "F R U R' U' F' U2 F R U R' U' F'",
-  "R U R' U' R' F R F' R U R' U' R' F R F'",
-  "F R U R' U' F' R U R' U' R' F R F'",
-  "R U R' U R U2 R' F R U R' U' F' U2",
-  "R U R' U' R' F R F' U F R U R' U' F'",
-  "F R U R' U' F' U R U R' U' R' F R F'",
-  "R U R' U' R' F R F' R U R' U' R' F R F' U2",
-  "F R U R' U' F' U2 R U R' U' R' F R F'",
-  "R U R' U R U2 R' F R U R' U' F' U'",
-  "R U R' U' R' F R F' U' F R U R' U' F'",
-  "F R U R' U' F' U' R U R' U' R' F R F'",
-  "R U R' U' R' F R F' U2 F R U R' U' F'",
-  "F R U R' U' F' R U R' U' R' F R F' U2",
-  "R U R' U R U2 R' F R U R' U' F' U",
-];
+// Fonction pour générer un scramble officiel via la bibliothèque scrambled
+export async function generateOfficialScramble(): Promise<string> {
+  try {
+    // Utiliser la bibliothèque scrambled pour générer un scramble officiel 3x3
+    // 20 mouvements est la longueur standard pour les mélanges 3x3 officiels
+    const result = generateScrambleSync(20, 3);
+    return result.scramble;
+  } catch (error) {
+    console.error("Erreur lors de la génération du scramble officiel:", error);
 
-// Fonction pour générer un scramble basé sur une date
-export function generateDailyScramble(date: string): string {
-  // Utiliser la date comme seed pour avoir le même scramble pour la même date
-  const seed = date.replace(/-/g, "");
-  const numericSeed = parseInt(seed, 10);
+    // Fallback vers des scrambles valides si scrambled échoue
+    const FALLBACK_SCRAMBLES = [
+      "R U R' U' R' F R2 U' R' U' R U R' F'",
+      "F R U R' U' F' R U R' U' R' F R F'",
+      "R U R' U R U2 R' F R U R' U' F'",
+      "R U R' U' R' F R F' R U R' U' R' F R F'",
+      "F R U R' U' F' U F R U R' U' F'",
+      "R U R' U' R' F R F' U2 R U R' U' R' F R F'",
+      "F R U R' U' F' U2 F R U R' U' F'",
+      "R U R' U' R' F R F' R U R' U' R' F R F'",
+      "F R U R' U' F' R U R' U' R' F R F'",
+      "R U R' U R U2 R' F R U R' U' F' U2",
+      "R U R' U' R' F R F' U F R U R' U' F'",
+      "F R U R' U' F' U R U R' U' R' F R F'",
+      "R U R' U' R' F R F' R U R' U' R' F R F' U2",
+      "F R U R' U' F' U2 R U R' U' R' F R F'",
+      "R U R' U R U2 R' F R U R' U' F' U'",
+      "R U R' U' R' F R F' U' F R U R' U' F'",
+      "F R U R' U' F' U' R U R' U' R' F R F'",
+      "R U R' U' R' F R F' U2 F R U R' U' F'",
+      "F R U R' U' F' R U R' U' R' F R F' U2",
+      "R U R' U R U2 R' F R U R' U' F' U",
+      "L U L' U L U2 L' F L U L' U' F'",
+      "L U L' U' L' F L F' L U L' U' L' F L F'",
+      "F L U L' U' F' L U L' U' L' F L F'",
+      "B U B' U B U2 B' F B U B' U' F'",
+      "B U B' U' B' F B F' B U B' U' B' F B F'",
+      "F B U B' U' F' B U B' U' B' F B F'",
+    ];
 
-  // Créer un générateur de nombres pseudo-aléatoires basé sur la date
-  const seededRandom = (min: number, max: number) => {
-    const x = Math.sin(numericSeed) * 10000;
-    const random = x - Math.floor(x);
-    return Math.floor(random * (max - min + 1)) + min;
-  };
-
-  // Sélectionner un scramble de manière déterministe
-  const index = seededRandom(0, FALLBACK_SCRAMBLES.length - 1);
-  return FALLBACK_SCRAMBLES[index];
+    const randomIndex = Math.floor(Math.random() * FALLBACK_SCRAMBLES.length);
+    return FALLBACK_SCRAMBLES[randomIndex];
+  }
 }
 
-// Fonction pour obtenir le scramble du jour (synchrone)
-export function getDailyScramble(): string {
+// Fonction pour sauvegarder un scramble en base de données
+export async function saveDailyScramble(
+  date: string,
+  scramble: string
+): Promise<void> {
+  try {
+    const { error } = await supabase.from("daily_scrambles").upsert(
+      {
+        challenge_date: date,
+        scramble: scramble,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "challenge_date",
+      }
+    );
+
+    if (error) {
+      console.error("Erreur lors de la sauvegarde du scramble:", error);
+      throw error;
+    }
+  } catch (error) {
+    console.error("Erreur lors de la sauvegarde du scramble:", error);
+    throw error;
+  }
+}
+
+// Fonction pour récupérer le scramble du jour depuis la base de données
+export async function getDailyScrambleFromDB(
+  date: string
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from("daily_scrambles")
+      .select("scramble")
+      .eq("challenge_date", date)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        // Aucun scramble trouvé pour cette date
+        return null;
+      }
+      throw error;
+    }
+
+    return data.scramble;
+  } catch (error) {
+    console.error("Erreur lors de la récupération du scramble:", error);
+    return null;
+  }
+}
+
+// Fonction pour obtenir ou générer le scramble du jour
+export async function getDailyScramble(): Promise<string> {
   const today = getTodayDate();
-  return generateDailyScramble(today);
+
+  // Essayer de récupérer le scramble depuis la DB
+  let scramble = await getDailyScrambleFromDB(today);
+
+  // Si pas de scramble en DB, en générer un nouveau
+  if (!scramble) {
+    console.log("Génération d'un nouveau scramble pour", today);
+    scramble = await generateOfficialScramble();
+
+    // Sauvegarder le nouveau scramble
+    try {
+      await saveDailyScramble(today, scramble);
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde du scramble:", error);
+      // Continuer avec le scramble généré même si la sauvegarde échoue
+    }
+  }
+
+  return scramble;
 }
 
 // Fonction pour vérifier si un scramble est pour aujourd'hui
@@ -74,4 +151,22 @@ export function getTimeRemaining(): {
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
   return { hours, minutes, seconds };
+}
+
+// Fonction pour générer et sauvegarder le scramble du jour (pour les tâches cron)
+export async function generateAndSaveDailyScramble(): Promise<void> {
+  const today = getTodayDate();
+  console.log(`Génération du scramble pour ${today}`);
+
+  try {
+    const scramble = await generateOfficialScramble();
+    await saveDailyScramble(today, scramble);
+    console.log(`Scramble généré et sauvegardé pour ${today}:`, scramble);
+  } catch (error) {
+    console.error(
+      `Erreur lors de la génération du scramble pour ${today}:`,
+      error
+    );
+    throw error;
+  }
 }

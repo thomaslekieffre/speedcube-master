@@ -8,20 +8,28 @@ import { Timer, Trophy, Users, Zap } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
 import { formatTime } from "@/lib/time";
 import { useChallenge } from "@/hooks/use-challenge";
-import {
-  getTodayDate,
-  getTimeRemaining,
-  getDailyScramble,
-} from "@/lib/daily-scramble";
+import { useDailyScramble } from "@/hooks/use-daily-scramble";
+import { getTodayDate, getTimeRemaining } from "@/lib/daily-scramble";
 
 export default function ChallengePage() {
-  const [scramble, setScramble] = useState(() => getDailyScramble());
-  const [challengeDate, setChallengeDate] = useState(() => getTodayDate());
-  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [timeRemaining, setTimeRemaining] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [currentTime, setCurrentTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isInspection, setIsInspection] = useState(false);
   const [inspectionTime, setInspectionTime] = useState(15);
+
+  // Utiliser le hook pour les mélanges quotidiens
+  const {
+    scramble,
+    date: challengeDate,
+    loading: scrambleLoading,
+    error: scrambleError,
+    loadDailyScramble,
+  } = useDailyScramble();
 
   // Utiliser le hook pour la gestion des challenges
   const {
@@ -68,16 +76,11 @@ export default function ChallengePage() {
     return () => clearInterval(interval);
   }, [isRunning, isInspection]);
 
-  // Vérifier si la date a changé et mettre à jour le scramble
+  // Réinitialiser les tentatives quand la date change
   useEffect(() => {
     const today = getTodayDate();
-    if (today !== challengeDate) {
-      setChallengeDate(today);
-      setScramble(getDailyScramble());
-      // Réinitialiser les tentatives pour le nouveau jour
-      if (attempts.length > 0) {
-        resetAttempts();
-      }
+    if (challengeDate && today !== challengeDate && attempts.length > 0) {
+      resetAttempts();
     }
   }, [challengeDate, attempts.length, resetAttempts]);
 
@@ -85,7 +88,7 @@ export default function ChallengePage() {
   useEffect(() => {
     // Initialiser le temps restant côté client
     setTimeRemaining(getTimeRemaining());
-    
+
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining());
     }, 1000);
@@ -143,16 +146,6 @@ export default function ChallengePage() {
     return Math.min(...timesWithPenalties);
   };
 
-  const handleResetAttempts = async () => {
-    try {
-      await resetAttempts();
-      // Recharger le classement après réinitialisation
-      await loadLeaderboard();
-    } catch (error) {
-      console.error("Erreur lors de la réinitialisation:", error);
-    }
-  };
-
   // Gestion des touches clavier
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -199,7 +192,12 @@ export default function ChallengePage() {
             <Badge variant="outline">
               Challenge du {new Date(challengeDate).toLocaleDateString("fr-FR")}
             </Badge>
-            <Badge variant="outline">{attempts.length}/3 tentatives</Badge>
+            <Badge
+              variant="outline"
+              className={attempts.length >= 3 ? "text-red-500" : ""}
+            >
+              {attempts.length}/3 tentatives
+            </Badge>
             <Badge variant="outline" className="text-orange-500">
               {timeRemaining.hours}h {timeRemaining.minutes}m{" "}
               {timeRemaining.seconds}s
@@ -221,18 +219,34 @@ export default function ChallengePage() {
               <div>
                 <h3 className="text-sm font-medium mb-2">Scramble du jour</h3>
                 <div className="bg-muted p-4 rounded-lg font-mono text-lg text-center mb-4">
-                  {scramble}
+                  {scrambleLoading ? (
+                    <div className="text-muted-foreground">
+                      Chargement du scramble...
+                    </div>
+                  ) : scrambleError ? (
+                    <div className="text-red-500">Erreur: {scrambleError}</div>
+                  ) : (
+                    scramble
+                  )}
                 </div>
 
                 {/* Visualisation du cube */}
                 <div className="h-48 sm:h-56 lg:h-64 bg-muted/30 rounded-lg border overflow-hidden">
-                  <CubeViewer
-                    key={`${challengeDate}-${scramble}`} // Force le re-render quand la date ou le scramble change
-                    puzzleType="333"
-                    scramble={scramble}
-                    onReset={() => {}}
-                    showControls={false}
-                  />
+                  {scramble && !scrambleLoading && !scrambleError ? (
+                    <CubeViewer
+                      key={`${challengeDate}-${scramble}`} // Force le re-render quand la date ou le scramble change
+                      puzzleType="333"
+                      scramble={scramble}
+                      onReset={() => {}}
+                      showControls={false}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      {scrambleLoading
+                        ? "Chargement..."
+                        : "Scramble non disponible"}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -267,7 +281,7 @@ export default function ChallengePage() {
                       onClick={startTimer}
                       className="flex-1"
                       size="lg"
-                      disabled={loading}
+                      disabled={loading || scrambleLoading || !scramble}
                     >
                       <Zap className="h-4 w-4 mr-2" />
                       {loading ? "..." : "Commencer"}
@@ -290,15 +304,19 @@ export default function ChallengePage() {
                 </div>
 
                 {/* Indication touche espace */}
-                {!isRunning && !isInspection && attempts.length < 3 && (
-                  <div className="text-center text-xs text-muted-foreground">
-                    Appuie sur{" "}
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      Espace
-                    </kbd>{" "}
-                    pour commencer
-                  </div>
-                )}
+                {!isRunning &&
+                  !isInspection &&
+                  attempts.length < 3 &&
+                  !scrambleLoading &&
+                  scramble && (
+                    <div className="text-center text-xs text-muted-foreground">
+                      Appuie sur{" "}
+                      <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                        Espace
+                      </kbd>{" "}
+                      pour commencer
+                    </div>
+                  )}
                 {isInspection && (
                   <div className="text-center text-xs text-orange-500">
                     Appuie sur{" "}
@@ -315,20 +333,7 @@ export default function ChallengePage() {
           {/* Attempts */}
           <Card className="mb-6">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Mes tentatives</CardTitle>
-                {attempts.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetAttempts}
-                    className="text-xs"
-                    disabled={loading}
-                  >
-                    {loading ? "..." : "Réinitialiser"}
-                  </Button>
-                )}
-              </div>
+              <CardTitle>Mes tentatives</CardTitle>
             </CardHeader>
             <CardContent>
               {attempts.length === 0 ? (
@@ -337,7 +342,7 @@ export default function ChallengePage() {
                     Aucune tentative pour l'instant
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Vos tentatives seront sauvegardées automatiquement
+                    Vous avez 3 tentatives pour aujourd'hui
                   </p>
                 </div>
               ) : (
@@ -409,6 +414,13 @@ export default function ChallengePage() {
                       </div>
                     </div>
                   ))}
+                  {attempts.length >= 3 && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <div className="text-sm text-red-600 font-medium text-center">
+                        Toutes vos tentatives sont épuisées pour aujourd'hui
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {getBestTime() && (

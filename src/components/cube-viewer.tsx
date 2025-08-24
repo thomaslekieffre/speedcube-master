@@ -10,6 +10,8 @@ interface CubeViewerProps {
   onViewerReady?: (viewer: any) => void;
   showControls?: boolean; // Par défaut false
   algorithm?: string; // Pour le reset, si différent du scramble
+  fallbackOnly?: boolean; // Pour forcer l'utilisation du fallback
+  showScrambleFirst?: boolean; // Afficher d'abord le scramble, puis l'algorithme
 }
 
 // Mapping our puzzle IDs to cubing.js puzzle names
@@ -239,15 +241,29 @@ export function CubeViewer({
   onViewerReady,
   showControls = false, // Par défaut, pas de contrôles
   algorithm,
+  fallbackOnly = false, // Par défaut, utiliser le visualiseur 3D
+  showScrambleFirst = false,
 }: CubeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
   const [isReady, setIsReady] = useState(false);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+  const [hasError, setHasError] = useState(false);
+  const [currentSequence, setCurrentSequence] = useState<string>("");
+  const [isShowingScramble, setIsShowingScramble] = useState(false);
+  const initRef = useRef(false);
 
   useEffect(() => {
-    // reset le ready state à chaque changement
-    setIsReady(false);
+    // Si on force le fallback, ne pas initialiser le viewer
+    if (fallbackOnly) {
+      setHasError(false);
+      setIsReady(true);
+      return;
+    }
+
+    // Éviter les initialisations multiples
+    if (initRef.current) return;
+    initRef.current = true;
 
     if (!containerRef.current) return;
 
@@ -255,9 +271,10 @@ export function CubeViewer({
       try {
         const { TwistyPlayer } = await import("cubing/twisty");
 
-        // Nettoyer l'ancien viewer
+        // Nettoyer l'ancien viewer proprement
         if (viewerRef.current) {
           try {
+            viewerRef.current.dispose?.();
             containerRef.current?.removeChild(viewerRef.current);
           } catch {}
           viewerRef.current = null;
@@ -265,13 +282,20 @@ export function CubeViewer({
 
         const puzzleName = puzzleNameMap[puzzleType] ?? "3x3x3";
 
-        // Configuration simple du viewer
+        // Configuration simple du viewer avec gestion d'erreur WebGL
         const viewer = new TwistyPlayer({
           puzzle: puzzleName as any,
           alg: scramble || "",
           background: "none",
           controlPanel: "none",
           viewerLink: "none",
+        });
+
+        // Gestion d'erreur WebGL
+        viewer.addEventListener("error", (e: any) => {
+          console.warn("Erreur WebGL dans CubeViewer:", e);
+          setHasError(true);
+          setIsReady(true);
         });
 
         containerRef.current?.appendChild(viewer);
@@ -282,11 +306,14 @@ export function CubeViewer({
 
         // Marquer comme prêt après insertion
         setIsReady(true);
+        setHasError(false);
 
         // Notifier le parent que le viewer est prêt
         onViewerReady?.(viewer);
       } catch (error) {
         console.error("Erreur lors de l'initialisation du viewer:", error);
+        setHasError(true);
+        setIsReady(true);
       }
     };
 
@@ -295,25 +322,82 @@ export function CubeViewer({
     return () => {
       if (viewerRef.current && containerRef.current) {
         try {
+          viewerRef.current.dispose?.();
           containerRef.current.removeChild(viewerRef.current);
         } catch {}
         viewerRef.current = null;
       }
+      initRef.current = false;
     };
-  }, [puzzleType, scramble]);
+  }, [puzzleType, fallbackOnly]); // Ajouter fallbackOnly aux dépendances
 
-  // Mettre à jour le scramble quand il change
+  // Mettre à jour le scramble quand il change (avec debounce)
   useEffect(() => {
-    if (viewerRef.current && scramble) {
-      viewerRef.current.alg = scramble;
+    if (viewerRef.current && isReady) {
+      // Utiliser un timeout pour éviter les mises à jour trop fréquentes
+      const timeoutId = setTimeout(() => {
+        try {
+          if (showScrambleFirst && scramble) {
+            // Afficher d'abord le scramble
+            viewerRef.current.alg = scramble;
+            setCurrentSequence(scramble);
+            setIsShowingScramble(true);
+
+            // Après 3 secondes, afficher l'algorithme
+            setTimeout(() => {
+              if (algorithm) {
+                viewerRef.current.alg = algorithm;
+                setCurrentSequence(algorithm);
+                setIsShowingScramble(false);
+              }
+            }, 3000);
+          } else {
+            // Comportement normal
+            viewerRef.current.alg = scramble;
+            setCurrentSequence(scramble);
+            setIsShowingScramble(false);
+          }
+        } catch (error) {
+          console.warn("Erreur lors de la mise à jour du scramble:", error);
+        }
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [scramble]);
+  }, [scramble, algorithm, isReady, showScrambleFirst]);
+
+  // Composant de fallback simple
+  const FallbackViewer = () => (
+    <div className="flex items-center justify-center h-full text-muted-foreground">
+      <div className="text-center">
+        <div className="text-2xl mb-2">🎲</div>
+        <p className="text-sm font-medium">
+          {showScrambleFirst && isShowingScramble ? "Scramble" : "Notation"}
+        </p>
+        <p className="text-xs mt-1 font-mono bg-muted px-2 py-1 rounded">
+          {currentSequence || scramble || "Aucun scramble"}
+        </p>
+        {showScrambleFirst && algorithm && (
+          <p className="text-xs mt-1 text-blue-500">
+            {isShowingScramble
+              ? "→ Algorithme dans 3s"
+              : "→ Algorithme affiché"}
+          </p>
+        )}
+        <p className="text-xs mt-2 text-muted-foreground">
+          {puzzleNameMap[puzzleType] || puzzleType}
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full h-full flex flex-col">
       {/* Visualiseur spécifique pour le Clock */}
       {puzzleType === "clock" ? (
         <ClockViewer scramble={scramble} />
+      ) : fallbackOnly || hasError ? (
+        <FallbackViewer />
       ) : (
         <>
           <div

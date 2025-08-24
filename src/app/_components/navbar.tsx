@@ -10,11 +10,15 @@ import {
   LogOut,
   Settings,
   Heart,
+  Shield,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { useProfile } from "@/hooks/use-profile";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useUserRole } from "@/hooks/use-user-role";
+import { useModerationBadge } from "@/hooks/use-moderation-badge";
+import { AlgorithmNotifications } from "@/components/algorithm-notifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +31,8 @@ export function Navbar() {
   const { isSignedIn, user } = useUser();
   const { profile, loading: profileLoading } = useProfile();
   const { favorites } = useFavorites();
+  const { isModerator } = useUserRole();
+  const { pendingCount } = useModerationBadge();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -59,6 +65,14 @@ export function Navbar() {
               <span className="hidden lg:inline">Algorithmes</span>
               <span className="lg:hidden hidden sm:inline">Algos</span>
             </Link>
+            <Link
+              href="/methods"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline">Méthodes</span>
+              <span className="lg:hidden hidden sm:inline">Méthodes</span>
+            </Link>
             {isSignedIn && (
               <Link
                 href="/favorites"
@@ -73,6 +87,7 @@ export function Navbar() {
                 )}
               </Link>
             )}
+            {isSignedIn && <AlgorithmNotifications />}
             <Link
               href="/dashboard"
               className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
@@ -87,6 +102,20 @@ export function Navbar() {
               <Trophy className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Défi</span>
             </Link>
+            {isSignedIn && isModerator() && (
+              <Link
+                href="/admin/moderation"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors relative"
+              >
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Modération</span>
+                {pendingCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </div>
+                )}
+              </Link>
+            )}
             {isSignedIn && (
               <Link
                 href={`/profile/${profile?.username || "me"}`}

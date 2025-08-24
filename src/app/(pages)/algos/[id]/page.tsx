@@ -29,7 +29,6 @@ export default function AlgorithmDetailPage() {
   const [copied, setCopied] = useState(false);
   const cubeContainerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
-  const initializedRef = useRef(false);
   const currentAlgoIdRef = useRef<string | null>(null);
 
   const {
@@ -50,6 +49,24 @@ export default function AlgorithmDetailPage() {
     loadAlgorithm();
   }, [params.id, getAlgorithmById]);
 
+  // Fonction pour obtenir le nom du puzzle
+  const getPuzzleName = (puzzleType: string) => {
+    const puzzleNames: { [key: string]: any } = {
+      "333": "3x3x3",
+      "222": "2x2x2",
+      "444": "4x4x4",
+      "555": "5x5x5",
+      "666": "6x6x6",
+      "777": "7x7x7",
+      pyram: "pyraminx",
+      skewb: "skewb",
+      sq1: "square1",
+      clock: "clock",
+      minx: "megaminx",
+    };
+    return puzzleNames[puzzleType] || "3x3x3";
+  };
+
   // Initialiser le TwistyPlayer quand l'algorithme est chargé
   useEffect(() => {
     if (
@@ -65,7 +82,7 @@ export default function AlgorithmDetailPage() {
       // Importer et créer le TwistyPlayer dynamiquement
       import("cubing/twisty").then(({ TwistyPlayer }) => {
         const viewer = new TwistyPlayer({
-          puzzle: "3x3x3",
+          puzzle: getPuzzleName(algorithm.puzzle_type),
           alg: algorithm.notation,
           background: "none",
           controlPanel: "auto", // Contrôles automatiques
@@ -205,6 +222,9 @@ export default function AlgorithmDetailPage() {
             <p className="text-muted-foreground text-lg">
               {algorithm.description}
             </p>
+            <div className="text-sm text-muted-foreground mt-2">
+              Créé par {algorithm.creator_username}
+            </div>
           </div>
         </motion.div>
 
