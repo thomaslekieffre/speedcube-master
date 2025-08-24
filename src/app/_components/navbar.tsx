@@ -65,6 +65,14 @@ export function Navbar() {
               <span className="hidden lg:inline">Algorithmes</span>
               <span className="lg:hidden hidden sm:inline">Algos</span>
             </Link>
+            <Link
+              href="/methods"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline">Méthodes</span>
+              <span className="lg:hidden hidden sm:inline">Méthodes</span>
+            </Link>
             {isSignedIn && (
               <Link
                 href="/favorites"
@@ -95,18 +103,27 @@ export function Navbar() {
               <span className="hidden sm:inline">Défi</span>
             </Link>
             {isSignedIn && isModerator() && (
-              <Link
-                href="/algos/moderate"
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors relative"
-              >
-                <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Modération</span>
-                {pendingCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                    {pendingCount > 99 ? "99+" : pendingCount}
-                  </div>
-                )}
-              </Link>
+              <>
+                <Link
+                  href="/algos/moderate"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors relative"
+                >
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Modération Algos</span>
+                  {pendingCount > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </div>
+                  )}
+                </Link>
+                <Link
+                  href="/admin/methods"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors relative"
+                >
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Modération Méthodes</span>
+                </Link>
+              </>
             )}
             {isSignedIn && (
               <Link
