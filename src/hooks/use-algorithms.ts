@@ -235,7 +235,10 @@ export function useAlgorithms() {
             creatorUsername = algorithm.created_by.substring(0, 8);
           }
         } catch (profileErr) {
-          console.warn("Impossible de récupérer le nom d'utilisateur:", profileErr);
+          console.warn(
+            "Impossible de récupérer le nom d'utilisateur:",
+            profileErr
+          );
           creatorUsername = algorithm.created_by.substring(0, 8);
         }
       }
