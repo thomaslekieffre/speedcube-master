@@ -21,6 +21,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useModerationBadge } from "@/hooks/use-moderation-badge";
+import { useRevisionBadge } from "@/hooks/use-revision-badge";
 import { AlgorithmNotifications } from "@/components/algorithm-notifications";
 import {
   DropdownMenu,
@@ -36,6 +37,7 @@ export function Navbar() {
   const { favorites } = useFavorites();
   const { isModerator } = useUserRole();
   const { pendingCount } = useModerationBadge();
+  const { revisionCount, hasRevisions } = useRevisionBadge();
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -78,11 +80,16 @@ export function Navbar() {
             </Link>
             <Link
               href="/learning/review"
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors relative"
             >
               <Target className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden lg:inline">Révision</span>
               <span className="lg:hidden hidden sm:inline">Révision</span>
+              {hasRevisions && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                  {revisionCount > 99 ? "99+" : revisionCount}
+                </span>
+              )}
             </Link>
             <Link
               href="/learning/help"

@@ -13,7 +13,6 @@ import {
   XCircle,
   Eye,
   EyeOff,
-  RotateCcw,
   Trophy,
   Clock,
   Target,
@@ -144,18 +143,7 @@ export function LearningReviewCard({
         <CardContent className="space-y-4">
           {/* Visualisation du cube */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">Visualisation</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.location.reload()}
-                className="h-6 px-2"
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Reset
-              </Button>
-            </div>
+            <h4 className="text-sm font-medium">Visualisation</h4>
             <div className="h-64 bg-muted/30 rounded-lg border">
               <CubeViewer
                 scramble={notation}

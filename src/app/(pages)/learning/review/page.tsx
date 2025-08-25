@@ -18,7 +18,6 @@ import {
   CheckCircle,
   XCircle,
   ArrowLeft,
-  RefreshCw,
   Calendar,
   TrendingUp,
   HelpCircle,
@@ -70,10 +69,7 @@ export default function LearningReviewPage() {
     }
   };
 
-  const resetSession = () => {
-    setCurrentIndex(0);
-    setSessionStats({ reviewed: 0, successful: 0, failed: 0 });
-  };
+
 
   if (loading) {
     return (
@@ -321,22 +317,7 @@ export default function LearningReviewPage() {
           )}
         </AnimatePresence>
 
-        {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6 flex items-center justify-center gap-4"
-        >
-          <Button
-            variant="outline"
-            onClick={resetSession}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Recommencer la session
-          </Button>
-        </motion.div>
+
 
         {/* Statistiques globales */}
         <motion.div
