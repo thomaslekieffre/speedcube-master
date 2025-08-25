@@ -10,10 +10,17 @@ import {
   Download,
   Trash2,
   Box,
+  Move,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SolveList } from "./solve-list";
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { usePersonalBests } from "@/hooks/use-personal-bests";
@@ -53,6 +60,7 @@ export function TimerCard() {
     updateSolve,
     deleteSolve,
     clearAllSolves,
+    moveSolve,
     exportSolves,
     loading: solvesLoading,
     error: solvesError,
@@ -64,6 +72,17 @@ export function TimerCard() {
     getPersonalBest,
     refresh: refreshPersonalBests,
   } = usePersonalBests();
+
+  const {
+    sessions,
+    activeSession,
+    loading: sessionsLoading,
+  } = useSessions(selectedPuzzle);
+
+  // Filtrer les sessions disponibles pour le déplacement (exclure la session actuelle)
+  const availableSessions = sessions.filter(
+    (session) => session.id !== activeSessionId
+  );
 
   // Générer le premier scramble côté client seulement
   useEffect(() => {
@@ -292,6 +311,16 @@ export function TimerCard() {
     clearAllSolves();
     toast.success("Tous les solves supprimés");
   }, [clearAllSolves]);
+
+  const handleMoveSolve = useCallback(async (solveId: string, targetSessionId: string) => {
+    try {
+      await moveSolve(solveId, targetSessionId);
+      toast.success("Solve déplacé avec succès");
+    } catch (error) {
+      console.error("Erreur lors du déplacement:", error);
+      toast.error("Erreur lors du déplacement");
+    }
+  }, [moveSolve]);
 
   const formatTime = (ms: number) => {
     if (ms === 0) return "0.00";
@@ -742,6 +771,37 @@ export function TimerCard() {
                                       ? "+2"
                                       : solve.penalty}
                                   </Badge>
+                                )}
+                                {availableSessions.length > 0 && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 w-5 sm:h-6 sm:w-6 p-0 text-muted-foreground hover:text-foreground"
+                                      >
+                                        <Move className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                                        Déplacer vers...
+                                      </DropdownMenuItem>
+                                      {availableSessions.map((session) => (
+                                        <DropdownMenuItem
+                                          key={session.id}
+                                          onClick={() => handleMoveSolve(solve.id, session.id)}
+                                        >
+                                          {session.name}
+                                          {session.is_active && (
+                                            <Badge variant="secondary" className="ml-2 text-xs">
+                                              Active
+                                            </Badge>
+                                          )}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 )}
                                 <Button
                                   variant="ghost"

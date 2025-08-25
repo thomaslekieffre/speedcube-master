@@ -175,6 +175,34 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
     }
   };
 
+  const moveSolve = async (solveId: string, targetSessionId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("solves")
+        .update({ session_id: targetSessionId })
+        .eq("id", solveId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Erreur lors du déplacement du solve:", error);
+        throw error;
+      }
+
+      // Retirer le solve de la liste actuelle
+      setSolves((prev) => prev.filter((solve) => solve.id !== solveId));
+
+      // Notifier que des solves ont été déplacés
+      console.log("📤 Déclenchement de l'événement solves-updated (déplacement)");
+      window.dispatchEvent(new CustomEvent("solves-updated"));
+
+      return data;
+    } catch (err) {
+      console.error("Erreur lors du déplacement:", err);
+      throw err;
+    }
+  };
+
   const exportSolves = () => {
     const exportData = solves.map((solve) => ({
       ...solve,
@@ -201,6 +229,7 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
     updateSolve,
     deleteSolve,
     clearAllSolves,
+    moveSolve,
     exportSolves,
     refresh: loadSolves,
   };
