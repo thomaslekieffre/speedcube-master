@@ -186,7 +186,9 @@ export function Navbar() {
                   >
                     {(profile?.custom_avatar_url || profile?.avatar_url) && (
                       <img
-                        src={profile.custom_avatar_url || profile.avatar_url}
+                        src={
+                          profile.custom_avatar_url || profile.avatar_url || ""
+                        }
                         alt={profile.username || "Avatar"}
                         className="w-8 h-8 rounded-full object-cover border border-border"
                       />
@@ -202,7 +204,7 @@ export function Navbar() {
                   <div className="flex items-center gap-2 p-2">
                     {(profile?.custom_avatar_url || profile?.avatar_url) && (
                       <img
-                        src={profile.custom_avatar_url || profile.avatar_url}
+                        src={profile.custom_avatar_url || profile.avatar_url || ""}
                         alt={profile.username || "Avatar"}
                         className="w-8 h-8 rounded-full object-cover border border-border"
                       />
@@ -338,7 +340,7 @@ export function Navbar() {
                             profile?.avatar_url) && (
                             <img
                               src={
-                                profile.custom_avatar_url || profile.avatar_url
+                                profile.custom_avatar_url || profile.avatar_url || ""
                               }
                               alt={profile.username || "Avatar"}
                               className="w-10 h-10 rounded-full object-cover border border-border"

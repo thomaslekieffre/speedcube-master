@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
-import type { Database } from "@/lib/supabase";
+import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type InsertProfile = Database["public"]["Tables"]["profiles"]["Insert"];

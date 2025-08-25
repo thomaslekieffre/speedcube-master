@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { createSupabaseClientWithUser } from "@/lib/supabase";
-import type { Database } from "@/lib/supabase";
+import type { Database } from "@/types/database";
 
 type AlgorithmFavorite =
   Database["public"]["Tables"]["algorithm_favorites"]["Row"];
