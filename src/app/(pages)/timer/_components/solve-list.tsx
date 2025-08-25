@@ -5,15 +5,9 @@ import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { useUser } from "@clerk/nextjs";
+import type { Database } from "@/types/database";
 
-interface Solve {
-  id: string;
-  time: number;
-  penalty: "none" | "plus2" | "dnf";
-  scramble: string;
-  notes?: string;
-  created_at: string;
-}
+type Solve = Database["public"]["Tables"]["solves"]["Row"];
 
 function displayTime(s: Solve): string {
   if (s.penalty === "dnf") return "DNF";

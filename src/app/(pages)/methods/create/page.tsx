@@ -32,7 +32,7 @@ import { useUser } from "@clerk/nextjs";
 import { useCustomMethods } from "@/hooks/use-custom-methods";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { CubeViewer } from "@/components/cube-viewer";
-import { PUZZLES } from "@/components/puzzle-selector";
+import { PUZZLES, PuzzleType } from "@/components/puzzle-selector";
 import { toast } from "sonner";
 import type {
   CubeVisualizationData,
@@ -44,7 +44,7 @@ interface MethodForm {
   puzzle_type: string;
   description_markdown: string;
   cubing_notation_examples: string[];
-  cube_visualization_data: CubeVisualizationData[];
+  cube_visualization_data: CubeVisualizationData | null;
   algorithm_references: AlgorithmReference[];
   is_public: boolean;
 }
@@ -73,7 +73,7 @@ export default function CreateMethodPage() {
     puzzle_type: "333",
     description_markdown: "",
     cubing_notation_examples: [""],
-    cube_visualization_data: [],
+    cube_visualization_data: null,
     algorithm_references: [],
     is_public: true,
   });
@@ -156,9 +156,7 @@ export default function CreateMethodPage() {
   ) => {
     setForm((prev) => ({
       ...prev,
-      cube_visualization_data: prev.cube_visualization_data.map((vis, i) =>
-        i === index ? data : vis
-      ),
+      cube_visualization_data: data,
     }));
   };
 
@@ -190,10 +188,7 @@ export default function CreateMethodPage() {
         cubing_notation_example:
           form.cubing_notation_examples.filter((ex) => ex.trim()).join(" | ") ||
           undefined,
-        cube_visualization_data:
-          form.cube_visualization_data.length > 0
-            ? form.cube_visualization_data
-            : undefined,
+        cube_visualization_data: form.cube_visualization_data || undefined,
         algorithm_references:
           form.algorithm_references.length > 0
             ? form.algorithm_references
@@ -389,7 +384,7 @@ export default function CreateMethodPage() {
                           </h4>
                           <CubeViewer
                             scramble={example}
-                            puzzleType={form.puzzle_type}
+                            puzzleType={form.puzzle_type as PuzzleType}
                             onReset={() => {}}
                           />
                         </div>

@@ -117,8 +117,8 @@ export default function MethodsPage() {
   };
 
   const getPuzzleName = (puzzleType: string) => {
-    const puzzle = PUZZLES.find((p) => p.value === puzzleType);
-    return puzzle ? puzzle.label : puzzleType;
+    const puzzle = PUZZLES.find((p) => p.id === puzzleType);
+    return puzzle ? puzzle.name : puzzleType;
   };
 
   const formatDate = (dateString: string) => {
