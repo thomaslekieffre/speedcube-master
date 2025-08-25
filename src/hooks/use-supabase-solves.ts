@@ -7,7 +7,7 @@ type Solve = Database["public"]["Tables"]["solves"]["Row"];
 type InsertSolve = Database["public"]["Tables"]["solves"]["Insert"];
 type UpdateSolve = Database["public"]["Tables"]["solves"]["Update"];
 
-export function useSupabaseSolves(userId?: string) {
+export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
   const [solves, setSolves] = useState<Solve[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +25,18 @@ export function useSupabaseSolves(userId?: string) {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("solves")
         .select("*")
         .eq("user_id", targetUserId)
         .order("created_at", { ascending: false });
+
+      // Si une session est spécifiée, filtrer par session
+      if (sessionId) {
+        query = query.eq("session_id", sessionId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Erreur lors du chargement des solves:", error);
@@ -47,7 +54,7 @@ export function useSupabaseSolves(userId?: string) {
 
   useEffect(() => {
     loadSolves();
-  }, [targetUserId]);
+  }, [targetUserId, sessionId]);
 
   const addSolve = async (solve: Omit<InsertSolve, "user_id">) => {
     if (!user) {
@@ -59,6 +66,9 @@ export function useSupabaseSolves(userId?: string) {
       const newSolve = {
         ...solve,
         user_id: user.id,
+        // session_id sera géré automatiquement par le trigger SQL
+        // si sessionId est fourni, on l'utilise, sinon le trigger créera une session par défaut
+        session_id: sessionId || null,
       };
 
       const { data, error } = await supabase
@@ -79,6 +89,10 @@ export function useSupabaseSolves(userId?: string) {
       }
 
       setSolves((prev) => [data, ...prev]);
+
+      // Notifier que de nouveaux solves ont été ajoutés
+      window.dispatchEvent(new CustomEvent("solves-updated"));
+
       return data;
     } catch (err) {
       console.error("Erreur lors de l'ajout du solve:", err);

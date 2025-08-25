@@ -2,10 +2,40 @@ export interface Database {
   public: {
     Tables: {
       // Tables existantes
+      sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          puzzle_type: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          puzzle_type: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          puzzle_type?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       solves: {
         Row: {
           id: string;
           user_id: string;
+          session_id: string | null;
           puzzle_type: string;
           time: number;
           penalty: string;
@@ -16,6 +46,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          session_id?: string | null;
           puzzle_type: string;
           time: number;
           penalty: string;
@@ -26,6 +57,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          session_id?: string | null;
           puzzle_type?: string;
           time?: number;
           penalty?: string;
