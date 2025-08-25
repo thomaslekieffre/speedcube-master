@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import type {
@@ -42,39 +42,42 @@ export function useCustomMethods() {
 
   // Fonction utilitaire pour obtenir l'ID utilisateur
   const getUserId = useCallback((): string => {
-    if (!user) throw new Error("Utilisateur non connecté");
+    if (!user?.id) throw new Error("Utilisateur non connecté");
     return user.id;
-  }, [user]);
+  }, [user?.id]);
 
   // Charger toutes les méthodes (selon le rôle de l'utilisateur)
   const loadMethods = useCallback(async () => {
+    if (!user?.id) {
+      setMethods([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+
+      const supabase = createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("custom_methods")
         .select("*")
         .order("created_at", { ascending: false });
 
-      // Si l'utilisateur n'est pas connecté, ne montrer que les méthodes approuvées et publiques
-      if (!user) {
-        query = query.eq("status", "approved").eq("is_public", true);
-      } else {
-        // Vérifier le rôle de l'utilisateur
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
+      // Vérifier le rôle de l'utilisateur
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
 
-        if (roleData?.role === "moderator" || roleData?.role === "admin") {
-          // Les modérateurs voient toutes les méthodes
-          query = query.or("status.eq.approved,status.eq.pending");
-        } else {
-          // Les utilisateurs normaux voient seulement les méthodes approuvées et publiques
-          query = query.eq("status", "approved").eq("is_public", true);
-        }
+      if (roleData?.role === "moderator" || roleData?.role === "admin") {
+        // Les modérateurs voient toutes les méthodes
+        query = query.or("status.eq.approved,status.eq.pending");
+      } else {
+        // Les utilisateurs normaux voient seulement les méthodes approuvées et publiques
+        query = query.eq("status", "approved").eq("is_public", true);
       }
 
       const { data, error } = await query;
@@ -87,30 +90,33 @@ export function useCustomMethods() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Charger les sets
   const loadSets = useCallback(async () => {
+    if (!user?.id) {
+      setSets([]);
+      return;
+    }
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       let query = supabase
         .from("custom_sets")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (!user) {
-        query = query.eq("status", "approved").eq("is_public", true);
-      } else {
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
 
-        if (roleData?.role === "moderator" || roleData?.role === "admin") {
-          query = query.or("status.eq.approved,status.eq.pending");
-        } else {
-          query = query.eq("status", "approved").eq("is_public", true);
-        }
+      if (roleData?.role === "moderator" || roleData?.role === "admin") {
+        query = query.or("status.eq.approved,status.eq.pending");
+      } else {
+        query = query.eq("status", "approved").eq("is_public", true);
       }
 
       const { data, error } = await query;
@@ -119,7 +125,7 @@ export function useCustomMethods() {
     } catch (err) {
       console.error("Erreur lors du chargement des sets:", err);
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Charger les méthodes au montage
   useEffect(() => {
@@ -130,13 +136,14 @@ export function useCustomMethods() {
   // Créer une nouvelle méthode
   const createMethod = useCallback(
     async (methodData: CreateMethodData): Promise<CustomMethod | null> => {
-      if (!user) {
+      if (!user?.id) {
         toast.error("Vous devez être connecté pour créer une méthode");
         return null;
       }
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
 
         const { data, error } = await supabase
           .from("custom_methods")
@@ -161,7 +168,7 @@ export function useCustomMethods() {
         return null;
       }
     },
-    [user, loadMethods, getUserId]
+    [user?.id, loadMethods, getUserId]
   );
 
   // Mettre à jour une méthode
@@ -170,13 +177,14 @@ export function useCustomMethods() {
       methodId: string,
       updateData: UpdateMethodData
     ): Promise<boolean> => {
-      if (!user) {
+      if (!user?.id) {
         toast.error("Vous devez être connecté pour modifier une méthode");
         return false;
       }
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -195,19 +203,20 @@ export function useCustomMethods() {
         return false;
       }
     },
-    [user, loadMethods, getUserId]
+    [user?.id, loadMethods, getUserId]
   );
 
   // Supprimer une méthode
   const deleteMethod = useCallback(
     async (methodId: string): Promise<boolean> => {
-      if (!user) {
+      if (!user?.id) {
         toast.error("Vous devez être connecté pour supprimer une méthode");
         return false;
       }
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -226,13 +235,17 @@ export function useCustomMethods() {
         return false;
       }
     },
-    [user, loadMethods, getUserId]
+    [user?.id, loadMethods, getUserId]
   );
 
   // Obtenir une méthode par ID
   const getMethodById = useCallback(
     async (methodId: string): Promise<CustomMethod | null> => {
+      if (!user?.id) return null;
+
       try {
+        const supabase = createSupabaseClientWithUser(user.id);
+
         const { data, error } = await supabase
           .from("custom_methods")
           .select("*")
@@ -246,7 +259,7 @@ export function useCustomMethods() {
         return null;
       }
     },
-    []
+    [user?.id]
   );
 
   // Filtrer les méthodes
@@ -287,10 +300,11 @@ export function useCustomMethods() {
   // Fonctions de modération (pour les modérateurs)
   const approveMethod = useCallback(
     async (methodId: string): Promise<boolean> => {
-      if (!user) return false;
+      if (!user?.id) return false;
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -312,15 +326,16 @@ export function useCustomMethods() {
         return false;
       }
     },
-    [user, loadMethods, getUserId]
+    [user?.id, loadMethods, getUserId]
   );
 
   const rejectMethod = useCallback(
     async (methodId: string, reason: string): Promise<boolean> => {
-      if (!user) return false;
+      if (!user?.id) return false;
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -343,12 +358,16 @@ export function useCustomMethods() {
         return false;
       }
     },
-    [user, loadMethods, getUserId]
+    [user?.id, loadMethods, getUserId]
   );
 
   // Charger les méthodes en attente de modération
   const loadPendingMethods = useCallback(async (): Promise<CustomMethod[]> => {
+    if (!user?.id) return [];
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("custom_methods")
         .select("*")
@@ -361,7 +380,7 @@ export function useCustomMethods() {
       console.error("Erreur lors du chargement des méthodes en attente:", err);
       return [];
     }
-  }, []);
+  }, [user?.id]);
 
   // Créer une notification de modération
   const createModerationNotification = useCallback(
@@ -370,10 +389,11 @@ export function useCustomMethods() {
       type: "report" | "review_needed" | "approval_request",
       message?: string
     ): Promise<boolean> => {
-      if (!user) return false;
+      if (!user?.id) return false;
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("method_moderation_notifications")
@@ -394,7 +414,7 @@ export function useCustomMethods() {
         return false;
       }
     },
-    [user, getUserId]
+    [user?.id, getUserId]
   );
 
   return {

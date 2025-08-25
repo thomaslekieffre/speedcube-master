@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import type { Database } from "@/lib/supabase";
 
@@ -26,6 +26,10 @@ export function usePersonalBests(userId?: string) {
 
     try {
       setLoading(true);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(targetUserId);
+
       const { data, error } = await supabase
         .from("personal_bests")
         .select("*")
@@ -59,6 +63,9 @@ export function usePersonalBests(userId?: string) {
     if (!user) return;
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       // Vérifier si un PB existe déjà pour ce puzzle
       const existingPB = personalBests.find(
         (pb) => pb.puzzle_type === puzzleType
@@ -123,6 +130,9 @@ export function usePersonalBests(userId?: string) {
     if (!user) return;
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const existingPB = personalBests.find(
         (pb) => pb.puzzle_type === puzzleType
       );

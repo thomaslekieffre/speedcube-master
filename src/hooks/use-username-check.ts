@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 
 export function useUsernameCheck() {
@@ -14,8 +14,15 @@ export function useUsernameCheck() {
         return;
       }
 
+      if (!user?.id) {
+        setIsAvailable(false);
+        return;
+      }
+
       setChecking(true);
       try {
+        const supabase = createSupabaseClientWithUser(user.id);
+
         const { data, error } = await supabase
           .from("profiles")
           .select("id, username")
@@ -27,7 +34,7 @@ export function useUsernameCheck() {
           setIsAvailable(true);
         } else if (data) {
           // Username existe déjà
-          if (data.id === user?.id) {
+          if (data.id === user.id) {
             // C'est le même utilisateur, donc c'est "disponible" pour lui
             setIsAvailable(true);
           } else {

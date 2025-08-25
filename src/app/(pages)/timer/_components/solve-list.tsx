@@ -3,32 +3,50 @@
 import { formatTime } from "@/lib/time";
 import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
-import { Solve, useSolves } from "../_hooks/use-solves";
+import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
+import { useUser } from "@clerk/nextjs";
+
+interface Solve {
+  id: string;
+  time: number;
+  penalty: "none" | "plus2" | "dnf";
+  scramble: string;
+  notes?: string;
+  created_at: string;
+}
 
 function displayTime(s: Solve): string {
-  if (s.penalty === "DNF") return "DNF";
-  const base = s.timeMs;
-  const extra = s.penalty === "+2" ? 2000 : 0;
+  if (s.penalty === "dnf") return "DNF";
+  const base = s.time;
+  const extra = s.penalty === "plus2" ? 2000 : 0;
   return formatTime(base + extra);
 }
 
 export function SolveList() {
-  const { solves, clearAll } = useSolves();
+  const { user } = useUser();
+  const { solves, clearAllSolves, loading } = useSupabaseSolves(user?.id);
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Session</h2>
-          <Button variant="outline" className="h-8 px-3" onClick={clearAll}>
+          <Button
+            variant="outline"
+            className="h-8 px-3"
+            onClick={clearAllSolves}
+            disabled={loading}
+          >
             Effacer la session
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {solves.length === 0 ? (
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Chargement...</p>
+        ) : solves.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Aucun solve pour l’instant.
+            Aucun solve pour l'instant.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -46,9 +64,15 @@ export function SolveList() {
                 {solves.map((s) => (
                   <tr key={s.id} className="border-t border-border/60">
                     <td className="py-2 font-mono">{displayTime(s)}</td>
-                    <td className="py-2">{s.penalty}</td>
                     <td className="py-2">
-                      {new Date(s.createdAt).toLocaleString()}
+                      {s.penalty === "none"
+                        ? "OK"
+                        : s.penalty === "plus2"
+                        ? "+2"
+                        : "DNF"}
+                    </td>
+                    <td className="py-2">
+                      {new Date(s.created_at).toLocaleString()}
                     </td>
                     <td className="py-2 whitespace-pre-wrap break-words text-muted-foreground">
                       {s.scramble}

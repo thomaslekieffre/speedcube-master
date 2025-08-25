@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
@@ -32,7 +32,7 @@ export function useLearningSystem() {
   const getUserId = useCallback((): string => {
     // Utiliser l'ID utilisateur connecté ou l'ID par défaut pour les tests
     return user?.id || DEFAULT_USER_ID;
-  }, [user]);
+  }, [user?.id]);
 
   // Charger les données d'apprentissage de l'utilisateur
   const loadLearningData = useCallback(async () => {
@@ -41,6 +41,7 @@ export function useLearningSystem() {
     try {
       setLoading(true);
       const userId = getUserId();
+      const supabase = createSupabaseClientWithUser(userId);
 
       // Charger les algorithmes en cours d'apprentissage avec les détails des algorithmes
       const { data: learningData, error: learningError } = await supabase
@@ -94,12 +95,13 @@ export function useLearningSystem() {
     } finally {
       setLoading(false);
     }
-  }, [user, getUserId]);
+  }, [user?.id, getUserId]);
 
   // Générer les recommandations d'algorithmes
   const generateRecommendations = useCallback(
     async (userId: string, currentLearning: AlgorithmLearningWithDetails[]) => {
       try {
+        const supabase = createSupabaseClientWithUser(userId);
         const today = new Date().toISOString().split("T")[0];
         const recommendations: AlgorithmRecommendation[] = [];
 
@@ -150,6 +152,7 @@ export function useLearningSystem() {
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
         const today = new Date().toISOString();
 
         // Insérer l'algorithme dans la liste d'apprentissage
@@ -196,7 +199,7 @@ export function useLearningSystem() {
         toast.error("Erreur lors de l'ajout à l'apprentissage");
       }
     },
-    [user, getUserId]
+    [user?.id, getUserId]
   );
 
   // Marquer un algorithme comme révisé
@@ -206,6 +209,7 @@ export function useLearningSystem() {
 
       try {
         const userId = getUserId();
+        const supabase = createSupabaseClientWithUser(userId);
         const today = new Date().toISOString();
 
         // Trouver l'entrée d'apprentissage
@@ -280,7 +284,7 @@ export function useLearningSystem() {
         toast.error("Erreur lors de la révision");
       }
     },
-    [user, getUserId, learningData]
+    [user?.id, getUserId, learningData]
   );
 
   // Calculer la prochaine date de révision (spaced repetition)

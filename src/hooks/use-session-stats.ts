@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 
 export interface SessionStats {
@@ -30,6 +30,9 @@ export function useSessionStats(puzzleType?: string) {
 
     try {
       setLoading(true);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("session_stats")
@@ -64,12 +67,16 @@ export function useSessionStats(puzzleType?: string) {
   // Écouter les mises à jour de solves et de sessions pour rafraîchir les stats
   useEffect(() => {
     const handleSolvesUpdated = () => {
-      console.log("🔄 Événement solves-updated reçu, rechargement des stats...");
+      console.log(
+        "🔄 Événement solves-updated reçu, rechargement des stats..."
+      );
       loadSessionStats();
     };
 
     const handleSessionsUpdated = () => {
-      console.log("🔄 Événement sessions-updated reçu, rechargement des stats...");
+      console.log(
+        "🔄 Événement sessions-updated reçu, rechargement des stats..."
+      );
       loadSessionStats();
     };
 

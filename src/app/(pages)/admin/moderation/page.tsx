@@ -29,7 +29,8 @@ import {
 import { useUserRole } from "@/hooks/use-user-role";
 import { useCustomMethods } from "@/hooks/use-custom-methods";
 import { useCustomAlgorithms } from "@/hooks/use-custom-algorithms";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
+import { useUser } from "@clerk/nextjs";
 import { PUZZLES } from "@/components/puzzle-selector";
 import { toast } from "sonner";
 
@@ -49,6 +50,7 @@ const PUZZLE_TYPES = [
 ];
 
 export default function ModerationPage() {
+  const { user } = useUser();
   const { role: userRole } = useUserRole();
   const { approveMethod, rejectMethod } = useCustomMethods();
   const { approveAlgorithm, rejectAlgorithm } = useCustomAlgorithms();
@@ -65,8 +67,14 @@ export default function ModerationPage() {
 
   // Fonctions de chargement directes (pour éviter les conflits avec les hooks)
   const loadPendingMethodsDirect = async () => {
+    if (!user?.id) return [];
+
     try {
       console.log("🔍 loadPendingMethodsDirect: Début de la requête...");
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("custom_methods")
         .select("*")
@@ -90,8 +98,14 @@ export default function ModerationPage() {
   };
 
   const loadPendingAlgorithmsDirect = async () => {
+    if (!user?.id) return [];
+
     try {
       console.log("🔍 loadPendingAlgorithmsDirect: Début de la requête...");
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithms")
         .select("*")
@@ -117,6 +131,8 @@ export default function ModerationPage() {
   // Charger les données
   useEffect(() => {
     const loadData = async () => {
+      if (!user?.id) return;
+
       setLoading(true);
       try {
         console.log("🔄 Début du chargement des données de modération...");
@@ -143,7 +159,7 @@ export default function ModerationPage() {
       }
     };
     loadData();
-  }, []); // Dépendances vides pour éviter les rechargements
+  }, [user?.id]); // Dépendance sur user.id
 
   // Vérifier l'accès après tous les hooks
   if (userRole !== "admin" && userRole !== "moderator") {
@@ -158,6 +174,9 @@ export default function ModerationPage() {
             <p className="text-muted-foreground">
               Vous n'avez pas les permissions nécessaires pour accéder à cette
               page.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Rôle actuel: {userRole}
             </p>
           </div>
         </div>

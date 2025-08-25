@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 
 export interface Algorithm {
@@ -44,37 +44,41 @@ export function useAlgorithms() {
 
   // Charger tous les algorithmes (seulement les approuvés pour les utilisateurs normaux)
   const loadAlgorithms = async () => {
+    if (!user?.id) {
+      setAlgorithms([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("algorithms")
         .select("*")
         .order("created_at", { ascending: false });
 
-      // Si l'utilisateur n'est pas connecté, ne montrer que les algorithmes approuvés
-      if (!user) {
+      // Vérifier le rôle de l'utilisateur
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
+      if (roleData?.role === "moderator" || roleData?.role === "admin") {
+        // Les modérateurs ne voient que les algorithmes approuvés dans /algos
+        // (les algorithmes en attente sont visibles uniquement dans /algos/moderate)
         query = query.eq("status", "approved");
       } else {
-        // Vérifier le rôle de l'utilisateur
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
-
-        if (roleData?.role === "moderator" || roleData?.role === "admin") {
-          // Les modérateurs ne voient que les algorithmes approuvés dans /algos
-          // (les algorithmes en attente sont visibles uniquement dans /algos/moderate)
-          query = query.eq("status", "approved");
-        } else {
-          // Les utilisateurs normaux ne voient que les algorithmes approuvés
-          // ET leurs propres algorithmes en attente (mais pas les rejetés)
-          query = query.or(
-            `status.eq.approved,and(created_by.eq.${user.id},status.eq.pending)`
-          );
-        }
+        // Les utilisateurs normaux ne voient que les algorithmes approuvés
+        // ET leurs propres algorithmes en attente (mais pas les rejetés)
+        query = query.or(
+          `status.eq.approved,and(created_by.eq.${user.id},status.eq.pending)`
+        );
       }
 
       const { data, error } = await query;
@@ -92,7 +96,7 @@ export function useAlgorithms() {
   // Charger les algorithmes au montage
   useEffect(() => {
     loadAlgorithms();
-  }, []);
+  }, [user?.id]);
 
   // Filtrer les algorithmes
   const filterAlgorithms = (
@@ -147,9 +151,11 @@ export function useAlgorithms() {
       "id" | "created_at" | "updated_at" | "status" | "created_by"
     >
   ) => {
-    if (!user) throw new Error("Utilisateur non connecté");
+    if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithms")
         .insert({
@@ -172,7 +178,11 @@ export function useAlgorithms() {
 
   // Mettre à jour un algorithme
   const updateAlgorithm = async (id: string, updates: Partial<Algorithm>) => {
+    if (!user?.id) throw new Error("Utilisateur non connecté");
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithms")
         .update(updates)
@@ -194,7 +204,11 @@ export function useAlgorithms() {
 
   // Supprimer un algorithme
   const deleteAlgorithm = async (id: string) => {
+    if (!user?.id) throw new Error("Utilisateur non connecté");
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { error } = await supabase.from("algorithms").delete().eq("id", id);
 
       if (error) throw error;
@@ -208,7 +222,11 @@ export function useAlgorithms() {
 
   // Obtenir un algorithme par ID
   const getAlgorithmById = async (id: string): Promise<Algorithm | null> => {
+    if (!user?.id) return null;
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       // D'abord récupérer l'algorithme
       const { data: algorithm, error: algorithmError } = await supabase
         .from("algorithms")
@@ -258,9 +276,11 @@ export function useAlgorithms() {
 
   // Fonctions de modération (pour les modérateurs)
   const approveAlgorithm = async (algorithmId: string) => {
-    if (!user) throw new Error("Utilisateur non connecté");
+    if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithms")
         .update({
@@ -285,9 +305,11 @@ export function useAlgorithms() {
   };
 
   const rejectAlgorithm = async (algorithmId: string, reason: string) => {
-    if (!user) throw new Error("Utilisateur non connecté");
+    if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithms")
         .update({
@@ -314,7 +336,11 @@ export function useAlgorithms() {
 
   // Charger les algorithmes en attente de modération
   const loadPendingAlgorithms = async () => {
+    if (!user?.id) return [];
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithms")
         .select("*")
@@ -334,7 +360,11 @@ export function useAlgorithms() {
 
   // Compter les algorithmes en attente (pour le badge de modération)
   const countPendingAlgorithms = async (): Promise<number> => {
+    if (!user?.id) return 0;
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { count, error } = await supabase
         .from("algorithms")
         .select("*", { count: "exact", head: true })

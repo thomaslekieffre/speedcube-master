@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import type { Database } from "@/lib/supabase";
 
@@ -24,6 +24,9 @@ export function useSessions(puzzleType?: string) {
 
     try {
       setLoading(true);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("sessions")
@@ -65,6 +68,9 @@ export function useSessions(puzzleType?: string) {
     }
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       // Désactiver toutes les autres sessions pour ce puzzle
       await supabase
         .from("sessions")
@@ -111,6 +117,9 @@ export function useSessions(puzzleType?: string) {
     if (!user?.id) return;
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       // Désactiver toutes les autres sessions pour ce puzzle
       const sessionToActivate = sessions.find((s) => s.id === sessionId);
       if (sessionToActivate) {
@@ -156,7 +165,12 @@ export function useSessions(puzzleType?: string) {
   };
 
   const updateSession = async (sessionId: string, updates: UpdateSession) => {
+    if (!user?.id) return;
+
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("sessions")
         .update(updates)
@@ -165,7 +179,7 @@ export function useSessions(puzzleType?: string) {
         .single();
 
       if (error) {
-        console.error("Erreur lors de la mise à jour:", error);
+        console.error("Erreur lors de la mise à jour de la session:", error);
         throw error;
       }
 
@@ -177,38 +191,35 @@ export function useSessions(puzzleType?: string) {
         setActiveSession(data);
       }
 
-      // Déclencher une mise à jour des stats après modification
-      console.log(
-        "📤 Déclenchement de l'événement sessions-updated (modification)"
-      );
-      window.dispatchEvent(new CustomEvent("sessions-updated"));
-
       return data;
     } catch (err) {
-      console.error("Erreur lors de la mise à jour:", err);
+      console.error("Erreur lors de la mise à jour de la session:", err);
       throw err;
     }
   };
 
   const deleteSession = async (sessionId: string) => {
+    if (!user?.id) return;
+
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { error } = await supabase
         .from("sessions")
         .delete()
         .eq("id", sessionId);
 
       if (error) {
-        console.error("Erreur lors de la suppression:", error);
+        console.error("Erreur lors de la suppression de la session:", error);
         throw error;
       }
 
       setSessions((prev) => prev.filter((session) => session.id !== sessionId));
 
-      // Si on supprime la session active, la première session devient active
+      // Si la session supprimée était active, réactiver la première session disponible
       if (activeSession?.id === sessionId) {
-        const remainingSessions = sessions.filter(
-          (session) => session.id !== sessionId
-        );
+        const remainingSessions = sessions.filter((s) => s.id !== sessionId);
         if (remainingSessions.length > 0) {
           await activateSession(remainingSessions[0].id);
         } else {
@@ -222,7 +233,7 @@ export function useSessions(puzzleType?: string) {
       );
       window.dispatchEvent(new CustomEvent("sessions-updated"));
     } catch (err) {
-      console.error("Erreur lors de la suppression:", err);
+      console.error("Erreur lors de la suppression de la session:", err);
       throw err;
     }
   };
@@ -246,7 +257,6 @@ export function useSessions(puzzleType?: string) {
     activateSession,
     updateSession,
     deleteSession,
-    getSessionStats,
     refresh: loadSessions,
   };
 }
