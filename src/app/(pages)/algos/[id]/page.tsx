@@ -174,59 +174,81 @@ export default function AlgorithmDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <Button
               variant="ghost"
               onClick={() => router.push("/algos")}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Retour aux algorithmes
+              <span className="hidden sm:inline">Retour aux algorithmes</span>
+              <span className="sm:hidden">Retour</span>
             </Button>
-            <Button
-              variant="ghost"
-              onClick={handleToggleFavorite}
-              disabled={favoritesLoading}
-              className={`flex items-center gap-2 ${
-                algorithm && isFavorite(algorithm.id)
-                  ? "text-yellow-500"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <Star
-                className={`h-4 w-4 ${
-                  algorithm && isFavorite(algorithm.id) ? "fill-current" : ""
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
+              <Button
+                variant="ghost"
+                onClick={handleToggleFavorite}
+                disabled={favoritesLoading}
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-sm ${
+                  algorithm && isFavorite(algorithm.id)
+                    ? "text-yellow-500"
+                    : "text-muted-foreground"
                 }`}
-              />
-              {algorithm && isFavorite(algorithm.id)
-                ? "Favori"
-                : "Ajouter aux favoris"}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => algorithm && addToLearning(algorithm.id)}
-              className={`flex items-center gap-2 ${
-                algorithm &&
-                learningData.some((item) => item.algorithm_id === algorithm.id)
-                  ? "text-green-500"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <GraduationCap
-                className={`h-4 w-4 ${
+              >
+                <Star
+                  className={`h-4 w-4 flex-shrink-0 ${
+                    algorithm && isFavorite(algorithm.id) ? "fill-current" : ""
+                  }`}
+                />
+                <span className="hidden sm:inline">
+                  {algorithm && isFavorite(algorithm.id)
+                    ? "Favori"
+                    : "Ajouter aux favoris"}
+                </span>
+                <span className="sm:hidden">
+                  {algorithm && isFavorite(algorithm.id) ? "Favori" : "Favoris"}
+                </span>
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => algorithm && addToLearning(algorithm.id)}
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-sm ${
                   algorithm &&
                   learningData.some(
                     (item) => item.algorithm_id === algorithm.id
                   )
-                    ? "fill-current"
-                    : ""
+                    ? "text-green-500"
+                    : "text-muted-foreground"
                 }`}
-              />
-              {algorithm &&
-              learningData.some((item) => item.algorithm_id === algorithm.id)
-                ? "En apprentissage"
-                : "Ajouter à l'apprentissage"}
-            </Button>
+              >
+                <GraduationCap
+                  className={`h-4 w-4 flex-shrink-0 ${
+                    algorithm &&
+                    learningData.some(
+                      (item) => item.algorithm_id === algorithm.id
+                    )
+                      ? "fill-current"
+                      : ""
+                  }`}
+                />
+                <span className="hidden sm:inline">
+                  {algorithm &&
+                  learningData.some(
+                    (item) => item.algorithm_id === algorithm.id
+                  )
+                    ? "En apprentissage"
+                    : "Ajouter à l'apprentissage"}
+                </span>
+                <span className="sm:hidden">
+                  {algorithm &&
+                  learningData.some(
+                    (item) => item.algorithm_id === algorithm.id
+                  )
+                    ? "Appris"
+                    : "Apprendre"}
+                </span>
+              </Button>
+            </div>
           </div>
 
           {/* Titre et badges */}
