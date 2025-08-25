@@ -91,6 +91,7 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       setSolves((prev) => [data, ...prev]);
 
       // Notifier que de nouveaux solves ont été ajoutés
+      console.log("📤 Déclenchement de l'événement solves-updated (ajout)");
       window.dispatchEvent(new CustomEvent("solves-updated"));
 
       return data;
@@ -117,6 +118,11 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       setSolves((prev) =>
         prev.map((solve) => (solve.id === id ? data : solve))
       );
+
+      // Notifier que des solves ont été mis à jour
+      console.log("📤 Déclenchement de l'événement solves-updated (mise à jour)");
+      window.dispatchEvent(new CustomEvent("solves-updated"));
+
       return data;
     } catch (err) {
       console.error("Erreur lors de la mise à jour:", err);
@@ -134,6 +140,10 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       }
 
       setSolves((prev) => prev.filter((solve) => solve.id !== id));
+
+      // Notifier que des solves ont été supprimés
+      console.log("📤 Déclenchement de l'événement solves-updated (suppression)");
+      window.dispatchEvent(new CustomEvent("solves-updated"));
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
       throw err;
@@ -155,6 +165,10 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       }
 
       setSolves([]);
+
+      // Notifier que tous les solves ont été supprimés
+      console.log("📤 Déclenchement de l'événement solves-updated (clear all)");
+      window.dispatchEvent(new CustomEvent("solves-updated"));
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
       throw err;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Settings, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,8 @@ export function SessionManager({
   const [newSessionName, setNewSessionName] = useState("");
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const createInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const {
     sessions,
@@ -63,7 +65,6 @@ export function SessionManager({
       setIsCreateDialogOpen(false);
       toast.success("Session créée avec succès");
       onSessionChange?.(activeSession?.id || null);
-      refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de la création de la session:", error);
       toast.error("Erreur lors de la création de la session");
@@ -75,7 +76,6 @@ export function SessionManager({
       await activateSession(sessionId);
       toast.success("Session activée");
       onSessionChange?.(sessionId);
-      refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de l'activation de la session:", error);
       toast.error("Erreur lors de l'activation de la session");
@@ -93,7 +93,6 @@ export function SessionManager({
       setIsEditing(null);
       setEditName("");
       toast.success("Session mise à jour");
-      refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la session:", error);
       toast.error("Erreur lors de la mise à jour de la session");
@@ -105,7 +104,6 @@ export function SessionManager({
       await deleteSession(sessionId);
       toast.success("Session supprimée");
       onSessionChange?.(activeSession?.id || null);
-      refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de la suppression de la session:", error);
       toast.error("Erreur lors de la suppression de la session");
@@ -136,6 +134,26 @@ export function SessionManager({
   const getSessionStats = (sessionId: string) => {
     return sessionStats.find((stats) => stats.session_id === sessionId);
   };
+
+  // Empêcher le timer de se déclencher quand on tape dans les champs de saisie
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Si on est dans un champ de saisie et qu'on appuie sur espace
+      if (
+        e.key === " " &&
+        (document.activeElement === createInputRef.current ||
+          document.activeElement === editInputRef.current)
+      ) {
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown, true);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -178,6 +196,7 @@ export function SessionManager({
               <div>
                 <label className="text-sm font-medium">Nom de la session</label>
                 <Input
+                  ref={createInputRef}
                   value={newSessionName}
                   onChange={(e) => setNewSessionName(e.target.value)}
                   placeholder="Ex: Session matin, Compétition, etc."
@@ -185,15 +204,6 @@ export function SessionManager({
                     if (e.key === "Enter") {
                       e.preventDefault();
                       handleCreateSession();
-                    } else if (e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }
-                  }}
-                  onKeyUp={(e) => {
-                    if (e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
                     }
                   }}
                 />
@@ -241,6 +251,7 @@ export function SessionManager({
 
                     {isEditing === session.id ? (
                       <Input
+                        ref={editInputRef}
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className="flex-1 text-sm"
@@ -251,15 +262,6 @@ export function SessionManager({
                           } else if (e.key === "Escape") {
                             e.preventDefault();
                             cancelEditing();
-                          } else if (e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }
-                        }}
-                        onKeyUp={(e) => {
-                          if (e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
                           }
                         }}
                         autoFocus

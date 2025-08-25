@@ -61,16 +61,24 @@ export function useSessionStats(puzzleType?: string) {
     loadSessionStats();
   }, [user?.id, puzzleType]);
 
-  // Écouter les mises à jour de solves pour rafraîchir les stats
+  // Écouter les mises à jour de solves et de sessions pour rafraîchir les stats
   useEffect(() => {
     const handleSolvesUpdated = () => {
+      console.log("🔄 Événement solves-updated reçu, rechargement des stats...");
+      loadSessionStats();
+    };
+
+    const handleSessionsUpdated = () => {
+      console.log("🔄 Événement sessions-updated reçu, rechargement des stats...");
       loadSessionStats();
     };
 
     window.addEventListener("solves-updated", handleSolvesUpdated);
+    window.addEventListener("sessions-updated", handleSessionsUpdated);
 
     return () => {
       window.removeEventListener("solves-updated", handleSolvesUpdated);
+      window.removeEventListener("sessions-updated", handleSessionsUpdated);
     };
   }, []);
 

@@ -93,6 +93,13 @@ export function useSessions(puzzleType?: string) {
 
       setSessions((prev) => [data, ...prev]);
       setActiveSession(data);
+
+      // Déclencher une mise à jour des stats après création
+      console.log(
+        "📤 Déclenchement de l'événement sessions-updated (création)"
+      );
+      window.dispatchEvent(new CustomEvent("sessions-updated"));
+
       return data;
     } catch (err) {
       console.error("Erreur lors de la création de la session:", err);
@@ -134,6 +141,13 @@ export function useSessions(puzzleType?: string) {
         }))
       );
       setActiveSession(data);
+
+      // Déclencher une mise à jour des stats après activation
+      console.log(
+        "📤 Déclenchement de l'événement sessions-updated (activation)"
+      );
+      window.dispatchEvent(new CustomEvent("sessions-updated"));
+
       return data;
     } catch (err) {
       console.error("Erreur lors de l'activation de la session:", err);
@@ -162,6 +176,12 @@ export function useSessions(puzzleType?: string) {
       if (data.is_active) {
         setActiveSession(data);
       }
+
+      // Déclencher une mise à jour des stats après modification
+      console.log(
+        "📤 Déclenchement de l'événement sessions-updated (modification)"
+      );
+      window.dispatchEvent(new CustomEvent("sessions-updated"));
 
       return data;
     } catch (err) {
@@ -195,6 +215,12 @@ export function useSessions(puzzleType?: string) {
           setActiveSession(null);
         }
       }
+
+      // Déclencher une mise à jour des stats après suppression
+      console.log(
+        "📤 Déclenchement de l'événement sessions-updated (suppression)"
+      );
+      window.dispatchEvent(new CustomEvent("sessions-updated"));
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
       throw err;
