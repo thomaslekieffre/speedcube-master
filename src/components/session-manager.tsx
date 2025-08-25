@@ -65,6 +65,7 @@ export function SessionManager({
       setIsCreateDialogOpen(false);
       toast.success("Session créée avec succès");
       onSessionChange?.(activeSession?.id || null);
+
       // Rafraîchir les statistiques après la création de session
       await refreshSessionStats();
     } catch (error) {
@@ -78,6 +79,7 @@ export function SessionManager({
       await activateSession(sessionId);
       toast.success("Session activée");
       onSessionChange?.(sessionId);
+
       // Rafraîchir les statistiques après le changement de session
       await refreshSessionStats();
     } catch (error) {
@@ -108,6 +110,7 @@ export function SessionManager({
       await deleteSession(sessionId);
       toast.success("Session supprimée");
       onSessionChange?.(activeSession?.id || null);
+
       // Rafraîchir les statistiques après la suppression de session
       await refreshSessionStats();
     } catch (error) {
