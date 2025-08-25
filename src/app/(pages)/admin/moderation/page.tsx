@@ -56,14 +56,14 @@ export default function ModerationPage() {
   const { approveAlgorithm, rejectAlgorithm } = useCustomAlgorithms();
 
   const [activeTab, setActiveTab] = useState("methods");
-  const [methods, setMethods] = useState([]);
-  const [algorithms, setAlgorithms] = useState([]);
+  const [methods, setMethods] = useState<any[]>([]);
+  const [algorithms, setAlgorithms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState("all");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [itemToReject, setItemToReject] = useState(null);
+  const [itemToReject, setItemToReject] = useState<any>(null);
 
   // Fonctions de chargement directes (pour éviter les conflits avec les hooks)
   const loadPendingMethodsDirect = async () => {
