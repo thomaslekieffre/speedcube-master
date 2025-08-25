@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Edit, Copy, Plus, X } from "lucide-react";
+import { Trash2, Edit, Copy, Plus, X, Move } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Solve {
   id: string;
@@ -23,16 +29,28 @@ interface Solve {
   notes?: string;
 }
 
+interface Session {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 interface SolveListProps {
   solves: Solve[];
+  sessions: Session[];
+  currentSessionId?: string | null;
   onUpdateSolve: (id: string, updates: Partial<Solve>) => void;
   onDeleteSolve: (id: string) => void;
+  onMoveSolve?: (solveId: string, targetSessionId: string) => void;
 }
 
 export function SolveList({
   solves,
+  sessions,
+  currentSessionId,
   onUpdateSolve,
   onDeleteSolve,
+  onMoveSolve,
 }: SolveListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState("");
@@ -103,6 +121,17 @@ export function SolveList({
   const handleCopyScramble = (scramble: string) => {
     navigator.clipboard.writeText(scramble);
   };
+
+  const handleMoveSolve = (solveId: string, targetSessionId: string) => {
+    if (onMoveSolve) {
+      onMoveSolve(solveId, targetSessionId);
+    }
+  };
+
+  // Filtrer les sessions disponibles (exclure la session actuelle)
+  const availableSessions = sessions.filter(
+    (session) => session.id !== currentSessionId
+  );
 
   if (solves.length === 0) {
     return (
@@ -241,6 +270,37 @@ export function SolveList({
                     >
                       DNF
                     </Button>
+                    {availableSessions.length > 0 && onMoveSolve && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Move className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                            Déplacer vers...
+                          </DropdownMenuItem>
+                          {availableSessions.map((session) => (
+                            <DropdownMenuItem
+                              key={session.id}
+                              onClick={() => handleMoveSolve(solve.id, session.id)}
+                            >
+                              {session.name}
+                              {session.is_active && (
+                                <Badge variant="secondary" className="ml-2 text-xs">
+                                  Active
+                                </Badge>
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
