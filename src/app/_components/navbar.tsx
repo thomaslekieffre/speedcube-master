@@ -14,7 +14,6 @@ import {
   Shield,
   GraduationCap,
   Target,
-  BookOpen,
   Menu,
   X,
   ChevronDown,
@@ -138,9 +137,6 @@ export function Navbar() {
                 badge={hasRevisions ? revisionCount : undefined}
               >
                 Révision
-              </NavLink>
-              <NavLink href="/learning/help" icon={BookOpen}>
-                Aide
               </NavLink>
             </div>
 
@@ -298,9 +294,6 @@ export function Navbar() {
                         badge={hasRevisions ? revisionCount : undefined}
                       >
                         Révision
-                      </MobileNavLink>
-                      <MobileNavLink href="/learning/help" icon={BookOpen}>
-                        Aide
                       </MobileNavLink>
                     </div>
 

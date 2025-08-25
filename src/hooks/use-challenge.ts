@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser, useClerk } from "@clerk/nextjs";
 import {
   ChallengeAttempt,
@@ -34,9 +34,11 @@ export function useChallenge() {
 
   // Charger les tentatives de l'utilisateur pour aujourd'hui
   const loadUserAttempts = async () => {
+    if (!user?.id) return;
+
     try {
       setLoading(true);
-      if (!user) return;
+      const supabase = createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
       const { data, error } = await supabase
@@ -60,9 +62,11 @@ export function useChallenge() {
     time: number,
     penalty: "none" | "plus2" | "dnf" = "none"
   ) => {
+    if (!user?.id) throw new Error("Utilisateur non connecté");
+
     try {
       setLoading(true);
-      if (!user) throw new Error("Utilisateur non connecté");
+      const supabase = createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
 
@@ -95,8 +99,12 @@ export function useChallenge() {
 
   // Appliquer une pénalité à une tentative
   const applyPenalty = async (attemptId: string, penalty: "plus2" | "dnf") => {
+    if (!user?.id) throw new Error("Utilisateur non connecté");
+
     try {
       setLoading(true);
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { error } = await supabase
         .from("challenge_attempts")
         .update({ penalty })
@@ -124,6 +132,8 @@ export function useChallenge() {
   const loadLeaderboard = async () => {
     try {
       setLoading(true);
+      const supabase = createSupabaseClientWithUser(user?.id || "");
+
       const challengeDate = getChallengeDate();
 
       // Utiliser la table daily_challenge_tops pour le classement
@@ -146,7 +156,10 @@ export function useChallenge() {
 
   // Mettre à jour le classement après une nouvelle tentative
   const updateLeaderboard = async () => {
+    if (!user?.id) return;
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
       const challengeDate = getChallengeDate();
 
       // Récupérer toutes les tentatives valides pour aujourd'hui
@@ -239,8 +252,12 @@ export function useChallenge() {
 
   // Charger les statistiques du challenge
   const loadStats = async () => {
+    if (!user?.id) return;
+
     try {
       setLoading(true);
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const challengeDate = getChallengeDate();
 
       const { data, error } = await supabase.rpc("get_challenge_stats", {
@@ -258,9 +275,11 @@ export function useChallenge() {
 
   // Réinitialiser les tentatives (supprimer de la DB)
   const resetAttempts = async () => {
+    if (!user?.id) return;
+
     try {
       setLoading(true);
-      if (!user) return;
+      const supabase = createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
       const { error } = await supabase
@@ -284,12 +303,12 @@ export function useChallenge() {
 
   // Charger les données au montage du composant et quand l'utilisateur change
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadUserAttempts();
       loadLeaderboard();
       // loadStats(); // Désactivé pour l'instant
     }
-  }, [user]);
+  }, [user?.id]);
 
   return {
     attempts,

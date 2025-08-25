@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useUserRole } from "./use-user-role";
 import { useAlgorithms } from "./use-algorithms";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 
 export function useModerationBadge() {
   const { user } = useUser();
@@ -13,7 +13,7 @@ export function useModerationBadge() {
 
   // Charger le nombre total d'éléments en attente
   const loadPendingCount = async () => {
-    if (!user || !isModerator()) {
+    if (!user?.id || !isModerator()) {
       setPendingCount(0);
       setLoading(false);
       return;
@@ -21,6 +21,7 @@ export function useModerationBadge() {
 
     try {
       setLoading(true);
+      const supabase = createSupabaseClientWithUser(user.id);
 
       // Compter les méthodes en attente directement
       const { count: methodsCount, error: methodsError } = await supabase

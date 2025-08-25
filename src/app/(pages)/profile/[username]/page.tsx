@@ -23,7 +23,7 @@ import {
   Loader2,
   Edit,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import type { Database } from "@/lib/supabase";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -42,6 +42,8 @@ export default function PublicProfilePage() {
   const loadPublicProfile = async () => {
     try {
       setLoading(true);
+      const supabase = createSupabaseClientWithUser(user?.id || "");
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -70,7 +72,7 @@ export default function PublicProfilePage() {
     if (username) {
       loadPublicProfile();
     }
-  }, [username]);
+  }, [username, user?.id]);
 
   // Charger les PB et solves si le profil existe
   const { personalBests, formatTime } = usePersonalBests(profile?.id);

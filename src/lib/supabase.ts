@@ -14,6 +14,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Fonction pour créer un client Supabase avec l'ID utilisateur Clerk
+export const createSupabaseClientWithUser = (userId: string) => {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        "X-User-ID": userId,
+      },
+    },
+  });
+};
+
+// Fonction pour configurer l'ID utilisateur Clerk dans Supabase
+export const configureSupabaseForUser = (userId: string) => {
+  // Cette fonction n'est plus nécessaire car nous utilisons les headers HTTP
+  console.log("✅ ID utilisateur configuré pour Supabase via headers:", userId);
+};
+
 // Types pour les algorithmes avec système de modération
 export interface Algorithm {
   id: string;

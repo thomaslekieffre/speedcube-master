@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bell, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
 interface ModerationNotification {
   id: string;
   algorithm_id: string;
-  type: 'new_algorithm' | 'algorithm_approved' | 'algorithm_rejected';
+  type: "new_algorithm" | "algorithm_approved" | "algorithm_rejected";
   message: string;
   created_at: string;
 }
@@ -20,14 +20,18 @@ interface ModerationNotification {
 export function ModerationNotifications() {
   const { user } = useUser();
   const router = useRouter();
-  const [notifications, setNotifications] = useState<ModerationNotification[]>([]);
+  const [notifications, setNotifications] = useState<ModerationNotification[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
 
   const loadNotifications = async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setLoading(true);
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("moderation_notifications")
         .select("*")
@@ -45,15 +49,15 @@ export function ModerationNotifications() {
 
   useEffect(() => {
     loadNotifications();
-  }, [user]);
+  }, [user?.id]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'new_algorithm':
+      case "new_algorithm":
         return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'algorithm_approved':
+      case "algorithm_approved":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'algorithm_rejected':
+      case "algorithm_rejected":
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
@@ -62,25 +66,25 @@ export function ModerationNotifications() {
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'new_algorithm':
-        return 'bg-yellow-500/10 text-yellow-600 border-yellow-600';
-      case 'algorithm_approved':
-        return 'bg-green-500/10 text-green-600 border-green-600';
-      case 'algorithm_rejected':
-        return 'bg-red-500/10 text-red-600 border-red-600';
+      case "new_algorithm":
+        return "bg-yellow-500/10 text-yellow-600 border-yellow-600";
+      case "algorithm_approved":
+        return "bg-green-500/10 text-green-600 border-green-600";
+      case "algorithm_rejected":
+        return "bg-red-500/10 text-red-600 border-red-600";
       default:
-        return 'bg-muted text-muted-foreground';
+        return "bg-muted text-muted-foreground";
     }
   };
 
   const getNotificationText = (type: string) => {
     switch (type) {
-      case 'new_algorithm':
-        return 'Nouveau';
-      case 'algorithm_approved':
-        return 'Approuvé';
-      case 'algorithm_rejected':
-        return 'Rejeté';
+      case "new_algorithm":
+        return "Nouveau";
+      case "algorithm_approved":
+        return "Approuvé";
+      case "algorithm_rejected":
+        return "Rejeté";
       default:
         return type;
     }
@@ -147,14 +151,18 @@ export function ModerationNotifications() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs ${getNotificationColor(notification.type)}`}
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${getNotificationColor(
+                      notification.type
+                    )}`}
                   >
                     {getNotificationText(notification.type)}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(notification.created_at).toLocaleDateString("fr-FR")}
+                    {new Date(notification.created_at).toLocaleDateString(
+                      "fr-FR"
+                    )}
                   </span>
                 </div>
                 <p className="text-sm text-foreground mb-2">
@@ -163,7 +171,9 @@ export function ModerationNotifications() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push(`/algos/${notification.algorithm_id}`)}
+                  onClick={() =>
+                    router.push(`/algos/${notification.algorithm_id}`)
+                  }
                   className="h-6 px-2 text-xs"
                 >
                   <Eye className="h-3 w-3 mr-1" />

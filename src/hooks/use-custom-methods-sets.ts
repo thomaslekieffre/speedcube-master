@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 
 export interface CustomMethod {
   id: string;
@@ -30,7 +30,14 @@ export function useCustomMethodsSets() {
 
   // Charger les méthodes personnalisées
   const loadCustomMethods = async (puzzleType?: string) => {
+    if (!user?.id) {
+      setCustomMethods([]);
+      return;
+    }
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       let query = supabase
         .from("custom_methods")
         .select("*")
@@ -70,7 +77,14 @@ export function useCustomMethodsSets() {
 
   // Charger les sets personnalisés
   const loadCustomSets = async (methodName?: string) => {
+    if (!user?.id) {
+      setCustomSets([]);
+      return;
+    }
+
     try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
       let query = supabase
         .from("custom_sets")
         .select("*")
@@ -111,10 +125,11 @@ export function useCustomMethodsSets() {
 
   // Créer une nouvelle méthode personnalisée
   const createCustomMethod = async (name: string, puzzleType: string) => {
-    if (!user) throw new Error("Utilisateur non connecté");
+    if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
       console.log("Création méthode:", { name, puzzleType, userId: user.id });
+      const supabase = createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("custom_methods")
@@ -142,7 +157,7 @@ export function useCustomMethodsSets() {
 
   // Créer un nouveau set personnalisé
   const createCustomSet = async (name: string, methodName?: string) => {
-    if (!user) throw new Error("Utilisateur non connecté");
+    if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
       let methodId = null;
@@ -169,6 +184,8 @@ export function useCustomMethodsSets() {
         userId: user.id,
         insertData,
       });
+
+      const supabase = createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("custom_sets")

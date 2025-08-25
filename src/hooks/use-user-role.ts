@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 
 export type UserRole = "user" | "moderator" | "admin";
@@ -19,6 +19,9 @@ export function useUserRole() {
 
     try {
       setLoading(true);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
 
       // Vérifier d'abord dans la table user_roles
       const { data: roleData, error: roleError } = await supabase

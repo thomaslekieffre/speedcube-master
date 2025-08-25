@@ -65,6 +65,8 @@ export function SessionManager({
       setIsCreateDialogOpen(false);
       toast.success("Session créée avec succès");
       onSessionChange?.(activeSession?.id || null);
+      // Rafraîchir les statistiques après la création de session
+      await refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de la création de la session:", error);
       toast.error("Erreur lors de la création de la session");
@@ -76,6 +78,8 @@ export function SessionManager({
       await activateSession(sessionId);
       toast.success("Session activée");
       onSessionChange?.(sessionId);
+      // Rafraîchir les statistiques après le changement de session
+      await refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de l'activation de la session:", error);
       toast.error("Erreur lors de l'activation de la session");
@@ -104,6 +108,8 @@ export function SessionManager({
       await deleteSession(sessionId);
       toast.success("Session supprimée");
       onSessionChange?.(activeSession?.id || null);
+      // Rafraîchir les statistiques après la suppression de session
+      await refreshSessionStats();
     } catch (error) {
       console.error("Erreur lors de la suppression de la session:", error);
       toast.error("Erreur lors de la suppression de la session");
@@ -154,6 +160,13 @@ export function SessionManager({
       document.removeEventListener("keydown", handleKeyDown, true);
     };
   }, []);
+
+  // Rafraîchir les statistiques quand la session active change
+  useEffect(() => {
+    if (activeSession) {
+      refreshSessionStats();
+    }
+  }, [activeSession?.id]);
 
   if (loading) {
     return (
@@ -271,7 +284,7 @@ export function SessionManager({
                         <div className="text-sm font-medium truncate">
                           {session.name}
                         </div>
-                        {stats && (
+                        {stats ? (
                           <div className="text-xs text-muted-foreground mt-1">
                             {stats.total_solves} solves
                             {stats.best_time && (
@@ -284,6 +297,10 @@ export function SessionManager({
                                 • Moy: {formatTime(stats.average_time)}
                               </span>
                             )}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Aucun solve
                           </div>
                         )}
                       </div>

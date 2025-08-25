@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import type { Database } from "@/lib/supabase";
 
@@ -24,6 +24,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
     try {
       setLoading(true);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(targetUserId);
 
       let query = supabase
         .from("solves")
@@ -63,6 +66,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
     }
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const newSolve = {
         ...solve,
         user_id: user.id,
@@ -103,6 +109,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
   const updateSolve = async (id: string, updates: UpdateSolve) => {
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user?.id || '');
+
       const { data, error } = await supabase
         .from("solves")
         .update(updates)
@@ -120,7 +129,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       );
 
       // Notifier que des solves ont été mis à jour
-      console.log("📤 Déclenchement de l'événement solves-updated (mise à jour)");
+      console.log(
+        "📤 Déclenchement de l'événement solves-updated (mise à jour)"
+      );
       window.dispatchEvent(new CustomEvent("solves-updated"));
 
       return data;
@@ -132,6 +143,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
   const deleteSolve = async (id: string) => {
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user?.id || '');
+
       const { error } = await supabase.from("solves").delete().eq("id", id);
 
       if (error) {
@@ -142,7 +156,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       setSolves((prev) => prev.filter((solve) => solve.id !== id));
 
       // Notifier que des solves ont été supprimés
-      console.log("📤 Déclenchement de l'événement solves-updated (suppression)");
+      console.log(
+        "📤 Déclenchement de l'événement solves-updated (suppression)"
+      );
       window.dispatchEvent(new CustomEvent("solves-updated"));
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
@@ -154,6 +170,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
     if (!user) return;
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { error } = await supabase
         .from("solves")
         .delete()
@@ -177,6 +196,9 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
   const moveSolve = async (solveId: string, targetSessionId: string) => {
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user?.id || '');
+
       const { data, error } = await supabase
         .from("solves")
         .update({ session_id: targetSessionId })
@@ -193,12 +215,14 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       setSolves((prev) => prev.filter((solve) => solve.id !== solveId));
 
       // Notifier que des solves ont été déplacés
-      console.log("📤 Déclenchement de l'événement solves-updated (déplacement)");
+      console.log(
+        "📤 Déclenchement de l'événement solves-updated (déplacement)"
+      );
       window.dispatchEvent(new CustomEvent("solves-updated"));
 
       return data;
     } catch (err) {
-      console.error("Erreur lors du déplacement:", err);
+      console.error("Erreur lors du déplacement du solve:", err);
       throw err;
     }
   };

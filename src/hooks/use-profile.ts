@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import type { Database } from "@/lib/supabase";
 
@@ -23,6 +23,9 @@ export function useProfile() {
     try {
       setLoading(true);
 
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -35,7 +38,6 @@ export function useProfile() {
         setError(error.message);
       } else if (error && error.code === "PGRST116") {
         // Profil n'existe pas, le créer
-
         await createProfile();
       } else {
         setProfile(data);
@@ -52,6 +54,9 @@ export function useProfile() {
     if (!user) return;
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const newProfile: InsertProfile = {
         id: user.id,
         username:
@@ -85,6 +90,9 @@ export function useProfile() {
     if (!user) return;
 
     try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("profiles")
         .update(updates)

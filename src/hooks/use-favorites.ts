@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
+import { createSupabaseClientWithUser } from "@/lib/supabase";
+import type { Database } from "@/lib/supabase";
+
+type AlgorithmFavorite =
+  Database["public"]["Tables"]["algorithm_favorites"]["Row"];
 
 export function useFavorites() {
-  const { user } = useUser();
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<AlgorithmFavorite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
 
-  // Charger les favoris de l'utilisateur
   const loadFavorites = async () => {
-    if (!user) {
+    if (!user?.id) {
       setFavorites([]);
       setLoading(false);
       return;
@@ -19,78 +23,116 @@ export function useFavorites() {
 
     try {
       setLoading(true);
+
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
       const { data, error } = await supabase
         .from("algorithm_favorites")
-        .select("algorithm_id")
-        .eq("user_id", user.id);
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-
-      const favoriteIds = data?.map((fav) => fav.algorithm_id) || [];
-      setFavorites(favoriteIds);
+      if (error) {
+        console.error("Erreur lors du chargement des favoris:", error);
+        setError(error.message);
+      } else {
+        setFavorites(data || []);
+      }
     } catch (err) {
-      console.error("Erreur lors du chargement des favoris:", err);
-      setFavorites([]);
+      console.error("Erreur inattendue:", err);
+      setError("Erreur inattendue lors du chargement");
     } finally {
       setLoading(false);
     }
   };
 
-  // Charger les favoris au montage et quand l'utilisateur change
   useEffect(() => {
     loadFavorites();
-  }, [user]);
+  }, [user?.id]);
 
-  // Ajouter/retirer un favori
-  const toggleFavorite = async (algorithmId: string) => {
-    if (!user) return;
+  const addToFavorites = async (algorithmId: string) => {
+    if (!user?.id) return;
 
     try {
-      const isCurrentlyFavorite = favorites.includes(algorithmId);
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
 
-      if (isCurrentlyFavorite) {
-        // Retirer du favori
-        const { error } = await supabase
-          .from("algorithm_favorites")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("algorithm_id", algorithmId);
-
-        if (error) throw error;
-
-        setFavorites((prev) => prev.filter((id) => id !== algorithmId));
-      } else {
-        // Ajouter aux favoris
-        const { error } = await supabase.from("algorithm_favorites").insert({
+      const { data, error } = await supabase
+        .from("algorithm_favorites")
+        .insert({
           user_id: user.id,
           algorithm_id: algorithmId,
-        });
+        })
+        .select()
+        .single();
 
-        if (error) throw error;
-
-        setFavorites((prev) => [...prev, algorithmId]);
+      if (error) {
+        console.error("Erreur lors de l'ajout aux favoris:", error);
+        throw error;
       }
+
+      setFavorites((prev) => [data, ...prev]);
+      return data;
     } catch (err) {
-      console.error("Erreur lors de la modification du favori:", err);
+      console.error("Erreur lors de l'ajout aux favoris:", err);
+      throw err;
     }
   };
 
-  // Vérifier si un algorithme est en favori
-  const isFavorite = (algorithmId: string): boolean => {
-    return favorites.includes(algorithmId);
+  const removeFromFavorites = async (algorithmId: string) => {
+    if (!user?.id) return;
+
+    try {
+      // Créer un client Supabase avec l'ID utilisateur dans les headers
+      const supabase = createSupabaseClientWithUser(user.id);
+
+      const { error } = await supabase
+        .from("algorithm_favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("algorithm_id", algorithmId);
+
+      if (error) {
+        console.error("Erreur lors de la suppression des favoris:", error);
+        throw error;
+      }
+
+      setFavorites((prev) =>
+        prev.filter((fav) => fav.algorithm_id !== algorithmId)
+      );
+    } catch (err) {
+      console.error("Erreur lors de la suppression des favoris:", err);
+      throw err;
+    }
+  };
+
+  const isFavorite = (algorithmId: string) => {
+    return favorites.some((fav) => fav.algorithm_id === algorithmId);
+  };
+
+  const toggleFavorite = async (algorithmId: string) => {
+    if (isFavorite(algorithmId)) {
+      await removeFromFavorites(algorithmId);
+    } else {
+      await addToFavorites(algorithmId);
+    }
   };
 
   // Obtenir tous les IDs des algorithmes favoris
   const getFavoriteIds = (): string[] => {
-    return favorites;
+    return favorites.map((fav) => fav.algorithm_id);
   };
 
   return {
     favorites,
     loading,
-    toggleFavorite,
+    error,
+    addToFavorites,
+    removeFromFavorites,
     isFavorite,
+    toggleFavorite,
     getFavoriteIds,
-    loadFavorites,
+    refresh: loadFavorites,
   };
 }
