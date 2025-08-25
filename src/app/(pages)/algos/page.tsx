@@ -436,10 +436,6 @@ export default function AlgorithmsPage() {
                           <Eye className="h-3 w-3 mr-1" />
                           Voir
                         </Button>
-                        <Button size="sm" variant="outline">
-                          <BookOpen className="h-3 w-3 mr-1" />
-                          Apprendre
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>

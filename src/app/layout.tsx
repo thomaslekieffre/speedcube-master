@@ -5,6 +5,7 @@ import "./globals.css";
 import { Navbar } from "./_components/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { ClerkProvider } from "@clerk/nextjs";
+import { RevisionNotificationProvider } from "@/components/revision-notification-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,9 +36,11 @@ export default function RootLayout({
         <body
           className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
         >
-          <Navbar />
-          {children}
-          <Toaster />
+          <RevisionNotificationProvider>
+            <Navbar />
+            {children}
+            <Toaster />
+          </RevisionNotificationProvider>
         </body>
       </html>
     </ClerkProvider>

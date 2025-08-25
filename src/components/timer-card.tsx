@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { SolveList } from "./solve-list";
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { usePersonalBests } from "@/hooks/use-personal-bests";
+import { useSessions } from "@/hooks/use-sessions";
+import { SessionManager } from "./session-manager";
 import type { Database } from "@/lib/supabase";
 
 type Solve = Database["public"]["Tables"]["solves"]["Row"];
@@ -42,6 +44,7 @@ export function TimerCard() {
   const [currentScramble, setCurrentScramble] = useState("R U R' U'");
   const [selectedPuzzle, setSelectedPuzzle] = useState<PuzzleType>("333");
   const [dnfAlreadySaved, setDnfAlreadySaved] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const isInitialized = useRef(false);
 
   const {
@@ -53,7 +56,7 @@ export function TimerCard() {
     exportSolves,
     loading: solvesLoading,
     error: solvesError,
-  } = useSupabaseSolves();
+  } = useSupabaseSolves(undefined, activeSessionId);
 
   const {
     updateOrCreatePersonalBest,
@@ -196,6 +199,8 @@ export function TimerCard() {
   const handlePuzzleChange = useCallback((puzzleType: PuzzleType) => {
     setSelectedPuzzle(puzzleType);
     setCurrentScramble(generateMockScramble(puzzleType));
+    // Réinitialiser la session active quand on change de puzzle
+    setActiveSessionId(null);
   }, []);
 
   const handleResetCube = useCallback(() => {
@@ -319,8 +324,6 @@ export function TimerCard() {
         )
       : null;
 
-
-
   // Synchroniser automatiquement le PB de la base de données avec les solves actuels
   useEffect(() => {
     const syncPB = async () => {
@@ -342,7 +345,6 @@ export function TimerCard() {
         );
 
         if (bestTimeEntry) {
-
           await updateOrCreatePersonalBest(
             selectedPuzzle,
             bestTimeEntry.solve.time,
@@ -662,7 +664,18 @@ export function TimerCard() {
 
           {/* Solve History - Responsive */}
           <div className="xl:col-span-1">
-            <div className="sticky top-32">
+            <div className="sticky top-32 space-y-4">
+              {/* Session Manager */}
+              <Card>
+                <CardContent className="p-4 sm:p-6">
+                  <SessionManager
+                    selectedPuzzle={selectedPuzzle}
+                    onSessionChange={setActiveSessionId}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Solve History */}
               <Card>
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-3 sm:mb-4">

@@ -464,6 +464,7 @@ export default function MethodDetailPage() {
                                 scramble={notation}
                                 puzzleType={method.puzzle_type as PuzzleType}
                                 onReset={() => {}}
+                                showControls={true}
                               />
                             </div>
                           </div>
@@ -493,8 +494,8 @@ export default function MethodDetailPage() {
                               key={index}
                               className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                             >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
+                              <div className="space-y-4">
+                                <div>
                                   <h4 className="font-semibold mb-1">
                                     {ref.name}
                                   </h4>
@@ -507,16 +508,16 @@ export default function MethodDetailPage() {
                                     </p>
                                   )}
                                 </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    router.push(`/algos/${ref.algorithm_id}`)
-                                  }
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Voir
-                                </Button>
+                                <div className="flex justify-center">
+                                  <CubeViewer
+                                    scramble={ref.notation}
+                                    puzzleType={
+                                      method.puzzle_type as PuzzleType
+                                    }
+                                    onReset={() => {}}
+                                    showControls={true}
+                                  />
+                                </div>
                               </div>
                             </div>
                           ))}
