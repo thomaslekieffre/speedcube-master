@@ -206,17 +206,24 @@ export default function AlgorithmDetailPage() {
               variant="ghost"
               onClick={() => algorithm && addToLearning(algorithm.id)}
               className={`flex items-center gap-2 ${
-                algorithm && learningData.some(item => item.algorithm_id === algorithm.id)
+                algorithm &&
+                learningData.some((item) => item.algorithm_id === algorithm.id)
                   ? "text-green-500"
                   : "text-muted-foreground"
               }`}
             >
               <GraduationCap
                 className={`h-4 w-4 ${
-                  algorithm && learningData.some(item => item.algorithm_id === algorithm.id) ? "fill-current" : ""
+                  algorithm &&
+                  learningData.some(
+                    (item) => item.algorithm_id === algorithm.id
+                  )
+                    ? "fill-current"
+                    : ""
                 }`}
               />
-              {algorithm && learningData.some(item => item.algorithm_id === algorithm.id)
+              {algorithm &&
+              learningData.some((item) => item.algorithm_id === algorithm.id)
                 ? "En apprentissage"
                 : "Ajouter à l'apprentissage"}
             </Button>
@@ -414,25 +421,6 @@ export default function AlgorithmDetailPage() {
                     </div>
                   </TabsContent>
                 </Tabs>
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Button className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    Ajouter à ma révision
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Chronométrer
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </motion.div>

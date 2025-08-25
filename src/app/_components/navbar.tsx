@@ -73,8 +73,8 @@ export function Navbar() {
               className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
             >
               <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden lg:inline">Apprentissage</span>
-              <span className="lg:hidden hidden sm:inline">Apprentissage</span>
+              <span className="hidden lg:inline">Méthodes</span>
+              <span className="lg:hidden hidden sm:inline">Méthodes</span>
             </Link>
             <Link
               href="/learning/review"
