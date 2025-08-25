@@ -26,7 +26,7 @@ import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { usePersonalBests } from "@/hooks/use-personal-bests";
 import { useSessions } from "@/hooks/use-sessions";
 import { SessionManager } from "./session-manager";
-import type { Database } from "@/lib/supabase";
+import type { Database } from "@/types/database";
 
 type Solve = Database["public"]["Tables"]["solves"]["Row"];
 import { toast } from "sonner";
@@ -65,6 +65,9 @@ export function TimerCard() {
     loading: solvesLoading,
     error: solvesError,
   } = useSupabaseSolves(undefined, activeSessionId);
+
+  // Récupérer tous les solves du puzzle pour les stats (pas filtrés par session)
+  const { solves: allSolves } = useSupabaseSolves(undefined, null);
 
   const {
     updateOrCreatePersonalBest,
@@ -312,15 +315,18 @@ export function TimerCard() {
     toast.success("Tous les solves supprimés");
   }, [clearAllSolves]);
 
-  const handleMoveSolve = useCallback(async (solveId: string, targetSessionId: string) => {
-    try {
-      await moveSolve(solveId, targetSessionId);
-      toast.success("Solve déplacé avec succès");
-    } catch (error) {
-      console.error("Erreur lors du déplacement:", error);
-      toast.error("Erreur lors du déplacement");
-    }
-  }, [moveSolve]);
+  const handleMoveSolve = useCallback(
+    async (solveId: string, targetSessionId: string) => {
+      try {
+        await moveSolve(solveId, targetSessionId);
+        toast.success("Solve déplacé avec succès");
+      } catch (error) {
+        console.error("Erreur lors du déplacement:", error);
+        toast.error("Erreur lors du déplacement");
+      }
+    },
+    [moveSolve]
+  );
 
   const formatTime = (ms: number) => {
     if (ms === 0) return "0.00";
@@ -340,7 +346,11 @@ export function TimerCard() {
 
   // Calculer les statistiques
   const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
-  const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
+  // Pour les stats, utiliser tous les solves du puzzle (pas seulement ceux de la session)
+  const allPuzzleSolves = allSolves.filter(
+    (s) => s.puzzle_type === selectedPuzzle
+  );
+  const validSolves = allPuzzleSolves.filter((s) => s.penalty !== "dnf");
   const currentPB = getPersonalBest(selectedPuzzle);
 
   // Calculer le PB à partir des solves valides uniquement (avec pénalités)
@@ -392,14 +402,14 @@ export function TimerCard() {
     return () => clearTimeout(timeoutId);
   }, [
     validSolves,
-    puzzleSolves,
+    allPuzzleSolves,
     selectedPuzzle,
     updateOrCreatePersonalBest,
     deletePersonalBest,
   ]);
 
   const stats = {
-    total: puzzleSolves.length,
+    total: allPuzzleSolves.length,
     // Utiliser le PB calculé, pas le temps du timer
     pb: calculatedPB,
     average:
@@ -784,17 +794,28 @@ export function TimerCard() {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                      <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+                                      <DropdownMenuItem
+                                        disabled
+                                        className="text-xs text-muted-foreground"
+                                      >
                                         Déplacer vers...
                                       </DropdownMenuItem>
                                       {availableSessions.map((session) => (
                                         <DropdownMenuItem
                                           key={session.id}
-                                          onClick={() => handleMoveSolve(solve.id, session.id)}
+                                          onClick={() =>
+                                            handleMoveSolve(
+                                              solve.id,
+                                              session.id
+                                            )
+                                          }
                                         >
                                           {session.name}
                                           {session.is_active && (
-                                            <Badge variant="secondary" className="ml-2 text-xs">
+                                            <Badge
+                                              variant="secondary"
+                                              className="ml-2 text-xs"
+                                            >
                                               Active
                                             </Badge>
                                           )}
