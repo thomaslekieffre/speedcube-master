@@ -151,6 +151,7 @@ export function MarkdownEditor({
             <div className="flex items-center gap-2">
               {showPreview && (
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsPreviewMode(!isPreviewMode)}
@@ -171,6 +172,7 @@ export function MarkdownEditor({
               )}
               {showCubingNotation && (
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowCubingPanel(!showCubingPanel)}
@@ -187,6 +189,7 @@ export function MarkdownEditor({
           {/* Boutons de formatage */}
           <div className="flex flex-wrap items-center gap-1">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatBold}
@@ -196,6 +199,7 @@ export function MarkdownEditor({
               <Bold className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatItalic}
@@ -205,6 +209,7 @@ export function MarkdownEditor({
               <Italic className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatUnderline}
@@ -217,6 +222,7 @@ export function MarkdownEditor({
             <Separator orientation="vertical" className="h-6" />
 
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatHeading1}
@@ -226,6 +232,7 @@ export function MarkdownEditor({
               <Heading1 className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatHeading2}
@@ -235,6 +242,7 @@ export function MarkdownEditor({
               <Heading2 className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatHeading3}
@@ -247,6 +255,7 @@ export function MarkdownEditor({
             <Separator orientation="vertical" className="h-6" />
 
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatLargeText}
@@ -256,6 +265,7 @@ export function MarkdownEditor({
               <Type className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatSmallText}
@@ -268,6 +278,7 @@ export function MarkdownEditor({
             <Separator orientation="vertical" className="h-6" />
 
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={formatSeparator}
@@ -289,6 +300,7 @@ export function MarkdownEditor({
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium">Notation Cubing</h4>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={clearCubingNotation}
@@ -304,6 +316,7 @@ export function MarkdownEditor({
                   {["R", "L", "U", "D", "F", "B"].map((face) => (
                     <Button
                       key={face}
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => insertCubingMove(face)}
@@ -317,6 +330,7 @@ export function MarkdownEditor({
                   {["R'", "L'", "U'", "D'", "F'", "B'"].map((face) => (
                     <Button
                       key={face}
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => insertCubingMove(face)}
@@ -330,6 +344,7 @@ export function MarkdownEditor({
                   {["R2", "L2", "U2", "D2", "F2", "B2"].map((face) => (
                     <Button
                       key={face}
+                      type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => insertCubingMove(face)}
@@ -344,6 +359,7 @@ export function MarkdownEditor({
                     (move) => (
                       <Button
                         key={move}
+                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => insertCubingMove(move)}
