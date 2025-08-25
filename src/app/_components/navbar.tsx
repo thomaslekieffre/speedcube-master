@@ -12,6 +12,8 @@ import {
   Heart,
   Shield,
   GraduationCap,
+  Target,
+  BookOpen,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
@@ -73,6 +75,22 @@ export function Navbar() {
               <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden lg:inline">Apprentissage</span>
               <span className="lg:hidden hidden sm:inline">Apprentissage</span>
+            </Link>
+            <Link
+              href="/learning/review"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline">Révision</span>
+              <span className="lg:hidden hidden sm:inline">Révision</span>
+            </Link>
+            <Link
+              href="/learning/help"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden lg:inline">Aide</span>
+              <span className="lg:hidden hidden sm:inline">Aide</span>
             </Link>
             {isSignedIn && (
               <Link

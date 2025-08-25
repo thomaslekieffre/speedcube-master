@@ -17,10 +17,12 @@ import {
   Zap,
   Clock,
   Target,
+  GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
+import { useLearningSystem } from "@/hooks/use-learning-system";
 
 export default function AlgorithmDetailPage() {
   const params = useParams();
@@ -37,6 +39,7 @@ export default function AlgorithmDetailPage() {
     loading: favoritesLoading,
   } = useFavorites();
   const { getAlgorithmById } = useAlgorithms();
+  const { addToLearning, learningData } = useLearningSystem();
 
   // Charger l'algorithme par ID et initialiser le cube
   useEffect(() => {
@@ -198,6 +201,24 @@ export default function AlgorithmDetailPage() {
               {algorithm && isFavorite(algorithm.id)
                 ? "Favori"
                 : "Ajouter aux favoris"}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => algorithm && addToLearning(algorithm.id)}
+              className={`flex items-center gap-2 ${
+                algorithm && learningData.some(item => item.algorithm_id === algorithm.id)
+                  ? "text-green-500"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <GraduationCap
+                className={`h-4 w-4 ${
+                  algorithm && learningData.some(item => item.algorithm_id === algorithm.id) ? "fill-current" : ""
+                }`}
+              />
+              {algorithm && learningData.some(item => item.algorithm_id === algorithm.id)
+                ? "En apprentissage"
+                : "Ajouter à l'apprentissage"}
             </Button>
           </div>
 

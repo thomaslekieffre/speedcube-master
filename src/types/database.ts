@@ -504,3 +504,77 @@ export interface MethodModerationNotification {
   created_by: string;
   created_at: string;
 }
+
+// Types pour le système de révision intelligente
+export interface AlgorithmLearning {
+  id: string;
+  user_id: string;
+  algorithm_id: string;
+  status: "to_learn" | "learning" | "mastered" | "review";
+  current_level: number; // 0 = nouveau, 1-5 = niveaux de maîtrise
+  next_review_date: string;
+  last_reviewed: string;
+  review_count: number;
+  success_count: number;
+  failure_count: number;
+  streak_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Type pour les données d'apprentissage avec les détails de l'algorithme
+export interface AlgorithmLearningWithDetails extends AlgorithmLearning {
+  algorithm: {
+    id: string;
+    name: string;
+    notation: string;
+    difficulty: string;
+    puzzle_type: string;
+    method: string;
+    set_name: string;
+  };
+}
+
+export interface LearningSession {
+  id: string;
+  user_id: string;
+  session_date: string;
+  algorithms_reviewed: number;
+  algorithms_mastered: number;
+  total_time: number; // en secondes
+  created_at: string;
+}
+
+export interface LearningProgress {
+  user_id: string;
+  puzzle_type: string;
+  method: string;
+  total_algorithms: number;
+  learned_algorithms: number;
+  mastered_algorithms: number;
+  current_streak: number;
+  best_streak: number;
+  last_session_date: string;
+  updated_at: string;
+}
+
+export interface LearningBadge {
+  id: string;
+  user_id: string;
+  badge_type: string; // "full_pll", "full_oll", "sub_20", etc.
+  badge_name: string;
+  badge_description: string;
+  earned_at: string;
+  progress_percentage: number;
+}
+
+// Types pour les recommandations
+export interface AlgorithmRecommendation {
+  algorithm_id: string;
+  algorithm_name: string;
+  notation: string;
+  difficulty: string;
+  reason: string; // "due_for_review", "new_algorithm", "similar_to_failed"
+  priority: number; // 1-5, 5 étant le plus prioritaire
+  estimated_time: number; // en minutes
+}
