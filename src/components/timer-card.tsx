@@ -25,6 +25,7 @@ import { SolveList } from "./solve-list";
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { usePersonalBests } from "@/hooks/use-personal-bests";
 import { useSessions } from "@/hooks/use-sessions";
+import { useSolvesStats } from "@/hooks/use-solves-stats";
 import { SessionManager } from "./session-manager";
 import type { Database } from "@/types/database";
 
@@ -66,15 +67,10 @@ export function TimerCard() {
     error: solvesError,
   } = useSupabaseSolves(undefined, activeSessionId);
 
-  // Récupérer tous les solves du puzzle pour les stats (pas filtrés par session)
-  const { solves: allSolves } = useSupabaseSolves(undefined, null);
+  // Stats en temps réel pour le puzzle sélectionné
+  const { stats: puzzleStats } = useSolvesStats(selectedPuzzle, null); // null = tous les solves
 
-  const {
-    updateOrCreatePersonalBest,
-    deletePersonalBest,
-    getPersonalBest,
-    refresh: refreshPersonalBests,
-  } = usePersonalBests();
+  const { updateOrCreatePersonalBest, deletePersonalBest } = usePersonalBests();
 
   const {
     sessions,
@@ -180,15 +176,7 @@ export function TimerCard() {
 
       addSolve(solveData);
 
-      // Mettre à jour le PB si nécessaire
-      if (penalty !== "dnf") {
-        updateOrCreatePersonalBest(
-          selectedPuzzle,
-          finalTime,
-          penalty as "none" | "plus2",
-          currentScramble
-        );
-      }
+      // Le PB sera mis à jour automatiquement via le hook useSolvesStats
 
       // Générer un nouveau scramble
       setCurrentScramble(generateMockScramble(selectedPuzzle));
@@ -253,61 +241,14 @@ export function TimerCard() {
     async (solveId: string, updates: Partial<Solve>) => {
       try {
         await updateSolve(solveId, updates);
-
-        // Forcer une synchronisation immédiate du PB après mise à jour
-        setTimeout(async () => {
-          try {
-            const updatedSolves = solves.map((s) =>
-              s.id === solveId ? { ...s, ...updates } : s
-            );
-            const puzzleSolves = updatedSolves.filter(
-              (s) => s.puzzle_type === selectedPuzzle
-            );
-            const validSolves = puzzleSolves.filter((s) => s.penalty !== "dnf");
-
-            if (validSolves.length === 0) {
-              await deletePersonalBest(selectedPuzzle);
-            } else {
-              // Calculer le meilleur temps en tenant compte des pénalités
-              const timesWithPenalties = validSolves.map((s) => ({
-                solve: s,
-                effectiveTime: s.penalty === "plus2" ? s.time + 2000 : s.time,
-              }));
-
-              const bestTimeEntry = timesWithPenalties.reduce((min, current) =>
-                current.effectiveTime < min.effectiveTime ? current : min
-              );
-
-              if (bestTimeEntry) {
-                await updateOrCreatePersonalBest(
-                  selectedPuzzle,
-                  bestTimeEntry.solve.time,
-                  bestTimeEntry.solve.penalty as "none" | "plus2",
-                  bestTimeEntry.solve.scramble
-                );
-              }
-            }
-          } catch (error) {
-            console.error(
-              "Erreur lors de la synchronisation après mise à jour:",
-              error
-            );
-          }
-        }, 200);
-
+        // Les stats se mettront à jour automatiquement via le hook useSolvesStats
         toast.success("Solve mis à jour");
       } catch (error) {
         console.error("Erreur lors de la mise à jour du solve:", error);
         toast.error("Erreur lors de la mise à jour du solve");
       }
     },
-    [
-      updateSolve,
-      solves,
-      selectedPuzzle,
-      updateOrCreatePersonalBest,
-      deletePersonalBest,
-    ]
+    [updateSolve]
   );
 
   const handleClearAll = useCallback(() => {
@@ -346,78 +287,6 @@ export function TimerCard() {
 
   // Calculer les statistiques
   const puzzleSolves = solves.filter((s) => s.puzzle_type === selectedPuzzle);
-  // Pour les stats, utiliser tous les solves du puzzle (pas seulement ceux de la session)
-  const allPuzzleSolves = allSolves.filter(
-    (s) => s.puzzle_type === selectedPuzzle
-  );
-  const validSolves = allPuzzleSolves.filter((s) => s.penalty !== "dnf");
-  const currentPB = getPersonalBest(selectedPuzzle);
-
-  // Calculer le PB à partir des solves valides uniquement (avec pénalités)
-  const calculatedPB =
-    validSolves.length > 0
-      ? Math.min(
-          ...validSolves.map((s) =>
-            s.penalty === "plus2" ? s.time + 2000 : s.time
-          )
-        )
-      : null;
-
-  // Synchroniser automatiquement le PB de la base de données avec les solves actuels
-  useEffect(() => {
-    const syncPB = async () => {
-      try {
-        if (validSolves.length === 0) {
-          // Supprimer le PB s'il n'y a plus de solves
-          await deletePersonalBest(selectedPuzzle);
-          return;
-        }
-
-        // Calculer le meilleur temps en tenant compte des pénalités
-        const timesWithPenalties = validSolves.map((s) => ({
-          solve: s,
-          effectiveTime: s.penalty === "plus2" ? s.time + 2000 : s.time,
-        }));
-
-        const bestTimeEntry = timesWithPenalties.reduce((min, current) =>
-          current.effectiveTime < min.effectiveTime ? current : min
-        );
-
-        if (bestTimeEntry) {
-          await updateOrCreatePersonalBest(
-            selectedPuzzle,
-            bestTimeEntry.solve.time,
-            bestTimeEntry.solve.penalty as "none" | "plus2",
-            bestTimeEntry.solve.scramble
-          );
-        }
-      } catch (error) {
-        console.error("Erreur lors de la synchronisation du PB:", error);
-        // Ne pas afficher de toast d'erreur pour éviter le spam
-      }
-    };
-
-    // Délai pour éviter les synchronisations trop fréquentes
-    const timeoutId = setTimeout(syncPB, 100);
-    return () => clearTimeout(timeoutId);
-  }, [
-    validSolves,
-    allPuzzleSolves,
-    selectedPuzzle,
-    updateOrCreatePersonalBest,
-    deletePersonalBest,
-  ]);
-
-  const stats = {
-    total: allPuzzleSolves.length,
-    // Utiliser le PB calculé, pas le temps du timer
-    pb: calculatedPB,
-    average:
-      validSolves.length > 0
-        ? validSolves.slice(-12).reduce((sum, s) => sum + s.time, 0) /
-          Math.min(12, validSolves.length)
-        : null,
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -607,12 +476,12 @@ export function TimerCard() {
                     </div>
 
                     {/* Quick Stats - Responsive */}
-                    {stats && (
+                    {puzzleStats && (
                       <div className="pt-3 sm:pt-4 border-t border-border">
                         <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
                           <div className="space-y-1">
                             <div className="text-lg sm:text-xl font-bold text-foreground">
-                              {stats.total}
+                              {puzzleStats.total}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               Solves
@@ -620,7 +489,9 @@ export function TimerCard() {
                           </div>
                           <div className="space-y-1">
                             <div className="text-lg sm:text-xl font-bold text-primary">
-                              {stats.pb ? formatTime(stats.pb) : "N/A"}
+                              {puzzleStats.pb
+                                ? formatTime(puzzleStats.pb)
+                                : "N/A"}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               PB
@@ -628,8 +499,8 @@ export function TimerCard() {
                           </div>
                           <div className="space-y-1">
                             <div className="text-lg sm:text-xl font-bold text-accent">
-                              {stats.average
-                                ? formatTime(stats.average)
+                              {puzzleStats.average12
+                                ? formatTime(puzzleStats.average12)
                                 : "N/A"}
                             </div>
                             <div className="text-xs text-muted-foreground">

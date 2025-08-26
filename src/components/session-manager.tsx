@@ -171,6 +171,18 @@ export function SessionManager({
     }
   }, [activeSession?.id]);
 
+  // Écouter les événements de mise à jour des solves pour rafraîchir les stats des sessions
+  useEffect(() => {
+    const handleSolvesUpdated = () => {
+      console.log("📥 Événement solves-updated reçu dans SessionManager");
+      refreshSessionStats();
+    };
+
+    window.addEventListener("solves-updated", handleSolvesUpdated);
+    return () =>
+      window.removeEventListener("solves-updated", handleSolvesUpdated);
+  }, [refreshSessionStats]);
+
   if (loading) {
     return (
       <Card className="w-full">
