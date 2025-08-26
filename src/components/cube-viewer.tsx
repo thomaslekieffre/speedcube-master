@@ -46,145 +46,112 @@ function ClockViewer({ scramble }: { scramble: string }) {
 
     // Parser le scramble et appliquer les mouvements
     const moves = scramble.split(" ");
+
+    // Fonction helper pour extraire la rotation
+    const extractRotation = (move: string, prefix: string): number => {
+      const match = move.match(new RegExp(`^${prefix}(\\d+)\\+$`));
+      return match ? parseInt(match[1]) : 0;
+    };
+
+    // Calculer l'état final en une seule fois
+    let frontHands = Array(9).fill(0);
+    let backHands = Array(9).fill(0);
+
     moves.forEach((move) => {
-      if (move.includes("UR")) {
-        const rotation = parseInt(move.replace("UR", "").replace("+", "")) || 0;
+      if (move.startsWith("UR")) {
+        const rotation = extractRotation(move, "UR");
         // Appliquer la rotation aux 3 horloges du coin UR (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[3] = (newHands[3] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[3] = (newHands[3] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("DR")) {
-        const rotation = parseInt(move.replace("DR", "").replace("+", "")) || 0;
+        frontHands[0] = (frontHands[0] + rotation) % 12;
+        frontHands[1] = (frontHands[1] + rotation) % 12;
+        frontHands[3] = (frontHands[3] + rotation) % 12;
+        backHands[0] = (backHands[0] + rotation) % 12;
+        backHands[1] = (backHands[1] + rotation) % 12;
+        backHands[3] = (backHands[3] + rotation) % 12;
+      } else if (move.startsWith("DR")) {
+        const rotation = extractRotation(move, "DR");
         // Appliquer la rotation aux 3 horloges du coin DR (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[6] = (newHands[6] + rotation) % 12;
-          newHands[7] = (newHands[7] + rotation) % 12;
-          newHands[3] = (newHands[3] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[6] = (newHands[6] + rotation) % 12;
-          newHands[7] = (newHands[7] + rotation) % 12;
-          newHands[3] = (newHands[3] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("DL")) {
-        const rotation = parseInt(move.replace("DL", "").replace("+", "")) || 0;
+        frontHands[6] = (frontHands[6] + rotation) % 12;
+        frontHands[7] = (frontHands[7] + rotation) % 12;
+        frontHands[3] = (frontHands[3] + rotation) % 12;
+        backHands[6] = (backHands[6] + rotation) % 12;
+        backHands[7] = (backHands[7] + rotation) % 12;
+        backHands[3] = (backHands[3] + rotation) % 12;
+      } else if (move.startsWith("DL")) {
+        const rotation = extractRotation(move, "DL");
         // Appliquer la rotation aux 3 horloges du coin DL (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[6] = (newHands[6] + rotation) % 12;
-          newHands[7] = (newHands[7] + rotation) % 12;
-          newHands[8] = (newHands[8] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[6] = (newHands[6] + rotation) % 12;
-          newHands[7] = (newHands[7] + rotation) % 12;
-          newHands[8] = (newHands[8] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("UL")) {
-        const rotation = parseInt(move.replace("UL", "").replace("+", "")) || 0;
+        frontHands[6] = (frontHands[6] + rotation) % 12;
+        frontHands[7] = (frontHands[7] + rotation) % 12;
+        frontHands[8] = (frontHands[8] + rotation) % 12;
+        backHands[6] = (backHands[6] + rotation) % 12;
+        backHands[7] = (backHands[7] + rotation) % 12;
+        backHands[8] = (backHands[8] + rotation) % 12;
+      } else if (move.startsWith("UL")) {
+        const rotation = extractRotation(move, "UL");
         // Appliquer la rotation aux 3 horloges du coin UL (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[2] = (newHands[2] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[2] = (newHands[2] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("U")) {
-        const rotation = parseInt(move.replace("U", "").replace("+", "")) || 0;
+        frontHands[0] = (frontHands[0] + rotation) % 12;
+        frontHands[1] = (frontHands[1] + rotation) % 12;
+        frontHands[2] = (frontHands[2] + rotation) % 12;
+        backHands[0] = (backHands[0] + rotation) % 12;
+        backHands[1] = (backHands[1] + rotation) % 12;
+        backHands[2] = (backHands[2] + rotation) % 12;
+      } else if (
+        move.startsWith("U") &&
+        !move.startsWith("UR") &&
+        !move.startsWith("UL")
+      ) {
+        const rotation = extractRotation(move, "U");
         // Appliquer la rotation à la ligne du haut (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[2] = (newHands[2] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[2] = (newHands[2] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("R")) {
-        const rotation = parseInt(move.replace("R", "").replace("+", "")) || 0;
+        frontHands[0] = (frontHands[0] + rotation) % 12;
+        frontHands[1] = (frontHands[1] + rotation) % 12;
+        frontHands[2] = (frontHands[2] + rotation) % 12;
+        backHands[0] = (backHands[0] + rotation) % 12;
+        backHands[1] = (backHands[1] + rotation) % 12;
+        backHands[2] = (backHands[2] + rotation) % 12;
+      } else if (
+        move.startsWith("R") &&
+        !move.startsWith("UR") &&
+        !move.startsWith("DR")
+      ) {
+        const rotation = extractRotation(move, "R");
         // Appliquer la rotation à la colonne de droite (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[2] = (newHands[2] + rotation) % 12;
-          newHands[5] = (newHands[5] + rotation) % 12;
-          newHands[8] = (newHands[8] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[2] = (newHands[2] + rotation) % 12;
-          newHands[5] = (newHands[5] + rotation) % 12;
-          newHands[8] = (newHands[8] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("D")) {
-        const rotation = parseInt(move.replace("D", "").replace("+", "")) || 0;
+        frontHands[2] = (frontHands[2] + rotation) % 12;
+        frontHands[5] = (frontHands[5] + rotation) % 12;
+        frontHands[8] = (frontHands[8] + rotation) % 12;
+        backHands[2] = (backHands[2] + rotation) % 12;
+        backHands[5] = (backHands[5] + rotation) % 12;
+        backHands[8] = (backHands[8] + rotation) % 12;
+      } else if (
+        move.startsWith("D") &&
+        !move.startsWith("DR") &&
+        !move.startsWith("DL")
+      ) {
+        const rotation = extractRotation(move, "D");
         // Appliquer la rotation à la ligne du bas (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[6] = (newHands[6] + rotation) % 12;
-          newHands[7] = (newHands[7] + rotation) % 12;
-          newHands[8] = (newHands[8] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[6] = (newHands[6] + rotation) % 12;
-          newHands[7] = (newHands[7] + rotation) % 12;
-          newHands[8] = (newHands[8] + rotation) % 12;
-          return newHands;
-        });
-      } else if (move.includes("L")) {
-        const rotation = parseInt(move.replace("L", "").replace("+", "")) || 0;
+        frontHands[6] = (frontHands[6] + rotation) % 12;
+        frontHands[7] = (frontHands[7] + rotation) % 12;
+        frontHands[8] = (frontHands[8] + rotation) % 12;
+        backHands[6] = (backHands[6] + rotation) % 12;
+        backHands[7] = (backHands[7] + rotation) % 12;
+        backHands[8] = (backHands[8] + rotation) % 12;
+      } else if (
+        move.startsWith("L") &&
+        !move.startsWith("UL") &&
+        !move.startsWith("DL")
+      ) {
+        const rotation = extractRotation(move, "L");
         // Appliquer la rotation à la colonne de gauche (face avant ET arrière)
-        setFrontHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[6] = (newHands[6] + rotation) % 12;
-          return newHands;
-        });
-        setBackHands((prev) => {
-          const newHands = [...prev];
-          newHands[0] = (newHands[0] + rotation) % 12;
-          newHands[1] = (newHands[1] + rotation) % 12;
-          newHands[6] = (newHands[6] + rotation) % 12;
-          return newHands;
-        });
+        frontHands[0] = (frontHands[0] + rotation) % 12;
+        frontHands[1] = (frontHands[1] + rotation) % 12;
+        frontHands[6] = (frontHands[6] + rotation) % 12;
+        backHands[0] = (backHands[0] + rotation) % 12;
+        backHands[1] = (backHands[1] + rotation) % 12;
+        backHands[6] = (backHands[6] + rotation) % 12;
       }
     });
+
+    // Mettre à jour l'état en une seule fois
+    setFrontHands(frontHands);
+    setBackHands(backHands);
   }, [scramble]);
 
   const renderClockFace = (time: number, index: number) => {
@@ -260,6 +227,20 @@ export function CubeViewer({
       setIsReady(true);
       return;
     }
+
+    // Nettoyer l'ancien viewer si nécessaire
+    if (viewerRef.current && containerRef.current) {
+      try {
+        viewerRef.current.dispose?.();
+        containerRef.current.removeChild(viewerRef.current);
+      } catch {}
+      viewerRef.current = null;
+    }
+
+    // Réinitialiser l'état
+    initRef.current = false;
+    setIsReady(false);
+    setHasError(false);
 
     // Éviter les initialisations multiples
     if (initRef.current) return;
