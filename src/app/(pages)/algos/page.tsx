@@ -58,6 +58,7 @@ export default function AlgorithmsPage() {
     loading: favoritesLoading,
     toggleFavorite,
     isFavorite,
+    getFavoriteIds,
   } = useFavorites();
 
   // Charger les méthodes et sets personnalisés
@@ -86,7 +87,8 @@ export default function AlgorithmsPage() {
 
     // Filtrer par favoris si nécessaire
     if (favoritesOnly) {
-      return filtered.filter((algo) => favorites.includes(algo.id));
+      const favoriteIds = getFavoriteIds();
+      return filtered.filter((algo) => favoriteIds.includes(algo.id));
     }
 
     return filtered;
@@ -99,7 +101,7 @@ export default function AlgorithmsPage() {
     selectedSet,
     selectedDifficulty,
     favoritesOnly,
-    favorites,
+    getFavoriteIds,
   ]);
 
   const getDifficultyColor = (difficulty: string) => {
@@ -377,14 +379,14 @@ export default function AlgorithmsPage() {
                           onClick={() => toggleFavorite(algo.id)}
                           disabled={favoritesLoading}
                           className={`p-1 ${
-                            favorites.includes(algo.id)
+                            isFavorite(algo.id)
                               ? "text-yellow-500"
                               : "text-muted-foreground"
                           }`}
                         >
                           <Star
                             className={`h-4 w-4 ${
-                              favorites.includes(algo.id) ? "fill-current" : ""
+                              isFavorite(algo.id) ? "fill-current" : ""
                             }`}
                           />
                         </Button>
