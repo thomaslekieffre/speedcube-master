@@ -86,7 +86,7 @@ export default function AlgorithmsPage() {
 
     // Filtrer par favoris si nécessaire
     if (favoritesOnly) {
-      return filtered.filter((algo) => isFavorite(algo.id));
+      return filtered.filter((algo) => favorites.includes(algo.id));
     }
 
     return filtered;
@@ -100,8 +100,6 @@ export default function AlgorithmsPage() {
     selectedDifficulty,
     favoritesOnly,
     favorites,
-    filterAlgorithms,
-    isFavorite,
   ]);
 
   const getDifficultyColor = (difficulty: string) => {
@@ -379,14 +377,14 @@ export default function AlgorithmsPage() {
                           onClick={() => toggleFavorite(algo.id)}
                           disabled={favoritesLoading}
                           className={`p-1 ${
-                            isFavorite(algo.id)
+                            favorites.includes(algo.id)
                               ? "text-yellow-500"
                               : "text-muted-foreground"
                           }`}
                         >
                           <Star
                             className={`h-4 w-4 ${
-                              isFavorite(algo.id) ? "fill-current" : ""
+                              favorites.includes(algo.id) ? "fill-current" : ""
                             }`}
                           />
                         </Button>
