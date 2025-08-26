@@ -47,6 +47,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      cstimer_module:
+        specifier: ^0.1.4
+        version: 0.1.4
       cubing:
         specifier: ^0.58.2
         version: 0.58.2
@@ -1012,6 +1015,9 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
+
+  cstimer_module@0.1.4:
+    resolution: {integrity: sha512-mSrcPu0FyrJhfqYGTvzorR5V4gRdaVyX+10AxLk3WEKwEA0M4RXietvXwiibiJQ6ch6b3IyGqtvAN6dUBrxJfw==}
 
   cubing@0.58.2:
     resolution: {integrity: sha512-XBpQvFdYRmC3tDU7cUBPHyr96vbHfeekqYIJWot7iUQMpAqZ5dJAD8kyIQWxz3edBqPjJqyxiNWiZMSzUNmYtA==}
@@ -2402,6 +2408,8 @@ snapshots:
   cookie@1.0.2: {}
 
   csstype@3.1.3: {}
+
+  cstimer_module@0.1.4: {}
 
   cubing@0.58.2:
     dependencies:

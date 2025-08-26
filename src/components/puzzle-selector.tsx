@@ -4,6 +4,7 @@ import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Box } from "lucide-react";
+import { generateScramble } from "@/app/(pages)/timer/_utils/cstimer-scramble";
 
 export type PuzzleType =
   | "333"
@@ -686,17 +687,23 @@ export const PuzzleSelector = forwardRef<
 >(({ selectedPuzzle, onPuzzleChange, onScrambleChange }, ref) => {
   const [currentScramble, setCurrentScramble] = useState<string>("");
 
-  const generateScramble = (puzzleType: PuzzleType) => {
-    // Pour l'instant, on utilise le fallback local pour éviter les blocages
-    // TODO: Réintégrer cubing.js scramble plus tard
-    const fallback = generateMockScramble(puzzleType);
-    setCurrentScramble(fallback);
-    onScrambleChange(fallback);
+  const generateNewScramble = (puzzleType: PuzzleType) => {
+    try {
+      const scramble = generateScramble(puzzleType);
+      setCurrentScramble(scramble);
+      onScrambleChange(scramble);
+    } catch (error) {
+      console.error("Erreur lors de la génération du scramble:", error);
+      // Fallback vers un scramble simple
+      const fallback = "R U R' U'";
+      setCurrentScramble(fallback);
+      onScrambleChange(fallback);
+    }
   };
 
   // Fonction publique pour forcer la régénération (appelée depuis TimerCard)
   const regenerateScramble = () => {
-    generateScramble(selectedPuzzle);
+    generateNewScramble(selectedPuzzle);
   };
 
   // Exposer la fonction au composant parent
@@ -705,14 +712,14 @@ export const PuzzleSelector = forwardRef<
   }));
 
   useEffect(() => {
-    generateScramble(selectedPuzzle);
+    generateNewScramble(selectedPuzzle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPuzzle]);
 
   // Régénérer un scramble quand currentScramble devient vide (après un solve)
   useEffect(() => {
     if (!currentScramble) {
-      generateScramble(selectedPuzzle);
+      generateNewScramble(selectedPuzzle);
     }
   }, [currentScramble, selectedPuzzle]);
 
