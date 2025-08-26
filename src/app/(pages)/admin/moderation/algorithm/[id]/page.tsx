@@ -20,6 +20,10 @@ import {
   Code,
   Eye,
   Zap,
+  Copy,
+  Check,
+  Target,
+  BookOpen,
 } from "lucide-react";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useCustomAlgorithms } from "@/hooks/use-custom-algorithms";
@@ -27,6 +31,8 @@ import { createSupabaseClientWithUser } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import { PUZZLES } from "@/components/puzzle-selector";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CubeViewer } from "@/components/cube-viewer";
 
 export default function AlgorithmDetailPage() {
   const { id } = useParams();
@@ -39,6 +45,7 @@ export default function AlgorithmDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [copied, setCopied] = useState(false);
 
   // Charger les détails de l'algorithme
   useEffect(() => {
@@ -49,14 +56,53 @@ export default function AlgorithmDetailPage() {
         setLoading(true);
         const supabase = createSupabaseClientWithUser(user.id);
 
-        const { data, error } = await supabase
+        // Récupérer l'algorithme
+        const { data: algorithmData, error: algorithmError } = await supabase
           .from("algorithms")
           .select("*")
           .eq("id", id)
           .single();
 
-        if (error) {
-          console.error("Erreur lors du chargement:", error);
+        if (algorithmError) {
+          console.error("Erreur lors du chargement:", algorithmError);
+          toast.error("Erreur lors du chargement de l'algorithme");
+          return;
+        }
+
+        // Récupérer les usernames des créateurs et reviewers
+        const creatorIds = [algorithmData.created_by];
+        if (algorithmData.reviewed_by) {
+          creatorIds.push(algorithmData.reviewed_by);
+        }
+
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("id", creatorIds);
+
+        if (profilesError) {
+          console.error(
+            "Erreur lors du chargement des profils:",
+            profilesError
+          );
+        }
+
+        // Combiner les données
+        const creator = profilesData?.find(
+          (p) => p.id === algorithmData.created_by
+        );
+        const reviewer = profilesData?.find(
+          (p) => p.id === algorithmData.reviewed_by
+        );
+
+        const data = {
+          ...algorithmData,
+          creator,
+          reviewer,
+        };
+
+        if (algorithmError) {
+          console.error("Erreur lors du chargement:", algorithmError);
           toast.error("Erreur lors du chargement de l'algorithme");
           return;
         }
@@ -172,6 +218,15 @@ export default function AlgorithmDetailPage() {
     });
   };
 
+  const copyNotation = async () => {
+    if (algorithm) {
+      await navigator.clipboard.writeText(algorithm.notation);
+      setCopied(true);
+      toast.success("Notation copiée !");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const handleApprove = async () => {
     try {
       const success = await approveAlgorithm(algorithm.id);
@@ -256,10 +311,10 @@ export default function AlgorithmDetailPage() {
             </Button>
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-foreground">
-                Détails de l'algorithme
+                Modération - {algorithm.name}
               </h1>
               <p className="text-muted-foreground">
-                Vérifiez tous les détails avant de prendre une décision
+                Vérifiez les détails et prenez une décision
               </p>
             </div>
           </div>
@@ -268,6 +323,28 @@ export default function AlgorithmDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Contenu principal */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Visualisation 3D */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Visualisation de l'algorithme
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-96 bg-muted/30 rounded-lg border flex items-center justify-center">
+                  <CubeViewer
+                    puzzleType={algorithm.puzzle_type}
+                    scramble={algorithm.notation}
+                    onReset={() => {}}
+                    showControls={true}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Visualisation interactive de l'algorithme
+                </p>
+              </CardContent>
+            </Card>
             {/* Informations générales */}
             <Card>
               <CardHeader>
@@ -288,12 +365,27 @@ export default function AlgorithmDetailPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Notation */}
+                {/* Notation avec bouton copier */}
                 <div>
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <Code className="h-4 w-4" />
-                    Notation
-                  </h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <Code className="h-4 w-4" />
+                      Notation
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={copyNotation}
+                      className="flex items-center gap-2"
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                      {copied ? "Copié" : "Copier"}
+                    </Button>
+                  </div>
                   <div className="p-3 bg-muted/50 rounded text-sm font-mono">
                     {algorithm.notation}
                   </div>
@@ -393,6 +485,108 @@ export default function AlgorithmDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Tabs détaillés */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Détails de l'algorithme</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="fingertricks" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger
+                      value="fingertricks"
+                      className="flex items-center gap-2"
+                    >
+                      <Target className="h-4 w-4" />
+                      Fingertricks
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="notes"
+                      className="flex items-center gap-2"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      Notes
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="alternatives"
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Alternatives
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="fingertricks" className="mt-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Target className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                          <h4 className="font-medium mb-2">
+                            Technique recommandée
+                          </h4>
+                          <p className="text-muted-foreground">
+                            {algorithm.fingertricks ||
+                              "Aucune information sur les fingertricks disponible."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="notes" className="mt-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <BookOpen className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                          <h4 className="font-medium mb-2">
+                            Informations complémentaires
+                          </h4>
+                          <p className="text-muted-foreground">
+                            {algorithm.notes ||
+                              "Aucune note disponible pour cet algorithme."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="alternatives" className="mt-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Eye className="h-5 w-5 text-primary mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-medium mb-2">
+                            Variantes et alternatives
+                          </h4>
+                          {algorithm.alternatives &&
+                          algorithm.alternatives.length > 0 ? (
+                            <div className="space-y-2">
+                              {algorithm.alternatives.map(
+                                (alt: string, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="bg-muted/50 p-3 rounded-lg"
+                                  >
+                                    <code className="text-sm font-mono">
+                                      {alt}
+                                    </code>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-muted-foreground">
+                              Aucune alternative disponible pour cet algorithme.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
             {/* Métadonnées */}
             <Card>
               <CardHeader>
@@ -403,7 +597,8 @@ export default function AlgorithmDetailPage() {
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      <strong>Créé par:</strong> {algorithm.created_by}
+                      <strong>Créé par:</strong>{" "}
+                      {algorithm.creator?.username || "Utilisateur"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -416,13 +611,15 @@ export default function AlgorithmDetailPage() {
                   <div className="flex items-center gap-2">
                     <Box className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      <strong>Méthode:</strong> {algorithm.method}
+                      <strong>Méthode:</strong>{" "}
+                      {algorithm.method?.toUpperCase() || "N/A"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Code className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      <strong>Set:</strong> {algorithm.set_name}
+                      <strong>Set:</strong>{" "}
+                      {algorithm.set_name?.toUpperCase() || "N/A"}
                     </span>
                   </div>
                 </div>
@@ -472,7 +669,7 @@ export default function AlgorithmDetailPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Revisé par:</span>
                       <span className="text-sm font-medium">
-                        {algorithm.reviewed_by}
+                        {algorithm.reviewer?.username || algorithm.reviewed_by}
                       </span>
                     </div>
                   )}
