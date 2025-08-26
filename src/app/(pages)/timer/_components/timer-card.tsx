@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { formatTime } from "@/lib/time";
 import { Button } from "@/app/_components/ui/button";
 import { Card, CardContent, CardHeader } from "@/app/_components/ui/card";
-import { randomScrambleForEvent } from "cubing/scramble";
+import { generateScramble } from "../_utils/cstimer-scramble";
 import { Penalty, Solve, useSolves } from "../_hooks/use-solves";
 import { CubeViewer } from "@/components/cube-viewer";
+import { PuzzleSelector, type PuzzleType } from "@/components/puzzle-selector";
 
 function useRafTimer() {
   const [running, setRunning] = useState(false);
@@ -57,31 +58,28 @@ function useRafTimer() {
 export function TimerCard() {
   const { solves, addSolve } = useSolves();
   const { running, elapsedMs, start, stop, reset } = useRafTimer();
+  const [selectedPuzzle, setSelectedPuzzle] = useState<PuzzleType>("333");
   const [scramble, setScramble] = useState("");
   const [penalty, setPenalty] = useState<Penalty>("OK");
   const [notes, setNotes] = useState("");
   const [viewerKey, setViewerKey] = useState(0);
 
-  // Fonction pour générer un scramble avec cubing.js
-  const generateScramble = async () => {
+  // Fonction pour générer un scramble avec cstimer
+  const generateNewScramble = () => {
     try {
-      const scramble = await randomScrambleForEvent("333");
-      return scramble.toString();
+      return generateScramble(selectedPuzzle);
     } catch (error) {
       console.error("Erreur lors de la génération du scramble:", error);
       return "R U R' U'"; // Fallback
     }
   };
 
-  // Générer le premier scramble au chargement
+  // Générer le premier scramble au chargement et quand le puzzle change
   useEffect(() => {
-    const initScramble = async () => {
-      const initialScramble = await generateScramble();
-      setScramble(initialScramble);
-      setViewerKey((prev) => prev + 1);
-    };
-    initScramble();
-  }, []);
+    const initialScramble = generateNewScramble();
+    setScramble(initialScramble);
+    setViewerKey((prev) => prev + 1);
+  }, [selectedPuzzle]);
 
   const effectiveMs = useMemo(() => {
     if (penalty === "DNF") return NaN;
@@ -103,7 +101,7 @@ export function TimerCard() {
     return () => window.removeEventListener("keydown", onSpace);
   }, [onSpace]);
 
-  async function saveSolve() {
+  function saveSolve() {
     const s: Solve = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       timeMs: Math.max(0, Math.round(elapsedMs)),
@@ -116,33 +114,41 @@ export function TimerCard() {
     // reset for next
     setPenalty("OK");
     setNotes("");
-    const nextScramble = await generateScramble();
+    const nextScramble = generateNewScramble();
     setScramble(nextScramble);
     setViewerKey((prev) => prev + 1); // Forcer le re-render du viewer
     reset();
   }
 
   return (
-    <Card className="p-6">
-      <CardHeader className="pt-0 px-0">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span>Scramble actuel</span>
-          <code className="rounded-md bg-muted px-2 py-1 text-foreground/90 whitespace-pre-wrap break-words">
-            {scramble}
-          </code>
-          <Button
-            variant="outline"
-            className="h-8 px-3"
-            onClick={async () => {
-              const newScramble = await generateScramble();
-              setScramble(newScramble);
-              setViewerKey((prev) => prev + 1); // Forcer le re-render du viewer
-            }}
-          >
-            Nouveau scramble
-          </Button>
-        </div>
-      </CardHeader>
+    <div className="space-y-6">
+      {/* Sélecteur de puzzle */}
+      <PuzzleSelector
+        selectedPuzzle={selectedPuzzle}
+        onPuzzleChange={setSelectedPuzzle}
+        onScrambleChange={setScramble}
+      />
+      
+      <Card className="p-6">
+        <CardHeader className="pt-0 px-0">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>Scramble actuel</span>
+            <code className="rounded-md bg-muted px-2 py-1 text-foreground/90 whitespace-pre-wrap break-words">
+              {scramble}
+            </code>
+            <Button
+              variant="outline"
+              className="h-8 px-3"
+              onClick={() => {
+                const newScramble = generateNewScramble();
+                setScramble(newScramble);
+                setViewerKey((prev) => prev + 1); // Forcer le re-render du viewer
+              }}
+            >
+              Nouveau scramble
+            </Button>
+          </div>
+        </CardHeader>
       <CardContent className="px-0">
         <div className="flex flex-col items-center gap-6">
           <motion.div
@@ -201,7 +207,7 @@ export function TimerCard() {
             <div className="h-64 bg-muted/30 rounded-lg border">
               <CubeViewer
                 key={`${scramble}-${viewerKey}`} // Forcer le re-render avec la key
-                puzzleType="333"
+                puzzleType={selectedPuzzle}
                 scramble={scramble}
                 onReset={() => {}}
                 showControls={false}
@@ -227,5 +233,6 @@ export function TimerCard() {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
