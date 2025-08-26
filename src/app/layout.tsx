@@ -22,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Speedcube Master",
   description:
-    "Le Strava du speedcubing. Timer, algos, stats et défis pour tous les puzzles WCA.",
+    "Le site de référence français pour le speedcubing. Timer, algos, stats, méthodes et défis pour tous les puzzles WCA.",
 };
 
 export default function RootLayout({
