@@ -54,6 +54,18 @@ export function usePersonalBests(userId?: string) {
     loadPersonalBests();
   }, [targetUserId]);
 
+  // Écouter les événements de mise à jour des solves pour rafraîchir les PB
+  useEffect(() => {
+    const handleSolvesUpdated = () => {
+      console.log("📥 Événement solves-updated reçu dans usePersonalBests");
+      loadPersonalBests();
+    };
+
+    window.addEventListener("solves-updated", handleSolvesUpdated);
+    return () =>
+      window.removeEventListener("solves-updated", handleSolvesUpdated);
+  }, [targetUserId]);
+
   const updateOrCreatePersonalBest = async (
     puzzleType: string,
     time: number,
