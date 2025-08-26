@@ -18,7 +18,7 @@ export interface Algorithm {
   fingertricks: string;
   notes: string;
   alternatives: string[];
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "modified";
   created_by: string;
   creator_username?: string;
   reviewed_by?: string;
@@ -26,6 +26,9 @@ export interface Algorithm {
   rejection_reason?: string;
   created_at: string;
   updated_at: string;
+  modification_count: number;
+  last_modified_at?: string;
+  last_modified_by?: string;
 }
 
 interface FilterOptions {
@@ -148,7 +151,7 @@ export function useAlgorithms() {
   const createAlgorithm = async (
     algorithmData: Omit<
       Algorithm,
-      "id" | "created_at" | "updated_at" | "status" | "created_by"
+      "id" | "created_at" | "updated_at" | "status" | "created_by" | "modification_count" | "last_modified_at" | "last_modified_by" | "reviewed_by" | "reviewed_at" | "rejection_reason"
     >
   ) => {
     if (!user?.id) throw new Error("Utilisateur non connecté");
@@ -162,6 +165,7 @@ export function useAlgorithms() {
           ...algorithmData,
           status: "pending",
           created_by: user.id,
+          modification_count: 0,
         })
         .select()
         .single();
@@ -344,7 +348,7 @@ export function useAlgorithms() {
       const { data, error } = await supabase
         .from("algorithms")
         .select("*")
-        .eq("status", "pending")
+        .in("status", ["pending", "modified"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -368,7 +372,7 @@ export function useAlgorithms() {
       const { count, error } = await supabase
         .from("algorithms")
         .select("*", { count: "exact", head: true })
-        .eq("status", "pending");
+        .in("status", ["pending", "modified"]);
 
       if (error) throw error;
       return count || 0;

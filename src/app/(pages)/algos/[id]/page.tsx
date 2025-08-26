@@ -23,6 +23,9 @@ import { toast } from "sonner";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAlgorithms, Algorithm } from "@/hooks/use-algorithms";
 import { useLearningSystem } from "@/hooks/use-learning-system";
+import { useAlgorithmModifications } from "@/hooks/use-algorithm-modifications";
+import { AlgorithmModificationDialog } from "@/components/algorithm-modification-dialog";
+import { AlgorithmModificationHistory } from "@/components/algorithm-modification-history";
 
 export default function AlgorithmDetailPage() {
   const params = useParams();
@@ -40,6 +43,15 @@ export default function AlgorithmDetailPage() {
   } = useFavorites();
   const { getAlgorithmById } = useAlgorithms();
   const { addToLearning, learningData } = useLearningSystem();
+  const { canModifyAlgorithm } = useAlgorithmModifications();
+
+  // Fonction pour rafraîchir les données de l'algorithme
+  const refreshAlgorithm = async () => {
+    if (params.id) {
+      const algo = await getAlgorithmById(params.id as string);
+      setAlgorithm(algo);
+    }
+  };
 
   // Charger l'algorithme par ID et initialiser le cube
   useEffect(() => {
@@ -248,6 +260,17 @@ export default function AlgorithmDetailPage() {
                     : "Apprendre"}
                 </span>
               </Button>
+
+              {/* Boutons de modification pour le créateur */}
+              {algorithm && canModifyAlgorithm(algorithm) && (
+                <>
+                  <AlgorithmModificationDialog
+                    algorithm={algorithm}
+                    onSuccess={refreshAlgorithm}
+                  />
+                  <AlgorithmModificationHistory algorithm={algorithm} />
+                </>
+              )}
             </div>
           </div>
 
