@@ -3,7 +3,11 @@ import { generateScrambleSync } from "scrambled";
 
 // Fonction pour obtenir la date du jour au format YYYY-MM-DD
 export function getTodayDate(): string {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 // Fonction pour générer un scramble officiel via la bibliothèque scrambled
@@ -12,6 +16,7 @@ export async function generateOfficialScramble(): Promise<string> {
     // Utiliser la bibliothèque scrambled pour générer un scramble officiel 3x3
     // 20 mouvements est la longueur standard pour les mélanges 3x3 officiels
     const result = generateScrambleSync(20, 3);
+    console.log("Scramble généré avec scrambled:", result.scramble);
     return result.scramble;
   } catch (error) {
     console.error("Erreur lors de la génération du scramble officiel:", error);
@@ -47,6 +52,10 @@ export async function generateOfficialScramble(): Promise<string> {
     ];
 
     const randomIndex = Math.floor(Math.random() * FALLBACK_SCRAMBLES.length);
+    console.log(
+      "Utilisation du fallback scramble:",
+      FALLBACK_SCRAMBLES[randomIndex]
+    );
     return FALLBACK_SCRAMBLES[randomIndex];
   }
 }

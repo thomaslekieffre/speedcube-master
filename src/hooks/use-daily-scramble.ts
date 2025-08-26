@@ -27,8 +27,13 @@ export function useDailyScramble() {
 
       const data: DailyScrambleData = await response.json();
 
-      setScramble(data.scramble);
-      setDate(data.date);
+      // Vérifier que la date est valide
+      if (data.date && !isNaN(new Date(data.date).getTime())) {
+        setScramble(data.scramble);
+        setDate(data.date);
+      } else {
+        throw new Error("Date invalide reçue du serveur");
+      }
     } catch (err) {
       console.error("Erreur lors du chargement du scramble:", err);
       setError(err instanceof Error ? err.message : "Erreur inconnue");
