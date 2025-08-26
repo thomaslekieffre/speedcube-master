@@ -190,7 +190,10 @@ export default function ChallengePage() {
           </p>
           <div className="flex items-center justify-center gap-4 text-sm">
             <Badge variant="outline">
-              Challenge du {new Date(challengeDate).toLocaleDateString("fr-FR")}
+              Challenge du{" "}
+              {challengeDate
+                ? new Date(challengeDate).toLocaleDateString("fr-FR")
+                : new Date().toLocaleDateString("fr-FR")}
             </Badge>
             <Badge
               variant="outline"

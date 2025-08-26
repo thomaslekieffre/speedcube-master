@@ -25,7 +25,9 @@ import {
   Zap,
   Box,
   Users,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useCustomMethods } from "@/hooks/use-custom-methods";
 import { useCustomAlgorithms } from "@/hooks/use-custom-algorithms";
@@ -531,9 +533,17 @@ export default function ModerationPage() {
                         <CardHeader>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <CardTitle className="text-lg mb-2">
-                                {method.name}
-                              </CardTitle>
+                              <div className="flex items-center gap-2 mb-2">
+                                <CardTitle className="text-lg">
+                                  {method.name}
+                                </CardTitle>
+                                <Link
+                                  href={`/admin/moderation/method/${method.id}`}
+                                  className="text-primary hover:text-primary/80 transition-colors"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
+                              </div>
                               <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="outline">
                                   <Box className="h-3 w-3 mr-1" />
@@ -620,9 +630,17 @@ export default function ModerationPage() {
                         <CardHeader>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <CardTitle className="text-lg mb-2">
-                                {algo.name}
-                              </CardTitle>
+                              <div className="flex items-center gap-2 mb-2">
+                                <CardTitle className="text-lg">
+                                  {algo.name}
+                                </CardTitle>
+                                <Link
+                                  href={`/admin/moderation/algorithm/${algo.id}`}
+                                  className="text-primary hover:text-primary/80 transition-colors"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
+                              </div>
                               <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="outline">
                                   <Box className="h-3 w-3 mr-1" />

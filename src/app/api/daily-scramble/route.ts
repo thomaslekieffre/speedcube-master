@@ -1,32 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  generateAndSaveDailyScramble,
-  getDailyScrambleFromDB,
   getTodayDate,
+  generateOfficialScramble,
+  getDailyScrambleFromDB,
+  saveDailyScramble,
 } from "@/lib/daily-scramble";
 
 // GET - Récupérer le scramble du jour
 export async function GET() {
   try {
     const today = getTodayDate();
-    const scramble = await getDailyScrambleFromDB(today);
 
+    // Essayer de récupérer depuis la DB d'abord
+    let scramble = await getDailyScrambleFromDB(today);
+
+    // Si pas en DB, générer un nouveau
     if (!scramble) {
-      // Si pas de scramble pour aujourd'hui, en générer un
-      await generateAndSaveDailyScramble();
-      const newScramble = await getDailyScrambleFromDB(today);
+      try {
+        scramble = await generateOfficialScramble();
 
-      return NextResponse.json({
-        date: today,
-        scramble: newScramble,
-        generated: true,
-      });
+        // Essayer de sauvegarder en DB (mais continuer même si ça échoue)
+        try {
+          await saveDailyScramble(today, scramble);
+        } catch (dbError) {
+          console.warn(
+            "Impossible de sauvegarder en DB, mais scramble généré:",
+            dbError
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Erreur avec generateOfficialScramble, utilisation du fallback:",
+          error
+        );
+        scramble = "R U R' U' R' F R2 U' R' U' R U R' F'";
+      }
     }
 
     return NextResponse.json({
       date: today,
       scramble: scramble,
-      generated: false,
+      generated: true,
     });
   } catch (error) {
     console.error("Erreur lors de la récupération du scramble:", error);
@@ -40,23 +54,15 @@ export async function GET() {
 // POST - Forcer la génération d'un nouveau scramble pour aujourd'hui
 export async function POST(request: NextRequest) {
   try {
-    const { force = false } = await request.json();
-
-    if (force) {
-      // Forcer la régénération même si un scramble existe déjà
-      await generateAndSaveDailyScramble();
-    } else {
-      // Générer seulement si aucun scramble n'existe pour aujourd'hui
-      const today = getTodayDate();
-      const existingScramble = await getDailyScrambleFromDB(today);
-
-      if (!existingScramble) {
-        await generateAndSaveDailyScramble();
-      }
-    }
-
     const today = getTodayDate();
-    const scramble = await getDailyScrambleFromDB(today);
+    const scramble = await generateOfficialScramble();
+
+    // Essayer de sauvegarder en DB
+    try {
+      await saveDailyScramble(today, scramble);
+    } catch (dbError) {
+      console.warn("Impossible de sauvegarder en DB:", dbError);
+    }
 
     return NextResponse.json({
       date: today,
