@@ -288,12 +288,15 @@ export interface Database {
           alternatives: string[];
           created_at: string;
           updated_at: string;
-          status: string;
+          status: "pending" | "approved" | "rejected" | "modified";
           created_by: string;
           creator_username?: string;
           reviewed_by?: string;
           reviewed_at?: string;
           rejection_reason?: string;
+          modification_count: number;
+          last_modified_at?: string;
+          last_modified_by?: string;
         };
         Insert: {
           id?: string;
@@ -311,12 +314,15 @@ export interface Database {
           alternatives?: string[];
           created_at?: string;
           updated_at?: string;
-          status?: string;
+          status?: "pending" | "approved" | "rejected" | "modified";
           created_by: string;
           creator_username?: string;
           reviewed_by?: string;
           reviewed_at?: string;
           rejection_reason?: string;
+          modification_count?: number;
+          last_modified_at?: string;
+          last_modified_by?: string;
         };
         Update: {
           id?: string;
@@ -334,12 +340,104 @@ export interface Database {
           alternatives?: string[];
           created_at?: string;
           updated_at?: string;
-          status?: string;
+          status?: "pending" | "approved" | "rejected" | "modified";
           created_by?: string;
           creator_username?: string;
           reviewed_by?: string;
           reviewed_at?: string;
           rejection_reason?: string;
+          modification_count?: number;
+          last_modified_at?: string;
+          last_modified_by?: string;
+        };
+      };
+      algorithm_modifications: {
+        Row: {
+          id: string;
+          algorithm_id: string;
+          modified_by: string;
+          modified_at: string;
+          previous_data: {
+            name?: string;
+            notation?: string;
+            description?: string;
+            scramble?: string;
+            solution?: string;
+            fingertricks?: string;
+            notes?: string;
+            alternatives?: string[];
+            difficulty?: string;
+          };
+          new_data: {
+            name?: string;
+            notation?: string;
+            description?: string;
+            scramble?: string;
+            solution?: string;
+            fingertricks?: string;
+            notes?: string;
+            alternatives?: string[];
+            difficulty?: string;
+          };
+          modification_reason?: string;
+        };
+        Insert: {
+          id?: string;
+          algorithm_id: string;
+          modified_by: string;
+          modified_at?: string;
+          previous_data: {
+            name?: string;
+            notation?: string;
+            description?: string;
+            scramble?: string;
+            solution?: string;
+            fingertricks?: string;
+            notes?: string;
+            alternatives?: string[];
+            difficulty?: string;
+          };
+          new_data: {
+            name?: string;
+            notation?: string;
+            description?: string;
+            scramble?: string;
+            solution?: string;
+            fingertricks?: string;
+            notes?: string;
+            alternatives?: string[];
+            difficulty?: string;
+          };
+          modification_reason?: string;
+        };
+        Update: {
+          id?: string;
+          algorithm_id?: string;
+          modified_by?: string;
+          modified_at?: string;
+          previous_data?: {
+            name?: string;
+            notation?: string;
+            description?: string;
+            scramble?: string;
+            solution?: string;
+            fingertricks?: string;
+            notes?: string;
+            alternatives?: string[];
+            difficulty?: string;
+          };
+          new_data?: {
+            name?: string;
+            notation?: string;
+            description?: string;
+            scramble?: string;
+            solution?: string;
+            fingertricks?: string;
+            notes?: string;
+            alternatives?: string[];
+            difficulty?: string;
+          };
+          modification_reason?: string;
         };
       };
 

@@ -33,6 +33,7 @@ import { PUZZLES } from "@/components/puzzle-selector";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CubeViewer } from "@/components/cube-viewer";
+import { ModerationAlgorithmCard } from "@/components/moderation-algorithm-card";
 
 export default function AlgorithmDetailPage() {
   const { id } = useParams();
@@ -629,30 +630,12 @@ export default function AlgorithmDetailPage() {
 
           {/* Actions */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  onClick={handleApprove}
-                  className="w-full bg-green-500 hover:bg-green-600"
-                  disabled={algorithm.status !== "pending"}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Approuver
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowRejectDialog(true)}
-                  className="w-full"
-                  disabled={algorithm.status !== "pending"}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Rejeter
-                </Button>
-              </CardContent>
-            </Card>
+            <ModerationAlgorithmCard
+              algorithm={algorithm}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              loading={loading}
+            />
 
             {/* Statut */}
             <Card>

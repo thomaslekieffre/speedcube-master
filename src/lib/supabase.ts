@@ -3,12 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Debug: vérifier les variables d'environnement
-console.log("Supabase URL:", supabaseUrl ? "✅ Configuré" : "❌ Manquant");
-console.log("Supabase Key:", supabaseAnonKey ? "✅ Configuré" : "❌ Manquant");
-
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("❌ Variables d'environnement Supabase manquantes !");
+  console.error("Variables d'environnement Supabase manquantes !");
   console.error("Vérifiez votre fichier .env.local");
 }
 
@@ -28,7 +24,6 @@ export const createSupabaseClientWithUser = (userId: string) => {
 // Fonction pour configurer l'ID utilisateur Clerk dans Supabase
 export const configureSupabaseForUser = (userId: string) => {
   // Cette fonction n'est plus nécessaire car nous utilisons les headers HTTP
-  console.log("✅ ID utilisateur configuré pour Supabase via headers:", userId);
 };
 
 // Types pour les algorithmes avec système de modération
@@ -46,13 +41,46 @@ export interface Algorithm {
   fingertricks: string;
   notes: string;
   alternatives: string[];
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "modified";
   created_by: string;
   reviewed_by?: string;
   reviewed_at?: string;
   rejection_reason?: string;
   created_at: string;
   updated_at: string;
+  modification_count: number;
+  last_modified_at?: string;
+  last_modified_by?: string;
+}
+
+export interface AlgorithmModification {
+  id: string;
+  algorithm_id: string;
+  modified_by: string;
+  modified_at: string;
+  previous_data: {
+    name?: string;
+    notation?: string;
+    description?: string;
+    scramble?: string;
+    solution?: string;
+    fingertricks?: string;
+    notes?: string;
+    alternatives?: string[];
+    difficulty?: string;
+  };
+  new_data: {
+    name?: string;
+    notation?: string;
+    description?: string;
+    scramble?: string;
+    solution?: string;
+    fingertricks?: string;
+    notes?: string;
+    alternatives?: string[];
+    difficulty?: string;
+  };
+  modification_reason?: string;
 }
 
 // Types pour les rôles utilisateur

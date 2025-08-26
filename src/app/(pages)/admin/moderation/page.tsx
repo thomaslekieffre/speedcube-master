@@ -72,9 +72,6 @@ export default function ModerationPage() {
     if (!user?.id) return [];
 
     try {
-      console.log("🔍 loadPendingMethodsDirect: Début de la requête...");
-
-      // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
@@ -84,17 +81,12 @@ export default function ModerationPage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("❌ Erreur Supabase loadPendingMethodsDirect:", error);
         throw error;
       }
 
-      console.log("✅ loadPendingMethodsDirect: Données récupérées:", data);
       return data || [];
     } catch (err) {
-      console.error(
-        "❌ Erreur lors du chargement des méthodes en attente:",
-        err
-      );
+      console.error("Erreur lors du chargement des méthodes en attente:", err);
       return [];
     }
   };
@@ -103,29 +95,21 @@ export default function ModerationPage() {
     if (!user?.id) return [];
 
     try {
-      console.log("🔍 loadPendingAlgorithmsDirect: Début de la requête...");
-
-      // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")
         .select("*")
-        .eq("status", "pending")
+        .in("status", ["pending", "modified"])
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("❌ Erreur Supabase loadPendingAlgorithmsDirect:", error);
         throw error;
       }
 
-      console.log("✅ loadPendingAlgorithmsDirect: Données récupérées:", data);
       return data || [];
     } catch (err) {
-      console.error(
-        "❌ Erreur lors du chargement des algorithmes en attente:",
-        err
-      );
+      console.error("Erreur lors du chargement des algorithmes en attente:", err);
       return [];
     }
   };
@@ -137,24 +121,13 @@ export default function ModerationPage() {
 
       setLoading(true);
       try {
-        console.log("🔄 Début du chargement des données de modération...");
-
-        // Charger les méthodes en attente
-        console.log("📋 Chargement des méthodes en attente...");
         const methodsData = await loadPendingMethodsDirect();
-        console.log("✅ Méthodes chargées:", methodsData);
-
-        // Charger les algorithmes en attente
-        console.log("⚡ Chargement des algorithmes en attente...");
         const algorithmsData = await loadPendingAlgorithmsDirect();
-        console.log("✅ Algorithmes chargés:", algorithmsData);
 
         setMethods(methodsData);
         setAlgorithms(algorithmsData);
-
-        console.log("🎉 Chargement terminé avec succès");
       } catch (error) {
-        console.error("❌ Erreur lors du chargement:", error);
+        console.error("Erreur lors du chargement:", error);
         toast.error("Erreur lors du chargement des données");
       } finally {
         setLoading(false);
@@ -205,6 +178,16 @@ export default function ModerationPage() {
           <Badge variant="secondary">
             <Clock className="h-3 w-3 mr-1" />
             En attente
+          </Badge>
+        );
+      case "modified":
+        return (
+          <Badge
+            variant="outline"
+            className="border-orange-500 text-orange-600"
+          >
+            <Zap className="h-3 w-3 mr-1" />
+            Modifié
           </Badge>
         );
       case "rejected":
