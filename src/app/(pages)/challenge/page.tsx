@@ -116,8 +116,7 @@ export default function ChallengePage() {
 
     try {
       await saveAttempt(timeToSave, "none");
-      // Recharger le classement après une nouvelle tentative
-      await loadLeaderboard();
+      // Le classement est automatiquement mis à jour dans saveAttempt
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
       // Optionnel : afficher un toast d'erreur
@@ -130,8 +129,7 @@ export default function ChallengePage() {
   ) => {
     try {
       await applyPenalty(attemptId, penalty);
-      // Recharger le classement après modification
-      await loadLeaderboard();
+      // Le classement est automatiquement mis à jour dans applyPenalty
     } catch (error) {
       console.error("Erreur lors de l'application de la pénalité:", error);
     }
@@ -150,7 +148,7 @@ export default function ChallengePage() {
 
     try {
       await saveAttempt(time, penalty);
-      await loadLeaderboard();
+      // Le classement est automatiquement mis à jour dans saveAttempt
     } catch (error) {
       console.error("Erreur lors de l'ajout du temps manuel:", error);
     }
