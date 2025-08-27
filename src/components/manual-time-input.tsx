@@ -16,6 +16,7 @@ import {
 import { Plus, X, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { PUZZLES, type PuzzleType } from "./puzzle-selector";
+import { formatTime } from "@/lib/time";
 
 interface ManualTimeInputProps {
   onSave: (
@@ -131,16 +132,7 @@ export function ManualTimeInput({
     setIsOpen(false);
   };
 
-  const formatTime = (ms: number) => {
-    if (ms === 0) return "0.00";
-    const seconds = ms / 1000;
-    if (seconds < 60) {
-      return seconds.toFixed(2);
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = (seconds % 60).toFixed(2);
-    return `${minutes}:${remainingSeconds.padStart(5, "0")}`;
-  };
+
 
   if (!isOpen) {
     return (

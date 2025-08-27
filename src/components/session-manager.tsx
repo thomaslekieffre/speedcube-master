@@ -22,6 +22,7 @@ import {
 import { useSessions } from "@/hooks/use-sessions";
 import { useSessionStats } from "@/hooks/use-session-stats";
 import { toast } from "sonner";
+import { formatTime } from "@/lib/time";
 import type { PuzzleType } from "./puzzle-selector";
 
 interface SessionManagerProps {
@@ -129,16 +130,7 @@ export function SessionManager({
     setEditName("");
   };
 
-  const formatTime = (ms: number) => {
-    if (ms === 0) return "0.00";
-    const seconds = ms / 1000;
-    if (seconds < 60) {
-      return seconds.toFixed(2);
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = (seconds % 60).toFixed(2);
-    return `${minutes}:${remainingSeconds.padStart(5, "0")}`;
-  };
+
 
   const getSessionStats = (sessionId: string) => {
     return sessionStats.find((stats) => stats.session_id === sessionId);
