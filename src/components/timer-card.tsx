@@ -37,8 +37,8 @@ import {
   type PuzzleType,
   type PuzzleSelectorRef,
   PUZZLES,
-  generateMockScramble,
 } from "./puzzle-selector";
+import { generateScramble } from "@/app/(pages)/timer/_utils/cstimer-scramble";
 import { CubeViewer } from "./cube-viewer";
 
 export function TimerCard() {
@@ -87,7 +87,7 @@ export function TimerCard() {
   // Générer le premier scramble côté client seulement
   useEffect(() => {
     if (!isInitialized.current) {
-      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setCurrentScramble(generateScramble(selectedPuzzle));
       isInitialized.current = true;
     }
   }, []);
@@ -95,7 +95,7 @@ export function TimerCard() {
   // Générer un nouveau scramble quand le puzzle change
   useEffect(() => {
     if (isInitialized.current) {
-      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setCurrentScramble(generateScramble(selectedPuzzle));
     }
   }, [selectedPuzzle]);
 
@@ -184,7 +184,7 @@ export function TimerCard() {
       // Le PB sera mis à jour automatiquement via le hook useSolvesStats
 
       // Générer un nouveau scramble
-      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setCurrentScramble(generateScramble(selectedPuzzle));
       setDnfAlreadySaved(false);
 
       toast.success("Solve sauvegardé !");
@@ -213,7 +213,7 @@ export function TimerCard() {
 
   const handlePuzzleChange = useCallback((puzzleType: PuzzleType) => {
     setSelectedPuzzle(puzzleType);
-    setCurrentScramble(generateMockScramble(puzzleType));
+    setCurrentScramble(generateScramble(puzzleType));
     // Réinitialiser la session active quand on change de puzzle
     setActiveSessionId(null);
   }, []);
@@ -585,7 +585,7 @@ export function TimerCard() {
                         size="sm"
                         onClick={() =>
                           setCurrentScramble(
-                            generateMockScramble(selectedPuzzle)
+                            generateScramble(selectedPuzzle)
                           )
                         }
                         className="h-8 sm:h-9 px-3 sm:px-4"
