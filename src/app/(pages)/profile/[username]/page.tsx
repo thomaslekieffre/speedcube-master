@@ -318,7 +318,7 @@ export default function PublicProfilePage() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant="secondary" className="text-xs">
-                        {pb.puzzle_type}
+                        {PUZZLES.find((p) => p.id === pb.puzzle_type)?.shortName || pb.puzzle_type}
                       </Badge>
                       {pb.penalty === "plus2" && (
                         <Badge
@@ -382,7 +382,7 @@ export default function PublicProfilePage() {
                           ).length - index}
                         </div>
                         <Badge variant="secondary" className="text-xs">
-                          {solve.puzzle_type}
+                          {PUZZLES.find((p) => p.id === solve.puzzle_type)?.shortName || solve.puzzle_type}
                         </Badge>
                         <div className="text-sm font-mono font-semibold">
                           {formatTime(solve.time)}

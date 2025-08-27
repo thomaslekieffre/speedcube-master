@@ -163,6 +163,9 @@ export function TimerCard() {
   }, [isRunning, isInspection, inspectionStartTime]);
 
   const handleSpacePress = useCallback(() => {
+    // Vérifier si c'est un event blind
+    const isBlindEvent = ["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle);
+
     if (isRunning) {
       // Arrêter le timer immédiatement
       const finalTime = Date.now() - (startTime || 0);
@@ -200,17 +203,21 @@ export function TimerCard() {
       setDnfAlreadySaved(false);
 
       toast.success("Solve sauvegardé !");
-    } else if (isInspection) {
-      // Démarrer le solve depuis l'inspection
+    } else if (isInspection && !isBlindEvent) {
+      // Démarrer le solve depuis l'inspection (uniquement pour les events non-blind)
       setIsInspection(false);
       setInspection(0);
       setInspectionStartTime(null);
       setIsRunning(true);
       setStartTime(Date.now());
-    } else {
-      // Commencer l'inspection
+    } else if (!isBlindEvent) {
+      // Commencer l'inspection (uniquement pour les events non-blind)
       setIsInspection(true);
       setInspectionStartTime(Date.now());
+    } else {
+      // Pour les events blind : démarrer directement le timer
+      setIsRunning(true);
+      setStartTime(Date.now());
     }
   }, [
     isRunning,
@@ -312,8 +319,6 @@ export function TimerCard() {
     [addSolve]
   );
 
-
-
   const formatInspection = (ms: number) => {
     const seconds = ms / 1000;
     return seconds.toFixed(1);
@@ -331,7 +336,7 @@ export function TimerCard() {
             {/* Puzzle selector */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               {/* Puzzle buttons - Responsive grid */}
-              <div className="grid grid-cols-6 sm:flex sm:flex-wrap gap-1 sm:gap-2">
+              <div className="grid grid-cols-8 sm:flex sm:flex-wrap gap-1 sm:gap-2">
                 {[
                   "333",
                   "222",
@@ -344,6 +349,10 @@ export function TimerCard() {
                   "sq1",
                   "clock",
                   "minx",
+                  "333bf",
+                  "444bf",
+                  "555bf",
+                  "333mbf",
                 ].map((puzzleId) => {
                   const puzzle = PUZZLES.find((p: any) => p.id === puzzleId);
                   if (!puzzle) return null;
@@ -470,44 +479,51 @@ export function TimerCard() {
                           <div className="text-5xl sm:text-6xl lg:text-7xl font-mono font-bold text-foreground">
                             {formatTime(time)}
                           </div>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            Appuie sur espace pour commencer l'inspection
-                          </p>
+                                                     <p className="text-xs sm:text-sm text-muted-foreground">
+                             {["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle) 
+                               ? "Appuie sur espace pour démarrer" 
+                               : "Appuie sur espace pour commencer l'inspection"
+                             }
+                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Control Button - Responsive */}
-                    <div className="flex justify-center">
-                      <Button
-                        onClick={handleSpacePress}
-                        disabled={isInspection}
-                        className="h-10 sm:h-12 px-4 sm:px-6 text-base sm:text-lg font-semibold"
-                        size="lg"
-                      >
-                        {isRunning ? (
-                          <>
-                            <Square className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                            <span className="hidden sm:inline">Arrêter</span>
-                            <span className="sm:hidden">Stop</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                            {isInspection ? (
-                              <span className="hidden sm:inline">Démarrer</span>
-                            ) : (
-                              <span className="hidden sm:inline">
-                                Inspection
-                              </span>
-                            )}
-                            <span className="sm:hidden">
-                              {isInspection ? "Start" : "Insp"}
-                            </span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                                         {/* Control Button - Responsive */}
+                     <div className="flex justify-center">
+                       <Button
+                         onClick={handleSpacePress}
+                         disabled={isInspection}
+                         className="h-10 sm:h-12 px-4 sm:px-6 text-base sm:text-lg font-semibold"
+                         size="lg"
+                       >
+                         {isRunning ? (
+                           <>
+                             <Square className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                             <span className="hidden sm:inline">Arrêter</span>
+                             <span className="sm:hidden">Stop</span>
+                           </>
+                         ) : (
+                           <>
+                             <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                             {isInspection ? (
+                               <span className="hidden sm:inline">Démarrer</span>
+                             ) : ["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle) ? (
+                               <span className="hidden sm:inline">
+                                 Démarrer
+                               </span>
+                             ) : (
+                               <span className="hidden sm:inline">
+                                 Inspection
+                               </span>
+                             )}
+                             <span className="sm:hidden">
+                               {isInspection ? "Start" : ["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle) ? "Start" : "Insp"}
+                             </span>
+                           </>
+                         )}
+                       </Button>
+                     </div>
 
                     {/* Quick Stats - Responsive */}
                     {puzzleStats && (
@@ -547,40 +563,113 @@ export function TimerCard() {
                     )}
 
                     {/* Scramble Display - Responsive */}
-                    <div>
-                      <h3 className="text-sm sm:text-base font-semibold mb-2">
-                        Scramble actuel
-                      </h3>
-                      <div className="bg-muted/50 p-2 sm:p-3 rounded-lg border border-border">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">
-                            {PUZZLES.find((p) => p.id === selectedPuzzle)
-                              ?.shortName || "2x2x2"}
-                          </span>
+                    {selectedPuzzle !== "333mbf" && (
+                      <div>
+                        <h3 className="text-sm sm:text-base font-semibold mb-2">
+                          Scramble actuel
+                        </h3>
+                        <div className="bg-muted/50 p-2 sm:p-3 rounded-lg border border-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">
+                              {PUZZLES.find((p) => p.id === selectedPuzzle)
+                                ?.shortName || "2x2x2"}
+                            </span>
+                          </div>
+                          <code className="text-xs sm:text-sm font-mono break-all leading-relaxed text-foreground">
+                            {currentScramble}
+                          </code>
                         </div>
-                        <code className="text-xs sm:text-sm font-mono break-all leading-relaxed text-foreground">
-                          {currentScramble}
-                        </code>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Cube Viewer Section - Responsive */}
                   <div className="lg:col-span-2 flex flex-col">
-                    {currentScramble && currentScramble.trim() !== "" && (
-                      <div className="bg-muted/30 rounded-lg p-3 sm:p-4 lg:p-6 border border-border flex-1 flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
-                        <div className="flex-1">
-                          <CubeViewer
-                            puzzleType={selectedPuzzle}
-                            scramble={currentScramble}
-                            onReset={handleResetCube}
-                          />
+                    {currentScramble &&
+                      currentScramble.trim() !== "" &&
+                      selectedPuzzle !== "333mbf" && (
+                        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 lg:p-6 border border-border flex-1 flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
+                          <div className="flex-1">
+                            <CubeViewer
+                              puzzleType={selectedPuzzle}
+                              scramble={currentScramble}
+                              onReset={handleResetCube}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center mt-2 sm:mt-3">
+                            Utilisez la souris pour faire tourner le cube
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground text-center mt-2 sm:mt-3">
-                          Utilisez la souris pour faire tourner le cube
-                        </p>
-                      </div>
-                    )}
+                      )}
+                    {/* Affichage spécial pour le multi-blind */}
+                    {currentScramble &&
+                      currentScramble.trim() !== "" &&
+                      selectedPuzzle === "333mbf" && (
+                        <div className="bg-muted/30 rounded-lg p-3 sm:p-4 lg:p-6 border border-border flex-1 flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
+                          <div className="flex-1 flex flex-col">
+                            {/* Header */}
+                            <div className="text-center mb-6">
+                              <div className="text-3xl font-bold text-foreground mb-2">
+                                Multi-Blind
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                5 cubes • Mémorisation + Résolution
+                              </div>
+                            </div>
+
+                            {/* Scrambles Grid */}
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              {currentScramble
+                                .split("\n")
+                                .map((scramble, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-background/80 rounded-lg p-3 sm:p-4 border border-border/50 hover:border-border transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-primary"></div>
+                                        <span className="font-semibold text-sm text-foreground">
+                                          Cube {index + 1}
+                                        </span>
+                                      </div>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        {index + 1}/5
+                                      </Badge>
+                                    </div>
+                                    <div className="bg-muted/50 rounded p-2 sm:p-3">
+                                      <code className="text-xs sm:text-sm font-mono text-foreground break-all leading-relaxed">
+                                        {scramble}
+                                      </code>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+
+                            {/* Instructions */}
+                            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-primary/10 rounded-lg border border-primary/20">
+                              <div className="text-center">
+                                <div className="text-sm font-medium text-primary mb-1">
+                                  Instructions
+                                </div>
+                                <div className="text-xs text-muted-foreground space-y-1">
+                                  <div>
+                                    • Mémorisez tous les cubes avant de
+                                    commencer
+                                  </div>
+                                  <div>• Résolvez-les dans l'ordre (1 → 5)</div>
+                                  <div>
+                                    • Temps total = mémorisation + résolution
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     {/* Bouton Nouveau scramble dans la section visualisation */}
                     <div className="mt-4 flex justify-center">
                       <Button
