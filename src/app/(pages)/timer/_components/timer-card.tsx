@@ -86,24 +86,46 @@ export function TimerCard() {
     return penalty === "+2" ? elapsedMs + 2000 : elapsedMs;
   }, [elapsedMs, penalty]);
 
-  const onSpace = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.code !== "Space") return;
-      e.preventDefault();
+  const isProcessingRef = useRef(false);
+  const runningRef = useRef(running);
+  const startRef = useRef(start);
+  const stopRef = useRef(stop);
 
-      // Empêcher la répétition de touches
-      if (e.repeat) return;
-
-      if (running) stop();
-      else start();
-    },
-    [running, start, stop]
-  );
+  // Mettre à jour les refs quand les valeurs changent
+  runningRef.current = running;
+  startRef.current = start;
+  stopRef.current = stop;
 
   useEffect(() => {
-    window.addEventListener("keydown", onSpace);
-    return () => window.removeEventListener("keydown", onSpace);
-  }, [onSpace]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+
+      // Bloquer TOUS les autres gestionnaires d'événements
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      // Empêcher la répétition de touches avec un flag
+      if (e.repeat || isProcessingRef.current) return;
+
+      isProcessingRef.current = true;
+
+      if (runningRef.current) {
+        stopRef.current();
+      } else {
+        startRef.current();
+      }
+
+      // Reset le flag après un délai
+      setTimeout(() => {
+        isProcessingRef.current = false;
+      }, 500);
+    };
+
+    // Utiliser la capture phase pour intercepter AVANT les autres gestionnaires
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => document.removeEventListener("keydown", handleKeyDown, true);
+  }, []);
 
   function saveSolve() {
     const s: Solve = {

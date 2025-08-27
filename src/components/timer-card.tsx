@@ -148,6 +148,10 @@ export function TimerCard() {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.code === "Space") {
         event.preventDefault();
+
+        // Empêcher la répétition de touches
+        if (event.repeat) return;
+
         handleSpacePress();
       }
     };
