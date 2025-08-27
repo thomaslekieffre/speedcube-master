@@ -203,6 +203,54 @@ export default function Dashboard() {
           { min: 18, max: 999, label: "18s+", color: "#8b5cf6" },
         ],
       },
+      "333bf": {
+        sub60: 60000,
+        sub45: 45000,
+        sub30: 30000,
+        ranges: [
+          { min: 0, max: 30, label: "0-30s", color: "#22c55e" },
+          { min: 30, max: 60, label: "30-60s", color: "#3b82f6" },
+          { min: 60, max: 90, label: "60-90s", color: "#f59e0b" },
+          { min: 90, max: 120, label: "90-120s", color: "#ef4444" },
+          { min: 120, max: 999, label: "120s+", color: "#8b5cf6" },
+        ],
+      },
+      "444bf": {
+        sub300: 300000,
+        sub240: 240000,
+        sub180: 180000,
+        ranges: [
+          { min: 0, max: 180, label: "0-3min", color: "#22c55e" },
+          { min: 180, max: 300, label: "3-5min", color: "#3b82f6" },
+          { min: 300, max: 420, label: "5-7min", color: "#f59e0b" },
+          { min: 420, max: 600, label: "7-10min", color: "#ef4444" },
+          { min: 600, max: 999, label: "10min+", color: "#8b5cf6" },
+        ],
+      },
+      "555bf": {
+        sub600: 600000,
+        sub480: 480000,
+        sub360: 360000,
+        ranges: [
+          { min: 0, max: 360, label: "0-6min", color: "#22c55e" },
+          { min: 360, max: 600, label: "6-10min", color: "#3b82f6" },
+          { min: 600, max: 900, label: "10-15min", color: "#f59e0b" },
+          { min: 900, max: 1200, label: "15-20min", color: "#ef4444" },
+          { min: 1200, max: 999, label: "20min+", color: "#8b5cf6" },
+        ],
+      },
+      "333mbf": {
+        sub1800: 1800000,
+        sub1200: 1200000,
+        sub900: 900000,
+        ranges: [
+          { min: 0, max: 900, label: "0-15min", color: "#22c55e" },
+          { min: 900, max: 1800, label: "15-30min", color: "#3b82f6" },
+          { min: 1800, max: 2700, label: "30-45min", color: "#f59e0b" },
+          { min: 2700, max: 3600, label: "45-60min", color: "#ef4444" },
+          { min: 3600, max: 999, label: "60min+", color: "#8b5cf6" },
+        ],
+      },
       sq1: {
         sub20: 20000,
         sub15: 15000,
@@ -384,8 +432,6 @@ export default function Dashboard() {
 
     return { progressionData, histogramData };
   }, [puzzleSolves, stats, selectedPuzzle]);
-
-
 
   const getPuzzleName = (type: string) => {
     return PUZZLES.find((p) => p.id === type)?.name || type;

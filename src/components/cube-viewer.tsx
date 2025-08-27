@@ -27,6 +27,10 @@ const puzzleNameMap: Record<PuzzleType, string> = {
   sq1: "square1",
   clock: "clock",
   minx: "megaminx",
+  "333bf": "3x3x3", // 3x3x3 blindfolded utilise le même viewer
+  "444bf": "4x4x4", // 4x4x4 blindfolded utilise le viewer 4x4x4
+  "555bf": "5x5x5", // 5x5x5 blindfolded utilise le viewer 5x5x5
+  "333mbf": "3x3x3", // Multi-blind utilise le viewer 3x3x3 (mais pas de visualisation)
 };
 
 // Composant custom pour le Clock
