@@ -70,6 +70,9 @@ export function useChallenge() {
 
       const challengeDate = getChallengeDate();
 
+      // Récupérer le username de l'utilisateur
+      const username = getUserDisplayName(user);
+
       const { data, error } = await supabase
         .from("challenge_attempts")
         .insert({
@@ -85,8 +88,8 @@ export function useChallenge() {
 
       setAttempts((prev) => [...prev, data]);
 
-      // Le classement se met à jour automatiquement via le trigger SQL
-      await loadLeaderboard();
+      // Mettre à jour manuellement le classement
+      await updateLeaderboard(challengeDate, username);
 
       return data;
     } catch (error) {
@@ -118,8 +121,10 @@ export function useChallenge() {
         )
       );
 
-      // Le classement se met à jour automatiquement via le trigger SQL
-      await loadLeaderboard();
+      // Mettre à jour manuellement le classement
+      const challengeDate = getChallengeDate();
+      const username = getUserDisplayName(user);
+      await updateLeaderboard(challengeDate, username);
     } catch (error) {
       console.error("Erreur lors de l'application de la pénalité:", error);
       throw error;
@@ -202,6 +207,78 @@ export function useChallenge() {
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fonction pour mettre à jour le classement
+  const updateLeaderboard = async (challengeDate: string, username: string) => {
+    if (!user?.id) return;
+
+    try {
+      const supabase = createSupabaseClientWithUser(user.id);
+
+      // Récupérer toutes les tentatives de l'utilisateur pour aujourd'hui
+      const { data: allAttempts } = await supabase
+        .from("challenge_attempts")
+        .select("time, penalty")
+        .eq("user_id", user.id)
+        .eq("challenge_date", challengeDate)
+        .order("time", { ascending: true });
+
+      if (!allAttempts || allAttempts.length === 0) return;
+
+      // Trouver le meilleur temps valide (pas DNF)
+      const validAttempts = allAttempts.filter(
+        (attempt) => attempt.penalty !== "dnf"
+      );
+
+      let finalTime: number;
+      if (validAttempts.length === 0) {
+        // Toutes les tentatives sont DNF
+        finalTime = -1;
+      } else {
+        // Prendre le meilleur temps valide
+        const bestAttempt = validAttempts[0];
+        finalTime =
+          bestAttempt.penalty === "plus2"
+            ? bestAttempt.time + 2000
+            : bestAttempt.time;
+      }
+
+      // Vérifier si l'utilisateur est déjà dans le classement
+      const { data: existingEntry } = await supabase
+        .from("daily_challenge_tops")
+        .select("id, best_time")
+        .eq("challenge_date", challengeDate)
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingEntry) {
+        // Mettre à jour l'entrée existante
+        await supabase
+          .from("daily_challenge_tops")
+          .update({
+            best_time: finalTime,
+            username: username,
+          })
+          .eq("id", existingEntry.id);
+      } else {
+        // Insérer une nouvelle entrée
+        await supabase.from("daily_challenge_tops").insert({
+          challenge_date: challengeDate,
+          user_id: user.id,
+          username: username,
+          best_time: finalTime,
+          rank: 1, // Sera mis à jour par un trigger ou une fonction
+        });
+      }
+
+      // Recharger le classement
+      await loadLeaderboard();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour du classement:", error);
+      // Fallback: recharger simplement le classement
+      await loadLeaderboard();
     }
   };
 
