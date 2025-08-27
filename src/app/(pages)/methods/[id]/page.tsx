@@ -455,7 +455,9 @@ export default function MethodDetailPage() {
                               <h4 className="text-sm font-medium">
                                 Exemple {index + 1}
                               </h4>
-                              <div className="text-sm text-muted-foreground font-mono">
+                            </div>
+                            <div className="p-3 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border/50">
+                              <div className="text-sm font-mono text-foreground/90 break-all leading-relaxed">
                                 {notation}
                               </div>
                             </div>
@@ -496,11 +498,13 @@ export default function MethodDetailPage() {
                             >
                               <div className="space-y-4">
                                 <div>
-                                  <h4 className="font-semibold mb-1">
+                                  <h4 className="font-semibold mb-2">
                                     {ref.name}
                                   </h4>
-                                  <div className="text-sm font-mono text-muted-foreground mb-2">
-                                    {ref.notation}
+                                  <div className="p-3 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border/50 mb-3">
+                                    <div className="text-sm font-mono text-foreground/90 break-all leading-relaxed">
+                                      {ref.notation}
+                                    </div>
                                   </div>
                                   {ref.description && (
                                     <p className="text-sm text-muted-foreground">

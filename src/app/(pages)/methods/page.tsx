@@ -25,6 +25,11 @@ import {
   XCircle,
   Zap,
   Box,
+  Star,
+  TrendingUp,
+  Users,
+  Calendar,
+  ArrowRight,
 } from "lucide-react";
 import { useCustomMethods } from "@/hooks/use-custom-methods";
 import { useUser } from "@clerk/nextjs";
@@ -85,34 +90,92 @@ export default function MethodsPage() {
     switch (status) {
       case "approved":
         return (
-          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+          <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 shadow-sm">
             <CheckCircle className="h-3 w-3 mr-1" />
             Approuvée
           </Badge>
         );
       case "pending":
         return (
-          <Badge variant="secondary">
+          <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0 shadow-sm">
             <Clock className="h-3 w-3 mr-1" />
             En attente
           </Badge>
         );
       case "draft":
         return (
-          <Badge variant="outline">
+          <Badge className="bg-gradient-to-r from-slate-500 to-gray-600 text-white border-0 shadow-sm">
             <Eye className="h-3 w-3 mr-1" />
             Brouillon
           </Badge>
         );
       case "rejected":
         return (
-          <Badge variant="destructive">
+          <Badge className="bg-gradient-to-r from-red-500 to-pink-600 text-white border-0 shadow-sm">
             <XCircle className="h-3 w-3 mr-1" />
             Rejetée
           </Badge>
         );
       default:
         return null;
+    }
+  };
+
+  const getPuzzleIcon = (puzzleType: string) => {
+    switch (puzzleType) {
+      case "333":
+        return "🎯";
+      case "222":
+        return "⚡";
+      case "444":
+        return "🔷";
+      case "555":
+        return "💎";
+      case "666":
+        return "🌟";
+      case "777":
+        return "👑";
+      case "pyram":
+        return "🔺";
+      case "skewb":
+        return "💠";
+      case "sq1":
+        return "⬜";
+      case "clock":
+        return "⏰";
+      case "minx":
+        return "⭐";
+      default:
+        return "🧩";
+    }
+  };
+
+  const getPuzzleColor = (puzzleType: string) => {
+    switch (puzzleType) {
+      case "333":
+        return "from-blue-500 to-cyan-600";
+      case "222":
+        return "from-purple-500 to-pink-600";
+      case "444":
+        return "from-indigo-500 to-blue-600";
+      case "555":
+        return "from-violet-500 to-purple-600";
+      case "666":
+        return "from-rose-500 to-red-600";
+      case "777":
+        return "from-amber-500 to-orange-600";
+      case "pyram":
+        return "from-emerald-500 to-green-600";
+      case "skewb":
+        return "from-teal-500 to-cyan-600";
+      case "sq1":
+        return "from-slate-500 to-gray-600";
+      case "clock":
+        return "from-yellow-500 to-amber-600";
+      case "minx":
+        return "from-pink-500 to-rose-600";
+      default:
+        return "from-gray-500 to-slate-600";
     }
   };
 
@@ -291,16 +354,34 @@ export default function MethodsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                  className="group"
                 >
-                  <Card className="h-full hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer">
-                    <CardHeader>
+                  <Card className="h-full bg-gradient-to-br from-card to-card/80 border-0 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden relative">
+                    {/* Gradient overlay */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${getPuzzleColor(
+                        method.puzzle_type
+                      )} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}
+                    />
+
+                    {/* Puzzle icon badge */}
+                    <div className="absolute top-4 right-4 text-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                      {getPuzzleIcon(method.puzzle_type)}
+                    </div>
+
+                    <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg mb-2">
+                        <div className="flex-1 pr-8">
+                          <CardTitle className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors duration-300">
                             {method.name}
                           </CardTitle>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Badge
+                              className={`bg-gradient-to-r ${getPuzzleColor(
+                                method.puzzle_type
+                              )} text-white border-0 shadow-sm font-medium`}
+                            >
                               <Box className="h-3 w-3 mr-1" />
                               {getPuzzleName(method.puzzle_type)}
                             </Badge>
@@ -309,34 +390,74 @@ export default function MethodsPage() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
+
+                    <CardContent className="pt-0">
+                      <div className="space-y-4">
                         {method.description_markdown && (
-                          <p className="text-sm text-muted-foreground line-clamp-3">
+                          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
                             {method.description_markdown
                               .replace(/[#*`]/g, "")
-                              .substring(0, 150)}
-                            {method.description_markdown.length > 150 && "..."}
+                              .substring(0, 120)}
+                            {method.description_markdown.length > 120 && "..."}
                           </p>
                         )}
 
                         {method.cubing_notation_example && (
-                          <div className="p-2 bg-muted/50 rounded text-xs font-mono">
-                            {method.cubing_notation_example}
+                          <div className="p-3 bg-gradient-to-r from-muted/30 to-muted/50 rounded-lg border border-border/50">
+                            <div className="text-xs font-mono text-foreground/80 space-y-1">
+                              {method.cubing_notation_example
+                                .split(" | ")
+                                .slice(0, 2) // Limiter à 2 exemples pour éviter l'encombrement
+                                .map((notation, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <span className="text-primary/60 font-semibold min-w-[20px]">
+                                      {index + 1}.
+                                    </span>
+                                    <span className="break-all">
+                                      {notation.length > 50
+                                        ? `${notation.substring(0, 50)}...`
+                                        : notation}
+                                    </span>
+                                  </div>
+                                ))}
+                              {method.cubing_notation_example.split(" | ")
+                                .length > 2 && (
+                                <div className="text-primary/60 text-xs italic pt-1">
+                                  +
+                                  {method.cubing_notation_example.split(" | ")
+                                    .length - 2}{" "}
+                                  autres...
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
 
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{formatDate(method.created_at)}</span>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(method.created_at)}</span>
+                          </div>
+                          {method.usage_count > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              <span>{method.usage_count}</span>
+                            </div>
+                          )}
                         </div>
 
                         <Button
-                          variant="outline"
-                          className="w-full"
+                          className={`w-full bg-gradient-to-r ${getPuzzleColor(
+                            method.puzzle_type
+                          )} hover:shadow-lg hover:shadow-primary/25 text-white border-0 font-medium transition-all duration-300 group-hover:scale-105`}
                           onClick={() => router.push(`/methods/${method.id}`)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           Voir la méthode
+                          <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
                         </Button>
                       </div>
                     </CardContent>
