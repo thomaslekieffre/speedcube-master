@@ -7,7 +7,6 @@ import {
   Trophy,
   Brain,
   Target,
-  Users,
   Star,
   ArrowRight,
   CheckCircle,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { TypingEffect } from "@/components/typing-effect";
+import { UserCountDisplay } from "@/components/user-count-display";
 // import { DailyProgressBanner } from "@/components/daily-progress-banner";
 
 export default function Home() {
@@ -73,12 +73,7 @@ export default function Home() {
 
           {/* Stats preview */}
           <div className="flex justify-center gap-8 text-center">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-sm text-muted-foreground">
-                1000+ utilisateurs
-              </span>
-            </div>
+            <UserCountDisplay />
             <div className="flex items-center gap-2">
               <Box className="h-5 w-5 text-accent" />
               <span className="text-sm text-muted-foreground">
