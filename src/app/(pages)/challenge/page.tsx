@@ -152,6 +152,9 @@ export default function ChallengePage() {
       if (event.code === "Space") {
         event.preventDefault();
 
+        // Empêcher la répétition de touches
+        if (event.repeat) return;
+
         if (!isRunning && !isInspection && attempts.length < 3) {
           startTimer();
         } else if (isInspection) {
