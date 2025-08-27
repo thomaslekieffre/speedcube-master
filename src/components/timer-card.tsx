@@ -40,6 +40,7 @@ import {
 } from "./puzzle-selector";
 import { generateScramble } from "@/app/(pages)/timer/_utils/cstimer-scramble";
 import { CubeViewer } from "./cube-viewer";
+import { formatTime } from "@/lib/time";
 
 export function TimerCard() {
   const [isRunning, setIsRunning] = useState(false);
@@ -71,7 +72,7 @@ export function TimerCard() {
   // Stats en temps réel pour le puzzle sélectionné
   const { stats: puzzleStats } = useSolvesStats(selectedPuzzle, null); // null = tous les solves
 
-  const { updateOrCreatePersonalBest, deletePersonalBest } = usePersonalBests();
+  const { isNewPersonalBest } = usePersonalBests();
 
   const {
     sessions,
@@ -181,7 +182,18 @@ export function TimerCard() {
 
       addSolve(solveData);
 
-      // Le PB sera mis à jour automatiquement via le hook useSolvesStats
+      // Vérifier si c'est un nouveau PB
+      if (
+        isNewPersonalBest(
+          selectedPuzzle,
+          finalTime,
+          penalty as "none" | "plus2" | "dnf"
+        )
+      ) {
+        toast.success("Nouveau record personnel ! 🎉");
+      }
+
+      // Le PB sera mis à jour automatiquement via le trigger SQL
 
       // Générer un nouveau scramble
       setCurrentScramble(generateScramble(selectedPuzzle));
@@ -208,7 +220,7 @@ export function TimerCard() {
     selectedPuzzle,
     currentScramble,
     addSolve,
-    updateOrCreatePersonalBest,
+    isNewPersonalBest,
   ]);
 
   const handlePuzzleChange = useCallback((puzzleType: PuzzleType) => {
@@ -300,16 +312,7 @@ export function TimerCard() {
     [addSolve]
   );
 
-  const formatTime = (ms: number) => {
-    if (ms === 0) return "0.00";
-    const seconds = ms / 1000;
-    if (seconds < 60) {
-      return seconds.toFixed(2);
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = (seconds % 60).toFixed(2);
-    return `${minutes}:${remainingSeconds.padStart(5, "0")}`;
-  };
+
 
   const formatInspection = (ms: number) => {
     const seconds = ms / 1000;
@@ -584,9 +587,7 @@ export function TimerCard() {
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          setCurrentScramble(
-                            generateScramble(selectedPuzzle)
-                          )
+                          setCurrentScramble(generateScramble(selectedPuzzle))
                         }
                         className="h-8 sm:h-9 px-3 sm:px-4"
                       >

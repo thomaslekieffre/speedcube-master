@@ -24,6 +24,7 @@ import {
   Edit,
 } from "lucide-react";
 import { createSupabaseClientWithUser } from "@/lib/supabase";
+import { formatTime } from "@/lib/time";
 import type { Database } from "@/types/database";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -75,7 +76,7 @@ export default function PublicProfilePage() {
   }, [username, user?.id]);
 
   // Charger les PB et solves si le profil existe
-  const { personalBests, formatTime } = usePersonalBests(profile?.id);
+  const { personalBests } = usePersonalBests(profile?.id);
   const { solves } = useSupabaseSolves(profile?.id);
 
   if (loading) {

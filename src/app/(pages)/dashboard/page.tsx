@@ -38,6 +38,7 @@ import {
 import { useSupabaseSolves } from "@/hooks/use-supabase-solves";
 import { usePersonalBests } from "@/hooks/use-personal-bests";
 import { useLearningSystem } from "@/hooks/use-learning-system";
+import { formatTime } from "@/lib/time";
 import { PUZZLES } from "@/components/puzzle-selector";
 import {
   LineChart,
@@ -384,16 +385,7 @@ export default function Dashboard() {
     return { progressionData, histogramData };
   }, [puzzleSolves, stats, selectedPuzzle]);
 
-  const formatTime = (ms: number) => {
-    if (ms === 0) return "DNF";
-    const seconds = ms / 1000;
-    if (seconds < 60) {
-      return seconds.toFixed(2);
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = (seconds % 60).toFixed(2);
-    return `${minutes}:${remainingSeconds.padStart(5, "0")}`;
-  };
+
 
   const getPuzzleName = (type: string) => {
     return PUZZLES.find((p) => p.id === type)?.name || type;
