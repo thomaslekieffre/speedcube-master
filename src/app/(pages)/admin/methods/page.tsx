@@ -41,7 +41,7 @@ const STATUS_FILTERS = [
 
 export default function AdminMethodsPage() {
   const { role: userRole } = useUserRole();
-  const { methods, loading, approveMethod, rejectMethod, loadPendingMethods } =
+  const { methods, loading, approveMethod, rejectMethod, loadMethods } =
     useCustomMethods();
 
   const [searchQuery, setSearchQuery] = useState("");
