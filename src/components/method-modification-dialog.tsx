@@ -24,7 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Edit, AlertCircle, CheckCircle, Plus, X, GripVertical } from "lucide-react";
+import {
+  Edit,
+  AlertCircle,
+  CheckCircle,
+  Plus,
+  X,
+  GripVertical,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface MethodModificationDialogProps {
@@ -71,7 +78,10 @@ export function MethodModificationDialog({
 
   const { updateMethod, loading, error } = useCustomMethods();
 
-  const handleInputChange = (field: string, value: string | boolean | AlgorithmReference[]) => {
+  const handleInputChange = (
+    field: string,
+    value: string | boolean | AlgorithmReference[]
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Vérifier s'il y a des changements
@@ -85,8 +95,11 @@ export function MethodModificationDialog({
         ...newAlgorithmRef,
         order: formData.algorithm_references.length,
       };
-      
-      handleInputChange("algorithm_references", [...formData.algorithm_references, newRef]);
+
+      handleInputChange("algorithm_references", [
+        ...formData.algorithm_references,
+        newRef,
+      ]);
       setNewAlgorithmRef({
         algorithm_id: "",
         name: "",
@@ -94,15 +107,23 @@ export function MethodModificationDialog({
         description: "",
         order: 0,
       });
+    } else {
+      toast.error("Veuillez remplir le nom et la notation de l'algorithme");
     }
   };
 
   const removeAlgorithmReference = (index: number) => {
-    const updatedRefs = formData.algorithm_references.filter((_, i) => i !== index);
+    const updatedRefs = formData.algorithm_references.filter(
+      (_, i) => i !== index
+    );
     handleInputChange("algorithm_references", updatedRefs);
   };
 
-  const updateAlgorithmReference = (index: number, field: keyof AlgorithmReference, value: string) => {
+  const updateAlgorithmReference = (
+    index: number,
+    field: keyof AlgorithmReference,
+    value: string
+  ) => {
     const updatedRefs = [...formData.algorithm_references];
     updatedRefs[index] = { ...updatedRefs[index], [field]: value };
     handleInputChange("algorithm_references", updatedRefs);
@@ -192,7 +213,9 @@ export function MethodModificationDialog({
               <Label htmlFor="puzzle_type">Type de puzzle</Label>
               <Select
                 value={formData.puzzle_type}
-                onValueChange={(value) => handleInputChange("puzzle_type", value)}
+                onValueChange={(value) =>
+                  handleInputChange("puzzle_type", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -248,35 +271,35 @@ export function MethodModificationDialog({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Algorithmes de référence</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addAlgorithmReference}
-                className="h-8"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Ajouter
-              </Button>
             </div>
 
             {/* Nouvel algorithme */}
             <div className="p-4 border rounded-lg bg-muted/30">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs">Nom de l'algorithme</Label>
+                  <Label className="text-xs">Nom de l'algorithme *</Label>
                   <Input
                     value={newAlgorithmRef.name}
-                    onChange={(e) => setNewAlgorithmRef(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setNewAlgorithmRef((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                     placeholder="Ex: Sune, Anti-Sune..."
                     className="h-8 text-sm"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Notation</Label>
+                  <Label className="text-xs">Notation *</Label>
                   <Input
                     value={newAlgorithmRef.notation}
-                    onChange={(e) => setNewAlgorithmRef(prev => ({ ...prev, notation: e.target.value }))}
+                    onChange={(e) =>
+                      setNewAlgorithmRef((prev) => ({
+                        ...prev,
+                        notation: e.target.value,
+                      }))
+                    }
                     placeholder="Ex: R U R' U'"
                     className="h-8 text-sm font-mono"
                   />
@@ -286,10 +309,28 @@ export function MethodModificationDialog({
                 <Label className="text-xs">Description (optionnel)</Label>
                 <Input
                   value={newAlgorithmRef.description}
-                  onChange={(e) => setNewAlgorithmRef(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setNewAlgorithmRef((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Description courte..."
                   className="h-8 text-sm"
                 />
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addAlgorithmReference}
+                  disabled={!newAlgorithmRef.name || !newAlgorithmRef.notation}
+                  className="h-8"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Ajouter l'algorithme
+                </Button>
               </div>
             </div>
 
@@ -300,7 +341,9 @@ export function MethodModificationDialog({
                   <div key={index} className="p-3 border rounded-lg bg-card">
                     <div className="flex items-center gap-2 mb-3">
                       <GripVertical className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Algorithme {index + 1}</span>
+                      <span className="text-sm font-medium">
+                        Algorithme {index + 1}
+                      </span>
                       <Button
                         type="button"
                         variant="ghost"
@@ -311,13 +354,19 @@ export function MethodModificationDialog({
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">Nom</Label>
                         <Input
                           value={ref.name}
-                          onChange={(e) => updateAlgorithmReference(index, "name", e.target.value)}
+                          onChange={(e) =>
+                            updateAlgorithmReference(
+                              index,
+                              "name",
+                              e.target.value
+                            )
+                          }
                           className="h-8 text-sm"
                         />
                       </div>
@@ -325,7 +374,13 @@ export function MethodModificationDialog({
                         <Label className="text-xs">Notation</Label>
                         <Input
                           value={ref.notation}
-                          onChange={(e) => updateAlgorithmReference(index, "notation", e.target.value)}
+                          onChange={(e) =>
+                            updateAlgorithmReference(
+                              index,
+                              "notation",
+                              e.target.value
+                            )
+                          }
                           className="h-8 text-sm font-mono"
                         />
                       </div>
@@ -334,7 +389,13 @@ export function MethodModificationDialog({
                       <Label className="text-xs">Description</Label>
                       <Input
                         value={ref.description || ""}
-                        onChange={(e) => updateAlgorithmReference(index, "description", e.target.value)}
+                        onChange={(e) =>
+                          updateAlgorithmReference(
+                            index,
+                            "description",
+                            e.target.value
+                          )
+                        }
                         className="h-8 text-sm"
                       />
                     </div>
