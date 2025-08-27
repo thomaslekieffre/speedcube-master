@@ -27,6 +27,7 @@ import { usePersonalBests } from "@/hooks/use-personal-bests";
 import { useSessions } from "@/hooks/use-sessions";
 import { useSolvesStats } from "@/hooks/use-solves-stats";
 import { SessionManager } from "./session-manager";
+import { ManualTimeInput } from "./manual-time-input";
 import type { Database } from "@/types/database";
 
 type Solve = Database["public"]["Tables"]["solves"]["Row"];
@@ -271,6 +272,32 @@ export function TimerCard() {
       }
     },
     [moveSolve]
+  );
+
+  const handleManualTimeSave = useCallback(
+    async (
+      time: number,
+      penalty: "none" | "plus2" | "dnf",
+      puzzleType: string,
+      scramble?: string
+    ) => {
+      try {
+        const solveData = {
+          time: penalty === "dnf" ? 0 : time,
+          penalty,
+          puzzle_type: puzzleType,
+          scramble: scramble || "",
+          notes: "",
+        };
+
+        await addSolve(solveData);
+        toast.success("Temps ajouté manuellement !");
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du temps:", error);
+        toast.error("Erreur lors de l'ajout du temps");
+      }
+    },
+    [addSolve]
   );
 
   const formatTime = (ms: number) => {
@@ -579,6 +606,17 @@ export function TimerCard() {
           {/* Solve History - Responsive */}
           <div className="xl:col-span-1">
             <div className="sticky top-32 space-y-4">
+              {/* Manual Time Input */}
+              <Card>
+                <CardContent className="p-4 sm:p-6">
+                  <ManualTimeInput
+                    onSave={handleManualTimeSave}
+                    defaultPuzzle={selectedPuzzle}
+                    scramble={currentScramble}
+                  />
+                </CardContent>
+              </Card>
+
               {/* Session Manager */}
               <Card>
                 <CardContent className="p-4 sm:p-6">

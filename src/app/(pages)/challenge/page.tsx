@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Timer, Trophy, Users, Zap } from "lucide-react";
 import { CubeViewer } from "@/components/cube-viewer";
+import { ManualTimeInput } from "@/components/manual-time-input";
 import { formatTime } from "@/lib/time";
 import { useChallenge } from "@/hooks/use-challenge";
 import { useDailyScramble } from "@/hooks/use-daily-scramble";
 import { getTodayDate, getTimeRemaining } from "@/lib/daily-scramble";
+import { toast } from "sonner";
 
 export default function ChallengePage() {
   const [timeRemaining, setTimeRemaining] = useState({
@@ -135,6 +137,25 @@ export default function ChallengePage() {
     }
   };
 
+  const handleManualTimeSave = async (
+    time: number,
+    penalty: "none" | "plus2" | "dnf",
+    puzzleType: string,
+    scramble?: string
+  ) => {
+    if (attempts.length >= 3) {
+      toast.error("Vous avez déjà utilisé vos 3 tentatives pour aujourd'hui");
+      return;
+    }
+
+    try {
+      await saveAttempt(time, penalty);
+      await loadLeaderboard();
+    } catch (error) {
+      console.error("Erreur lors de l'ajout du temps manuel:", error);
+    }
+  };
+
   const getBestTime = () => {
     if (attempts.length === 0) return null;
     const validAttempts = attempts.filter((a) => a.penalty !== "dnf");
@@ -211,9 +232,9 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
           {/* Timer Section */}
-          <Card className="mb-6">
+          <Card className="mb-6 xl:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Timer className="h-5 w-5" />
@@ -337,7 +358,7 @@ export default function ChallengePage() {
           </Card>
 
           {/* Attempts */}
-          <Card className="mb-6">
+          <Card className="mb-6 xl:col-span-1">
             <CardHeader>
               <CardTitle>Mes tentatives</CardTitle>
             </CardHeader>
@@ -442,8 +463,27 @@ export default function ChallengePage() {
             </CardContent>
           </Card>
 
+          {/* Manual Time Input */}
+          <Card className="xl:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Timer className="h-5 w-5" />
+                Entrée manuelle
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ManualTimeInput
+                onSave={handleManualTimeSave}
+                scramble={scramble}
+                defaultPuzzle="333"
+                disabled={attempts.length >= 3 || loading || scrambleLoading}
+                puzzleLocked={true}
+              />
+            </CardContent>
+          </Card>
+
           {/* Leaderboard */}
-          <Card>
+          <Card className="xl:col-span-3">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
