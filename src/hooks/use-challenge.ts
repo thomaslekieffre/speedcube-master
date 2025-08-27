@@ -85,8 +85,8 @@ export function useChallenge() {
 
       setAttempts((prev) => [...prev, data]);
 
-      // Mettre à jour le classement après chaque nouvelle tentative
-      await updateLeaderboard();
+      // Le classement se met à jour automatiquement via le trigger SQL
+      await loadLeaderboard();
 
       return data;
     } catch (error) {
@@ -118,8 +118,8 @@ export function useChallenge() {
         )
       );
 
-      // Mettre à jour le classement après modification de pénalité
-      await updateLeaderboard();
+      // Le classement se met à jour automatiquement via le trigger SQL
+      await loadLeaderboard();
     } catch (error) {
       console.error("Erreur lors de l'application de la pénalité:", error);
       throw error;
@@ -136,13 +136,13 @@ export function useChallenge() {
 
       const challengeDate = getChallengeDate();
 
-      // Utiliser la table daily_challenge_tops pour le classement
+      // Utiliser la table daily_challenge_tops pour le classement (top 10)
       const { data, error } = await supabase
         .from("daily_challenge_tops")
         .select("*")
         .eq("challenge_date", challengeDate)
         .order("rank", { ascending: true })
-        .limit(5);
+        .limit(10);
 
       if (error) throw error;
 
@@ -151,116 +151,6 @@ export function useChallenge() {
       console.error("Erreur lors du chargement du classement:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Mettre à jour le classement après une nouvelle tentative
-  const updateLeaderboard = async () => {
-    if (!user?.id) return;
-
-    try {
-      const supabase = createSupabaseClientWithUser(user.id);
-      const challengeDate = getChallengeDate();
-
-      // Récupérer toutes les tentatives valides pour aujourd'hui
-      const { data: attempts, error: attemptsError } = await supabase
-        .from("challenge_attempts")
-        .select("*")
-        .eq("challenge_date", challengeDate);
-
-      if (attemptsError) throw attemptsError;
-
-      // Grouper par utilisateur et calculer le meilleur temps
-      const attemptsByUser = new Map();
-      attempts?.forEach((attempt) => {
-        if (!attemptsByUser.has(attempt.user_id)) {
-          attemptsByUser.set(attempt.user_id, []);
-        }
-        attemptsByUser.get(attempt.user_id).push(attempt);
-      });
-
-      // Calculer le meilleur temps pour chaque utilisateur
-      const userBestTimes = Array.from(attemptsByUser.entries())
-        .map(([user_id, userAttempts]) => {
-          const validAttempts = userAttempts.filter(
-            (a: any) => a.penalty !== "dnf"
-          );
-          if (validAttempts.length === 0) return null;
-
-          const bestTime = Math.min(
-            ...validAttempts.map((a: any) =>
-              a.penalty === "plus2" ? a.time + 2000 : a.time
-            )
-          );
-
-          return {
-            user_id,
-            best_time: bestTime,
-            attempts_count: userAttempts.length,
-          };
-        })
-        .filter(Boolean)
-        .sort((a, b) => a!.best_time - b!.best_time);
-
-      // Récupérer les usernames depuis la table profiles
-      const userIds = userBestTimes.map((entry) => entry!.user_id);
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, username")
-        .in("id", userIds);
-
-      if (profilesError) throw profilesError;
-
-      // Créer un map des usernames
-      const usernameMap = new Map();
-      profiles?.forEach((profile) => {
-        usernameMap.set(profile.id, profile.username);
-      });
-
-      // Utiliser upsert pour éviter les race conditions
-      const top5 = userBestTimes.slice(0, 5);
-      if (top5.length > 0) {
-        const leaderboardEntries = top5.map((entry, index) => ({
-          challenge_date: challengeDate,
-          user_id: entry!.user_id,
-          username:
-            usernameMap.get(entry!.user_id) ||
-            `User ${entry!.user_id.slice(0, 8)}`,
-          best_time: entry!.best_time,
-          rank: index + 1,
-        }));
-
-        // Upsert avec gestion des conflits sur challenge_date et rank
-        const { error: upsertError } = await supabase
-          .from("daily_challenge_tops")
-          .upsert(leaderboardEntries, {
-            onConflict: "challenge_date,rank",
-          });
-
-        if (upsertError) {
-          console.error("Erreur d'upsert du classement:", upsertError);
-          throw upsertError;
-        }
-      }
-
-      // Supprimer les entrées qui ne sont plus dans le top 5
-      const top5UserIds = top5.map((entry) => entry!.user_id);
-      if (top5UserIds.length > 0) {
-        await supabase
-          .from("daily_challenge_tops")
-          .delete()
-          .eq("challenge_date", challengeDate)
-          .not(
-            "user_id",
-            "in",
-            `(${top5UserIds.map((id) => `'${id}'`).join(",")})`
-          );
-      }
-
-      // Recharger le classement
-      await loadLeaderboard();
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du classement:", error);
     }
   };
 
@@ -305,8 +195,8 @@ export function useChallenge() {
       if (error) throw error;
       setAttempts([]);
 
-      // Mettre à jour le classement après suppression des tentatives
-      await updateLeaderboard();
+      // Le classement se met à jour automatiquement via le trigger SQL
+      await loadLeaderboard();
     } catch (error) {
       console.error("Erreur lors de la réinitialisation:", error);
       throw error;
@@ -334,6 +224,5 @@ export function useChallenge() {
     resetAttempts,
     loadLeaderboard,
     loadStats,
-    updateLeaderboard,
   };
 }

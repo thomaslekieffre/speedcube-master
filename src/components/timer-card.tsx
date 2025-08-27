@@ -27,6 +27,7 @@ import { usePersonalBests } from "@/hooks/use-personal-bests";
 import { useSessions } from "@/hooks/use-sessions";
 import { useSolvesStats } from "@/hooks/use-solves-stats";
 import { SessionManager } from "./session-manager";
+import { ManualTimeInput } from "./manual-time-input";
 import type { Database } from "@/types/database";
 
 type Solve = Database["public"]["Tables"]["solves"]["Row"];
@@ -36,8 +37,8 @@ import {
   type PuzzleType,
   type PuzzleSelectorRef,
   PUZZLES,
-  generateMockScramble,
 } from "./puzzle-selector";
+import { generateScramble } from "@/app/(pages)/timer/_utils/cstimer-scramble";
 import { CubeViewer } from "./cube-viewer";
 
 export function TimerCard() {
@@ -86,7 +87,7 @@ export function TimerCard() {
   // Générer le premier scramble côté client seulement
   useEffect(() => {
     if (!isInitialized.current) {
-      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setCurrentScramble(generateScramble(selectedPuzzle));
       isInitialized.current = true;
     }
   }, []);
@@ -94,7 +95,7 @@ export function TimerCard() {
   // Générer un nouveau scramble quand le puzzle change
   useEffect(() => {
     if (isInitialized.current) {
-      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setCurrentScramble(generateScramble(selectedPuzzle));
     }
   }, [selectedPuzzle]);
 
@@ -183,7 +184,7 @@ export function TimerCard() {
       // Le PB sera mis à jour automatiquement via le hook useSolvesStats
 
       // Générer un nouveau scramble
-      setCurrentScramble(generateMockScramble(selectedPuzzle));
+      setCurrentScramble(generateScramble(selectedPuzzle));
       setDnfAlreadySaved(false);
 
       toast.success("Solve sauvegardé !");
@@ -212,7 +213,7 @@ export function TimerCard() {
 
   const handlePuzzleChange = useCallback((puzzleType: PuzzleType) => {
     setSelectedPuzzle(puzzleType);
-    setCurrentScramble(generateMockScramble(puzzleType));
+    setCurrentScramble(generateScramble(puzzleType));
     // Réinitialiser la session active quand on change de puzzle
     setActiveSessionId(null);
   }, []);
@@ -271,6 +272,32 @@ export function TimerCard() {
       }
     },
     [moveSolve]
+  );
+
+  const handleManualTimeSave = useCallback(
+    async (
+      time: number,
+      penalty: "none" | "plus2" | "dnf",
+      puzzleType: string,
+      scramble?: string
+    ) => {
+      try {
+        const solveData = {
+          time: penalty === "dnf" ? 0 : time,
+          penalty,
+          puzzle_type: puzzleType,
+          scramble: scramble || "",
+          notes: "",
+        };
+
+        await addSolve(solveData);
+        toast.success("Temps ajouté manuellement !");
+      } catch (error) {
+        console.error("Erreur lors de l'ajout du temps:", error);
+        toast.error("Erreur lors de l'ajout du temps");
+      }
+    },
+    [addSolve]
   );
 
   const formatTime = (ms: number) => {
@@ -558,7 +585,7 @@ export function TimerCard() {
                         size="sm"
                         onClick={() =>
                           setCurrentScramble(
-                            generateMockScramble(selectedPuzzle)
+                            generateScramble(selectedPuzzle)
                           )
                         }
                         className="h-8 sm:h-9 px-3 sm:px-4"
@@ -579,6 +606,17 @@ export function TimerCard() {
           {/* Solve History - Responsive */}
           <div className="xl:col-span-1">
             <div className="sticky top-32 space-y-4">
+              {/* Manual Time Input */}
+              <Card>
+                <CardContent className="p-4 sm:p-6">
+                  <ManualTimeInput
+                    onSave={handleManualTimeSave}
+                    defaultPuzzle={selectedPuzzle}
+                    scramble={currentScramble}
+                  />
+                </CardContent>
+              </Card>
+
               {/* Session Manager */}
               <Card>
                 <CardContent className="p-4 sm:p-6">
