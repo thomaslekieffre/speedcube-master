@@ -175,7 +175,8 @@ export function useCustomMethods() {
   const updateMethod = useCallback(
     async (
       methodId: string,
-      updateData: UpdateMethodData
+      updateData: UpdateMethodData,
+      reason?: string
     ): Promise<boolean> => {
       if (!user?.id) {
         toast.error("Vous devez être connecté pour modifier une méthode");
@@ -186,6 +187,43 @@ export function useCustomMethods() {
         const userId = getUserId();
         const supabase = createSupabaseClientWithUser(userId);
 
+        // 1. Récupérer la méthode actuelle
+        const { data: currentMethod, error: fetchError } = await supabase
+          .from("custom_methods")
+          .select("*")
+          .eq("id", methodId)
+          .single();
+
+        if (fetchError) {
+          throw new Error("Impossible de récupérer la méthode");
+        }
+
+        // 2. Créer l'enregistrement de modification via RPC (cela met aussi à jour la méthode automatiquement)
+        const previousData = {
+          name: currentMethod.name,
+          puzzle_type: currentMethod.puzzle_type,
+          description_markdown: currentMethod.description_markdown,
+          cubing_notation_example: currentMethod.cubing_notation_example,
+          is_public: currentMethod.is_public,
+          algorithm_references: currentMethod.algorithm_references,
+        };
+
+        const { error: modificationError } = await supabase.rpc(
+          "insert_method_modification",
+          {
+            p_method_id: methodId,
+            p_modified_by: userId,
+            p_previous_data: previousData,
+            p_new_data: updateData,
+            p_reason: reason || null,
+          }
+        );
+
+        if (modificationError) {
+          throw new Error("Erreur lors de l'enregistrement de la modification");
+        }
+
+        // 3. Mettre à jour la méthode (séparément car la RPC ne met pas à jour tous les champs)
         const { error } = await supabase
           .from("custom_methods")
           .update(updateData)
@@ -417,11 +455,54 @@ export function useCustomMethods() {
     [user?.id, getUserId]
   );
 
+  // Récupérer l'historique des modifications d'une méthode
+  const getMethodModificationHistory = useCallback(
+    async (methodId: string) => {
+      if (!user) return [];
+
+      try {
+        const supabase = createSupabaseClientWithUser(user.id);
+
+        const { data, error } = await supabase
+          .from("method_modifications")
+          .select(
+            `
+            *,
+            modified_by_user:profiles!method_modifications_modified_by_fkey(username, avatar_url)
+          `
+          )
+          .eq("method_id", methodId)
+          .order("modified_at", { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        return data || [];
+      } catch (err) {
+        console.error("Erreur lors du chargement de l'historique:", err);
+        return [];
+      }
+    },
+    [user]
+  );
+
+  // Vérifier si l'utilisateur peut modifier une méthode
+  const canModifyMethod = useCallback(
+    (method: CustomMethod): boolean => {
+      if (!user) return false;
+      return method.created_by === user.id;
+    },
+    [user]
+  );
+
   return {
     methods,
     sets,
     loading,
     error,
+    loadMethods,
+    loadSets,
     createMethod,
     updateMethod,
     deleteMethod,
@@ -429,8 +510,8 @@ export function useCustomMethods() {
     filterMethods,
     approveMethod,
     rejectMethod,
-    loadPendingMethods,
     createModerationNotification,
-    refresh: loadMethods,
+    getMethodModificationHistory,
+    canModifyMethod,
   };
 }

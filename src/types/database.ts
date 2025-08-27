@@ -460,6 +460,9 @@ export interface Database {
           rejection_reason: string | null;
           is_public: boolean;
           updated_at: string;
+          modification_count: number;
+          last_modified_at: string | null;
+          last_modified_by: string | null;
         };
         Insert: {
           id?: string;
@@ -478,6 +481,9 @@ export interface Database {
           rejection_reason?: string | null;
           is_public?: boolean;
           updated_at?: string;
+          modification_count?: number;
+          last_modified_at?: string | null;
+          last_modified_by?: string | null;
         };
         Update: {
           id?: string;
@@ -496,6 +502,9 @@ export interface Database {
           rejection_reason?: string | null;
           is_public?: boolean;
           updated_at?: string;
+          modification_count?: number;
+          last_modified_at?: string | null;
+          last_modified_by?: string | null;
         };
       };
       custom_sets: {
@@ -571,6 +580,80 @@ export interface Database {
           created_at?: string;
         };
       };
+      method_modifications: {
+        Row: {
+          id: string;
+          method_id: string;
+          modified_by: string;
+          modified_at: string;
+          previous_data: {
+            name?: string;
+            puzzle_type?: string;
+            description_markdown?: string;
+            cubing_notation_example?: string;
+            is_public?: boolean;
+            algorithm_references?: AlgorithmReference[];
+          };
+          new_data: {
+            name?: string;
+            puzzle_type?: string;
+            description_markdown?: string;
+            cubing_notation_example?: string;
+            is_public?: boolean;
+            algorithm_references?: AlgorithmReference[];
+          };
+          modification_reason?: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          method_id: string;
+          modified_by: string;
+          modified_at?: string;
+          previous_data: {
+            name?: string;
+            puzzle_type?: string;
+            description_markdown?: string;
+            cubing_notation_example?: string;
+            is_public?: boolean;
+            algorithm_references?: AlgorithmReference[];
+          };
+          new_data: {
+            name?: string;
+            puzzle_type?: string;
+            description_markdown?: string;
+            cubing_notation_example?: string;
+            is_public?: boolean;
+            algorithm_references?: AlgorithmReference[];
+          };
+          modification_reason?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          method_id?: string;
+          modified_by?: string;
+          modified_at?: string;
+          previous_data?: {
+            name?: string;
+            puzzle_type?: string;
+            description_markdown?: string;
+            cubing_notation_example?: string;
+            is_public?: boolean;
+            algorithm_references?: AlgorithmReference[];
+          };
+          new_data?: {
+            name?: string;
+            puzzle_type?: string;
+            description_markdown?: string;
+            cubing_notation_example?: string;
+            is_public?: boolean;
+            algorithm_references?: AlgorithmReference[];
+          };
+          modification_reason?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -593,6 +676,9 @@ export interface CustomMethod {
   rejection_reason: string | null;
   is_public: boolean;
   updated_at: string;
+  modification_count: number;
+  last_modified_at: string | null;
+  last_modified_by: string | null;
 }
 
 export interface CustomSet {
@@ -632,6 +718,31 @@ export interface MethodModerationNotification {
   type: "report" | "review_needed" | "approval_request";
   message: string | null;
   created_by: string;
+  created_at: string;
+}
+
+export interface MethodModification {
+  id: string;
+  method_id: string;
+  modified_by: string;
+  modified_at: string;
+  previous_data: {
+    name?: string;
+    puzzle_type?: string;
+    description_markdown?: string;
+    cubing_notation_example?: string;
+    is_public?: boolean;
+    algorithm_references?: AlgorithmReference[];
+  };
+  new_data: {
+    name?: string;
+    puzzle_type?: string;
+    description_markdown?: string;
+    cubing_notation_example?: string;
+    is_public?: boolean;
+    algorithm_references?: AlgorithmReference[];
+  };
+  modification_reason?: string;
   created_at: string;
 }
 

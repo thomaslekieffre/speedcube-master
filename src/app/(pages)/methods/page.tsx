@@ -35,6 +35,7 @@ import { useCustomMethods } from "@/hooks/use-custom-methods";
 import { useUser } from "@clerk/nextjs";
 import { PUZZLES } from "@/components/puzzle-selector";
 import { toast } from "sonner";
+import { MethodModificationDialog } from "@/components/method-modification-dialog";
 
 const PUZZLE_TYPES = [
   { value: "all", label: "Tous les puzzles" },
@@ -61,7 +62,8 @@ const STATUS_FILTERS = [
 export default function MethodsPage() {
   const router = useRouter();
   const { user } = useUser();
-  const { methods, loading, filterMethods } = useCustomMethods();
+  const { methods, loading, filterMethods, canModifyMethod } =
+    useCustomMethods();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPuzzle, setSelectedPuzzle] = useState("all");
@@ -449,16 +451,27 @@ export default function MethodsPage() {
                           )}
                         </div>
 
-                        <Button
-                          className={`w-full bg-gradient-to-r ${getPuzzleColor(
-                            method.puzzle_type
-                          )} hover:shadow-lg hover:shadow-primary/25 text-white border-0 font-medium transition-all duration-300 group-hover:scale-105`}
-                          onClick={() => router.push(`/methods/${method.id}`)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Voir la méthode
-                          <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            className={`flex-1 bg-gradient-to-r ${getPuzzleColor(
+                              method.puzzle_type
+                            )} hover:shadow-lg hover:shadow-primary/25 text-white border-0 font-medium transition-all duration-300 group-hover:scale-105`}
+                            onClick={() => router.push(`/methods/${method.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Voir la méthode
+                            <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                          </Button>
+                          {canModifyMethod(method) && (
+                            <MethodModificationDialog
+                              method={method}
+                              onSuccess={() => {
+                                // Recharger la liste après modification
+                                window.location.reload();
+                              }}
+                            />
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

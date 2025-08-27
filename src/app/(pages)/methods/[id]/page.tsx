@@ -31,6 +31,7 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { CubeViewer } from "@/components/cube-viewer";
 import { PUZZLES, PuzzleType } from "@/components/puzzle-selector";
 import type { CustomMethod } from "@/types/database";
+import { MethodModificationDialog } from "@/components/method-modification-dialog";
 
 export default function MethodDetailPage() {
   const params = useParams();
@@ -43,6 +44,7 @@ export default function MethodDetailPage() {
     rejectMethod,
     deleteMethod,
     createModerationNotification,
+    canModifyMethod,
   } = useCustomMethods();
 
   const [method, setMethod] = useState<CustomMethod | null>(null);
@@ -252,10 +254,7 @@ export default function MethodDetailPage() {
     );
   }
 
-  const canEdit =
-    user &&
-    (method.created_by === user.id || isModerator()) &&
-    method.status !== "approved";
+  const canEdit = method && canModifyMethod(method);
   const canModerate = isModerator();
 
   return (
@@ -308,14 +307,17 @@ export default function MethodDetailPage() {
                 )}
               </Button>
               {canEdit && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push(`/methods/${method.id}/edit`)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <MethodModificationDialog
+                  method={method}
+                  onSuccess={() => {
+                    // Recharger la méthode après modification
+                    const loadMethod = async () => {
+                      const methodData = await getMethodById(method.id);
+                      setMethod(methodData);
+                    };
+                    loadMethod();
+                  }}
+                />
               )}
               {canEdit && (
                 <Button
