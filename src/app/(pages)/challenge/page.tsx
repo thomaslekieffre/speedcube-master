@@ -538,7 +538,9 @@ export default function ChallengePage() {
                       </div>
                       <div className="text-right">
                         <div className="font-mono font-bold">
-                          {formatTime(entry.best_time)}
+                          {entry.best_time === -1
+                            ? "DNF"
+                            : formatTime(entry.best_time)}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Aujourd'hui
