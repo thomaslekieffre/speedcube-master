@@ -217,13 +217,7 @@ export function useChallenge() {
         usernameMap.set(profile.id, profile.username);
       });
 
-      // Supprimer l'ancien classement pour aujourd'hui
-      await supabase
-        .from("daily_challenge_tops")
-        .delete()
-        .eq("challenge_date", challengeDate);
-
-      // Insérer le nouveau classement (top 5)
+      // Utiliser upsert pour éviter les race conditions
       const top5 = userBestTimes.slice(0, 5);
       if (top5.length > 0) {
         const leaderboardEntries = top5.map((entry, index) => ({
@@ -236,11 +230,31 @@ export function useChallenge() {
           rank: index + 1,
         }));
 
-        const { error: insertError } = await supabase
+        // Upsert avec gestion des conflits sur challenge_date et rank
+        const { error: upsertError } = await supabase
           .from("daily_challenge_tops")
-          .insert(leaderboardEntries);
+          .upsert(leaderboardEntries, {
+            onConflict: "challenge_date,rank",
+          });
 
-        if (insertError) throw insertError;
+        if (upsertError) {
+          console.error("Erreur d'upsert du classement:", upsertError);
+          throw upsertError;
+        }
+      }
+
+      // Supprimer les entrées qui ne sont plus dans le top 5
+      const top5UserIds = top5.map((entry) => entry!.user_id);
+      if (top5UserIds.length > 0) {
+        await supabase
+          .from("daily_challenge_tops")
+          .delete()
+          .eq("challenge_date", challengeDate)
+          .not(
+            "user_id",
+            "in",
+            `(${top5UserIds.map((id) => `'${id}'`).join(",")})`
+          );
       }
 
       // Recharger le classement
