@@ -1,12 +1,19 @@
 import { supabase } from "./supabase";
 import { generateScrambleSync } from "scrambled";
 
-// Fonction pour obtenir la date du jour au format YYYY-MM-DD
+// Fonction pour obtenir la date du jour au format YYYY-MM-DD (heure locale française)
 export function getTodayDate(): string {
+  // Utiliser l'heure locale française (UTC+1/+2 selon l'heure d'été)
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+
+  // Convertir en heure locale française
+  const frenchTime = new Date(
+    now.toLocaleString("en-US", { timeZone: "Europe/Paris" })
+  );
+
+  const year = frenchTime.getFullYear();
+  const month = String(frenchTime.getMonth() + 1).padStart(2, "0");
+  const day = String(frenchTime.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 

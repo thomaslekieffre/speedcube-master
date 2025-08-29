@@ -3,9 +3,8 @@ Features futures pour speedcube-master dans l'ordre :
 1. blind, multiblind, bblind event avec mélanges ✅
 - Fix de défi encore ✅ 
 - Pouvoir edit les méthodes ✅ 
-- Fix lancer le timer sur téléphone
+- Fix lancer le timer sur téléphone ✅
 - Fix enlever visualisation cube sur blind ✅
-- Fix le defi reset a 00h (22h heure supabase)
 - importer ses temps des autres app (cstimer, cubic timer)
 - Mettre ao5 dans les moyennes
 - une page review de cubes (ça permettra les partenariats)
