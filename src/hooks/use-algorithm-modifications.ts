@@ -24,7 +24,7 @@ export function useAlgorithmModifications() {
     setError(null);
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // 1. Récupérer l'algorithme actuel
       const { data: currentAlgorithm, error: fetchError } = await supabase
@@ -100,7 +100,7 @@ export function useAlgorithmModifications() {
     if (!user) return [];
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithm_modifications")

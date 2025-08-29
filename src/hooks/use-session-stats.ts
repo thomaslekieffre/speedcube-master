@@ -30,7 +30,7 @@ export function useSessionStats(puzzleType: string) {
       setLoading(true);
       setError(null);
 
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
       const { data, error } = await supabase
         .from("session_stats")
         .select("*")

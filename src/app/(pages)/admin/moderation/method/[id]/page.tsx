@@ -46,7 +46,7 @@ export default function MethodDetailPage() {
 
       try {
         setLoading(true);
-        const supabase = createSupabaseClientWithUser(user.id);
+        const supabase = await createSupabaseClientWithUser(user.id);
 
         const { data, error } = await supabase
           .from("custom_methods")

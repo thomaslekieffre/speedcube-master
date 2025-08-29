@@ -55,7 +55,7 @@ export default function AlgorithmDetailPage() {
 
       try {
         setLoading(true);
-        const supabase = createSupabaseClientWithUser(user.id);
+        const supabase = await createSupabaseClientWithUser(user.id);
 
         // Récupérer l'algorithme
         const { data: algorithmData, error: algorithmError } = await supabase

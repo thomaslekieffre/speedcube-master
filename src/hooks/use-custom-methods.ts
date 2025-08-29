@@ -58,7 +58,7 @@ export function useCustomMethods() {
       setLoading(true);
       setError(null);
 
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("custom_methods")
@@ -100,7 +100,7 @@ export function useCustomMethods() {
     }
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("custom_sets")
@@ -143,7 +143,7 @@ export function useCustomMethods() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
 
         const { data, error } = await supabase
           .from("custom_methods")
@@ -185,7 +185,7 @@ export function useCustomMethods() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
 
         // 1. Récupérer la méthode actuelle
         const { data: currentMethod, error: fetchError } = await supabase
@@ -254,7 +254,7 @@ export function useCustomMethods() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -282,7 +282,7 @@ export function useCustomMethods() {
       if (!user?.id) return null;
 
       try {
-        const supabase = createSupabaseClientWithUser(user.id);
+        const supabase = await createSupabaseClientWithUser(user.id);
 
         const { data, error } = await supabase
           .from("custom_methods")
@@ -342,7 +342,7 @@ export function useCustomMethods() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -373,7 +373,7 @@ export function useCustomMethods() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("custom_methods")
@@ -404,7 +404,7 @@ export function useCustomMethods() {
     if (!user?.id) return [];
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("custom_methods")
@@ -431,7 +431,7 @@ export function useCustomMethods() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
 
         const { error } = await supabase
           .from("method_moderation_notifications")
@@ -461,7 +461,7 @@ export function useCustomMethods() {
       if (!user) return [];
 
       try {
-        const supabase = createSupabaseClientWithUser(user.id);
+        const supabase = await createSupabaseClientWithUser(user.id);
 
         const { data, error } = await supabase
           .from("method_modifications")

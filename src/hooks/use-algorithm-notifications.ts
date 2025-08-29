@@ -32,7 +32,7 @@ export function useAlgorithmNotifications() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Récupérer les algorithmes rejetés ET approuvés de l'utilisateur
       const { data: algorithms, error } = await supabase

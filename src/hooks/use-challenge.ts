@@ -43,7 +43,7 @@ export function useChallenge() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
       const { data, error } = await supabase
@@ -71,7 +71,7 @@ export function useChallenge() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
 
@@ -111,7 +111,7 @@ export function useChallenge() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { error } = await supabase
         .from("challenge_attempts")
@@ -142,7 +142,7 @@ export function useChallenge() {
   const loadLeaderboard = async () => {
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user?.id || "");
+      const supabase = await createSupabaseClientWithUser(user?.id || "");
 
       const challengeDate = getChallengeDate();
 
@@ -170,7 +170,7 @@ export function useChallenge() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
 
@@ -193,7 +193,7 @@ export function useChallenge() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const challengeDate = getChallengeDate();
       const { error } = await supabase
@@ -220,7 +220,7 @@ export function useChallenge() {
     if (!user?.id) return;
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Récupérer toutes les tentatives de l'utilisateur pour aujourd'hui
       const { data: allAttempts } = await supabase
