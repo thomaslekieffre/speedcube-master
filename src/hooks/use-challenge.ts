@@ -27,9 +27,14 @@ export function useChallenge() {
   const [stats, setStats] = useState<ChallengeStats | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Récupérer la date du challenge (aujourd'hui)
+  // Récupérer la date du challenge (aujourd'hui en heure locale française)
   const getChallengeDate = () => {
-    return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    // Utiliser l'heure locale française (UTC+1/+2 selon l'heure d'été)
+    const now = new Date();
+    const frenchTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Europe/Paris" })
+    );
+    return frenchTime.toISOString().split("T")[0]; // YYYY-MM-DD
   };
 
   // Charger les tentatives de l'utilisateur pour aujourd'hui
