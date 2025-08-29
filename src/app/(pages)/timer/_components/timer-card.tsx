@@ -215,8 +215,7 @@ export function TimerCard() {
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 onClick={() => (running ? stop() : start())}
-                className="flex-1 sm:flex-none min-h-[44px]"
-                size="lg"
+                className="flex-1 sm:flex-none min-h-[44px] px-6 py-3 text-base font-semibold"
               >
                 {running ? "Stop" : "Start"}
                 <span className="hidden sm:inline">(Espace)</span>
