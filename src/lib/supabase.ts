@@ -12,13 +12,30 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Fonction pour créer un client Supabase avec l'ID utilisateur Clerk
 export const createSupabaseClientWithUser = (userId: string) => {
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  const client = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
       headers: {
         "X-User-ID": userId,
       },
     },
   });
+
+  // Configurer l'ID utilisateur dans la session PostgreSQL pour les politiques RLS
+  const configureUser = async () => {
+    try {
+      await client.rpc("set_clerk_user_id", { user_id: userId });
+    } catch (error) {
+      console.warn(
+        "Impossible de configurer l'ID utilisateur pour RLS:",
+        error
+      );
+    }
+  };
+
+  // Appeler la configuration de manière asynchrone
+  configureUser();
+
+  return client;
 };
 
 // Fonction pour configurer l'ID utilisateur Clerk dans Supabase

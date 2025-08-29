@@ -62,6 +62,22 @@ export function useSessions(puzzleType?: string) {
     loadSessions();
   }, [user?.id, puzzleType]);
 
+  // Écouter les événements de mise à jour des sessions
+  useEffect(() => {
+    const handleSessionsUpdate = () => {
+      console.log(
+        "📥 Réception de l'événement sessions-updated, rafraîchissement..."
+      );
+      loadSessions();
+    };
+
+    window.addEventListener("sessions-updated", handleSessionsUpdate);
+
+    return () => {
+      window.removeEventListener("sessions-updated", handleSessionsUpdate);
+    };
+  }, [user?.id, puzzleType]);
+
   const createSession = async (name: string, puzzleType: string) => {
     if (!user?.id) {
       throw new Error("Utilisateur non connecté");
@@ -71,42 +87,34 @@ export function useSessions(puzzleType?: string) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
-      // Désactiver toutes les autres sessions pour ce puzzle
-      await supabase
-        .from("sessions")
-        .update({ is_active: false })
-        .eq("user_id", user.id)
-        .eq("puzzle_type", puzzleType);
-
-      // Créer la nouvelle session
-      const newSession = {
-        user_id: user.id,
-        name,
-        puzzle_type: puzzleType,
-        is_active: true,
-      };
-
-      const { data, error } = await supabase
-        .from("sessions")
-        .insert(newSession)
-        .select()
-        .single();
+      // Utiliser la fonction RPC pour créer la session
+      const { data, error } = await supabase.rpc("create_session_with_auth", {
+        p_user_id: user.id,
+        p_name: name,
+        p_puzzle_type: puzzleType,
+        p_is_active: true,
+      });
 
       if (error) {
         console.error("Erreur lors de la création de la session:", error);
         throw error;
       }
 
-      setSessions((prev) => [data, ...prev]);
-      setActiveSession(data);
+      if (data && data.length > 0) {
+        const newSession = data[0];
+        setSessions((prev) => [newSession, ...prev]);
+        setActiveSession(newSession);
 
-      // Déclencher une mise à jour des stats après création
-      console.log(
-        "📤 Déclenchement de l'événement sessions-updated (création)"
-      );
-      window.dispatchEvent(new CustomEvent("sessions-updated"));
+        // Déclencher une mise à jour des stats après création
+        console.log(
+          "📤 Déclenchement de l'événement sessions-updated (création)"
+        );
+        window.dispatchEvent(new CustomEvent("sessions-updated"));
 
-      return data;
+        return newSession;
+      } else {
+        throw new Error("Aucune session créée");
+      }
     } catch (err) {
       console.error("Erreur lors de la création de la session:", err);
       throw err;
@@ -120,44 +128,39 @@ export function useSessions(puzzleType?: string) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
-      // Désactiver toutes les autres sessions pour ce puzzle
-      const sessionToActivate = sessions.find((s) => s.id === sessionId);
-      if (sessionToActivate) {
-        await supabase
-          .from("sessions")
-          .update({ is_active: false })
-          .eq("user_id", user.id)
-          .eq("puzzle_type", sessionToActivate.puzzle_type);
-      }
-
-      // Activer la session sélectionnée
-      const { data, error } = await supabase
-        .from("sessions")
-        .update({ is_active: true })
-        .eq("id", sessionId)
-        .select()
-        .single();
+      // Utiliser la fonction RPC pour activer la session
+      const { data, error } = await supabase.rpc("update_session_with_auth", {
+        p_session_id: sessionId,
+        p_user_id: user.id,
+        p_name: null, // Pas de changement de nom
+        p_is_active: true,
+      });
 
       if (error) {
         console.error("Erreur lors de l'activation de la session:", error);
         throw error;
       }
 
-      setSessions((prev) =>
-        prev.map((session) => ({
-          ...session,
-          is_active: session.id === sessionId,
-        }))
-      );
-      setActiveSession(data);
+      if (data && data.length > 0) {
+        const activatedSession = data[0];
+        setSessions((prev) =>
+          prev.map((session) => ({
+            ...session,
+            is_active: session.id === sessionId,
+          }))
+        );
+        setActiveSession(activatedSession);
 
-      // Déclencher une mise à jour des stats après activation
-      console.log(
-        "📤 Déclenchement de l'événement sessions-updated (activation)"
-      );
-      window.dispatchEvent(new CustomEvent("sessions-updated"));
+        // Déclencher une mise à jour des stats après activation
+        console.log(
+          "📤 Déclenchement de l'événement sessions-updated (activation)"
+        );
+        window.dispatchEvent(new CustomEvent("sessions-updated"));
 
-      return data;
+        return activatedSession;
+      } else {
+        throw new Error("Session non trouvée ou accès refusé");
+      }
     } catch (err) {
       console.error("Erreur lors de l'activation de la session:", err);
       throw err;
@@ -171,27 +174,34 @@ export function useSessions(puzzleType?: string) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
-      const { data, error } = await supabase
-        .from("sessions")
-        .update(updates)
-        .eq("id", sessionId)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc("update_session_with_auth", {
+        p_session_id: sessionId,
+        p_user_id: user.id,
+        p_name: updates.name,
+        p_is_active: updates.is_active,
+      });
 
       if (error) {
         console.error("Erreur lors de la mise à jour de la session:", error);
         throw error;
       }
 
-      setSessions((prev) =>
-        prev.map((session) => (session.id === sessionId ? data : session))
-      );
+      if (data && data.length > 0) {
+        const updatedSession = data[0];
+        setSessions((prev) =>
+          prev.map((session) =>
+            session.id === sessionId ? updatedSession : session
+          )
+        );
 
-      if (data.is_active) {
-        setActiveSession(data);
+        if (updatedSession.is_active) {
+          setActiveSession(updatedSession);
+        }
+
+        return updatedSession;
+      } else {
+        throw new Error("Session non trouvée ou accès refusé");
       }
-
-      return data;
     } catch (err) {
       console.error("Erreur lors de la mise à jour de la session:", err);
       throw err;
@@ -205,33 +215,39 @@ export function useSessions(puzzleType?: string) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
-      const { error } = await supabase
-        .from("sessions")
-        .delete()
-        .eq("id", sessionId);
+      const { data, error } = await supabase.rpc("delete_session_with_auth", {
+        p_session_id: sessionId,
+        p_user_id: user.id,
+      });
 
       if (error) {
         console.error("Erreur lors de la suppression de la session:", error);
         throw error;
       }
 
-      setSessions((prev) => prev.filter((session) => session.id !== sessionId));
+      if (data) {
+        setSessions((prev) =>
+          prev.filter((session) => session.id !== sessionId)
+        );
 
-      // Si la session supprimée était active, réactiver la première session disponible
-      if (activeSession?.id === sessionId) {
-        const remainingSessions = sessions.filter((s) => s.id !== sessionId);
-        if (remainingSessions.length > 0) {
-          await activateSession(remainingSessions[0].id);
-        } else {
-          setActiveSession(null);
+        // Si la session supprimée était active, réactiver la première session disponible
+        if (activeSession?.id === sessionId) {
+          const remainingSessions = sessions.filter((s) => s.id !== sessionId);
+          if (remainingSessions.length > 0) {
+            await activateSession(remainingSessions[0].id);
+          } else {
+            setActiveSession(null);
+          }
         }
-      }
 
-      // Déclencher une mise à jour des stats après suppression
-      console.log(
-        "📤 Déclenchement de l'événement sessions-updated (suppression)"
-      );
-      window.dispatchEvent(new CustomEvent("sessions-updated"));
+        // Déclencher une mise à jour des stats après suppression
+        console.log(
+          "📤 Déclenchement de l'événement sessions-updated (suppression)"
+        );
+        window.dispatchEvent(new CustomEvent("sessions-updated"));
+      } else {
+        throw new Error("Session non trouvée ou accès refusé");
+      }
     } catch (err) {
       console.error("Erreur lors de la suppression de la session:", err);
       throw err;

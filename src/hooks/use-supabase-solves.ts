@@ -69,19 +69,17 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user.id);
 
-      const newSolve = {
-        ...solve,
-        user_id: user.id,
-        // session_id sera géré automatiquement par le trigger SQL
-        // si sessionId est fourni, on l'utilise, sinon le trigger créera une session par défaut
-        session_id: sessionId || null,
-      };
-
-      const { data, error } = await supabase
-        .from("solves")
-        .insert(newSolve)
-        .select()
-        .single();
+      // Utiliser la fonction RPC pour créer le solve
+      const { data, error } = await supabase.rpc("create_solve_with_auth", {
+        p_user_id: user.id,
+        p_session_id: sessionId || null,
+        p_puzzle_type: solve.puzzle_type,
+        p_time_ms: solve.time,
+        p_penalty: solve.penalty,
+        p_scramble: solve.scramble,
+        p_notes: solve.notes || null,
+        p_created_at: solve.created_at || new Date().toISOString(),
+      });
 
       if (error) {
         console.error("Erreur détaillée lors de l'ajout du solve:", {
@@ -94,13 +92,18 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
         throw error;
       }
 
-      setSolves((prev) => [data, ...prev]);
+      if (data && data.length > 0) {
+        const newSolve = data[0];
+        setSolves((prev) => [newSolve, ...prev]);
 
-      // Notifier que de nouveaux solves ont été ajoutés
-      console.log("📤 Déclenchement de l'événement solves-updated (ajout)");
-      window.dispatchEvent(new CustomEvent("solves-updated"));
+        // Notifier que de nouveaux solves ont été ajoutés
+        console.log("📤 Déclenchement de l'événement solves-updated (ajout)");
+        window.dispatchEvent(new CustomEvent("solves-updated"));
 
-      return data;
+        return newSolve;
+      } else {
+        throw new Error("Aucun solve créé");
+      }
     } catch (err) {
       console.error("Erreur lors de l'ajout du solve:", err);
       throw err;
@@ -112,29 +115,37 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user?.id || '');
 
-      const { data, error } = await supabase
-        .from("solves")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      // Utiliser la fonction RPC pour mettre à jour le solve
+      const { data, error } = await supabase.rpc("update_solve_with_auth", {
+        p_solve_id: id,
+        p_user_id: user?.id || '',
+        p_time_ms: updates.time,
+        p_penalty: updates.penalty,
+        p_scramble: updates.scramble,
+        p_notes: updates.notes,
+      });
 
       if (error) {
         console.error("Erreur lors de la mise à jour:", error);
         throw error;
       }
 
-      setSolves((prev) =>
-        prev.map((solve) => (solve.id === id ? data : solve))
-      );
+      if (data && data.length > 0) {
+        const updatedSolve = data[0];
+        setSolves((prev) =>
+          prev.map((solve) => (solve.id === id ? updatedSolve : solve))
+        );
 
-      // Notifier que des solves ont été mis à jour
-      console.log(
-        "📤 Déclenchement de l'événement solves-updated (mise à jour)"
-      );
-      window.dispatchEvent(new CustomEvent("solves-updated"));
+        // Notifier que des solves ont été mis à jour
+        console.log(
+          "📤 Déclenchement de l'événement solves-updated (mise à jour)"
+        );
+        window.dispatchEvent(new CustomEvent("solves-updated"));
 
-      return data;
+        return updatedSolve;
+      } else {
+        throw new Error("Aucun solve mis à jour");
+      }
     } catch (err) {
       console.error("Erreur lors de la mise à jour:", err);
       throw err;
@@ -146,20 +157,28 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = createSupabaseClientWithUser(user?.id || '');
 
-      const { error } = await supabase.from("solves").delete().eq("id", id);
+      // Utiliser la fonction RPC pour supprimer le solve
+      const { data, error } = await supabase.rpc("delete_solve_with_auth", {
+        p_solve_id: id,
+        p_user_id: user?.id || '',
+      });
 
       if (error) {
         console.error("Erreur lors de la suppression:", error);
         throw error;
       }
 
-      setSolves((prev) => prev.filter((solve) => solve.id !== id));
+      if (data) {
+        setSolves((prev) => prev.filter((solve) => solve.id !== id));
 
-      // Notifier que des solves ont été supprimés
-      console.log(
-        "📤 Déclenchement de l'événement solves-updated (suppression)"
-      );
-      window.dispatchEvent(new CustomEvent("solves-updated"));
+        // Notifier que des solves ont été supprimés
+        console.log(
+          "📤 Déclenchement de l'événement solves-updated (suppression)"
+        );
+        window.dispatchEvent(new CustomEvent("solves-updated"));
+      } else {
+        throw new Error("Erreur lors de la suppression du solve");
+      }
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
       throw err;

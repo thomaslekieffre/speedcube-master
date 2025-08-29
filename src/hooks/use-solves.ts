@@ -66,6 +66,15 @@ export function useSolves() {
     return newSolve;
   };
 
+  const addSolves = (solvesToAdd: Omit<Solve, "id">[]) => {
+    const newSolves: Solve[] = solvesToAdd.map((solve) => ({
+      ...solve,
+      id: `${Date.now()}-${idCounter.current++}`,
+    }));
+    setSolves((prev) => [...newSolves, ...prev]);
+    return newSolves;
+  };
+
   const updateSolve = (id: string, updates: Partial<Solve>) => {
     setSolves((prev) =>
       prev.map((solve) => (solve.id === id ? { ...solve, ...updates } : solve))
@@ -113,6 +122,7 @@ export function useSolves() {
   return {
     solves,
     addSolve,
+    addSolves,
     updateSolve,
     deleteSolve,
     clearAllSolves,
