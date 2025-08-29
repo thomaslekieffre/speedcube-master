@@ -276,7 +276,36 @@ export default function ChallengePage() {
               </div>
 
               {/* Timer Display */}
-              <div className="text-center">
+              <div
+                className="text-center cursor-pointer touch-manipulation relative group"
+                onClick={() => {
+                  if (!isRunning && !isInspection && attempts.length < 3) {
+                    startTimer();
+                  } else if (isInspection) {
+                    setIsInspection(false);
+                    setCurrentTime(0);
+                    setIsRunning(true);
+                  } else if (isRunning) {
+                    stopTimer();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (!isRunning && !isInspection && attempts.length < 3) {
+                      startTimer();
+                    } else if (isInspection) {
+                      setIsInspection(false);
+                      setCurrentTime(0);
+                      setIsRunning(true);
+                    } else if (isRunning) {
+                      stopTimer();
+                    }
+                  }
+                }}
+              >
                 {isInspection ? (
                   <div className="space-y-2">
                     <div className="text-2xl font-mono text-orange-500">
@@ -296,6 +325,19 @@ export default function ChallengePage() {
                     </div>
                   </div>
                 )}
+
+                {/* Indicateur mobile */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="bg-black/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium text-white">
+                    {!isRunning && !isInspection && attempts.length < 3
+                      ? "Appuie pour commencer"
+                      : isInspection
+                      ? "Appuie pour lancer maintenant"
+                      : isRunning
+                      ? "Appuie pour arrêter"
+                      : "Prêt"}
+                  </div>
+                </div>
               </div>
 
               {/* Controls */}
@@ -304,25 +346,31 @@ export default function ChallengePage() {
                   {!isRunning && !isInspection && attempts.length < 3 ? (
                     <Button
                       onClick={startTimer}
-                      className="flex-1"
+                      className="flex-1 min-h-[48px]"
                       size="lg"
                       disabled={loading || scrambleLoading || !scramble}
                     >
                       <Zap className="h-4 w-4 mr-2" />
                       {loading ? "..." : "Commencer"}
+                      <span className="hidden sm:inline ml-2 text-xs opacity-70">
+                        (Espace)
+                      </span>
                     </Button>
                   ) : isRunning ? (
                     <Button
                       onClick={stopTimer}
                       variant="destructive"
-                      className="flex-1"
+                      className="flex-1 min-h-[48px]"
                       size="lg"
                       disabled={loading}
                     >
                       {loading ? "..." : "Arrêter"}
+                      <span className="hidden sm:inline ml-2 text-xs opacity-70">
+                        (Espace)
+                      </span>
                     </Button>
                   ) : (
-                    <Button disabled className="flex-1" size="lg">
+                    <Button disabled className="flex-1 min-h-[48px]" size="lg">
                       {attempts.length >= 3 ? "Tentatives épuisées" : "Prêt"}
                     </Button>
                   )}
@@ -335,20 +383,30 @@ export default function ChallengePage() {
                   !scrambleLoading &&
                   scramble && (
                     <div className="text-center text-xs text-muted-foreground">
-                      Appuie sur{" "}
-                      <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                        Espace
-                      </kbd>{" "}
-                      pour commencer
+                      <span className="hidden sm:inline">
+                        Appuie sur{" "}
+                        <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                          Espace
+                        </kbd>{" "}
+                        pour commencer
+                      </span>
+                      <span className="sm:hidden">
+                        Appuie sur le timer ou le bouton pour commencer
+                      </span>
                     </div>
                   )}
                 {isInspection && (
                   <div className="text-center text-xs text-orange-500">
-                    Appuie sur{" "}
-                    <kbd className="px-1 py-0.5 bg-orange-500/20 rounded text-xs">
-                      Espace
-                    </kbd>{" "}
-                    pour lancer maintenant
+                    <span className="hidden sm:inline">
+                      Appuie sur{" "}
+                      <kbd className="px-1 py-0.5 bg-orange-500/20 rounded text-xs">
+                        Espace
+                      </kbd>{" "}
+                      pour lancer maintenant
+                    </span>
+                    <span className="sm:hidden">
+                      Appuie sur le timer pour lancer maintenant
+                    </span>
                   </div>
                 )}
               </div>

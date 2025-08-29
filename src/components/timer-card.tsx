@@ -164,7 +164,9 @@ export function TimerCard() {
 
   const handleSpacePress = useCallback(() => {
     // Vérifier si c'est un event blind
-    const isBlindEvent = ["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle);
+    const isBlindEvent = ["333bf", "444bf", "555bf", "333mbf"].includes(
+      selectedPuzzle
+    );
 
     if (isRunning) {
       // Arrêter le timer immédiatement
@@ -402,7 +404,18 @@ export function TimerCard() {
                   {/* Timer Section - Responsive */}
                   <div className="space-y-4 sm:space-y-6 flex flex-col justify-between">
                     {/* Timer Display - Responsive sizes */}
-                    <div className="text-center space-y-3 sm:space-y-4">
+                    <div
+                      className="text-center space-y-3 sm:space-y-4 cursor-pointer touch-manipulation relative group"
+                      onClick={handleSpacePress}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSpacePress();
+                        }
+                      }}
+                    >
                       {isInspection ? (
                         <div className="space-y-3 sm:space-y-4">
                           <div
@@ -467,11 +480,22 @@ export function TimerCard() {
                                 : "text-muted-foreground"
                             }`}
                           >
-                            {inspection > 17000
-                              ? "DNF - Inspection > 17 secondes"
-                              : inspection > 15000
-                              ? "+2 - Inspection > 15 secondes"
-                              : "Inspection en cours... Appuie sur espace pour démarrer"}
+                            {inspection > 17000 ? (
+                              "DNF - Inspection > 17 secondes"
+                            ) : inspection > 15000 ? (
+                              "+2 - Inspection > 15 secondes"
+                            ) : (
+                              <span>
+                                <span className="hidden sm:inline">
+                                  Inspection en cours... Appuie sur espace pour
+                                  démarrer
+                                </span>
+                                <span className="sm:hidden">
+                                  Inspection en cours... Appuie sur le timer
+                                  pour démarrer
+                                </span>
+                              </span>
+                            )}
                           </p>
                         </div>
                       ) : (
@@ -479,51 +503,78 @@ export function TimerCard() {
                           <div className="text-5xl sm:text-6xl lg:text-7xl font-mono font-bold text-foreground">
                             {formatTime(time)}
                           </div>
-                                                     <p className="text-xs sm:text-sm text-muted-foreground">
-                             {["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle) 
-                               ? "Appuie sur espace pour démarrer" 
-                               : "Appuie sur espace pour commencer l'inspection"
-                             }
-                           </p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {["333bf", "444bf", "555bf", "333mbf"].includes(
+                              selectedPuzzle
+                            ) ? (
+                              <span>
+                                <span className="hidden sm:inline">
+                                  Appuie sur espace pour démarrer
+                                </span>
+                                <span className="sm:hidden">
+                                  Appuie sur le timer pour démarrer
+                                </span>
+                              </span>
+                            ) : (
+                              <span>
+                                <span className="hidden sm:inline">
+                                  Appuie sur espace pour commencer l'inspection
+                                </span>
+                                <span className="sm:hidden">
+                                  Appuie sur le timer pour commencer
+                                  l'inspection
+                                </span>
+                              </span>
+                            )}
+                          </p>
                         </div>
                       )}
                     </div>
 
-                                         {/* Control Button - Responsive */}
-                     <div className="flex justify-center">
-                       <Button
-                         onClick={handleSpacePress}
-                         disabled={isInspection}
-                         className="h-10 sm:h-12 px-4 sm:px-6 text-base sm:text-lg font-semibold"
-                         size="lg"
-                       >
-                         {isRunning ? (
-                           <>
-                             <Square className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                             <span className="hidden sm:inline">Arrêter</span>
-                             <span className="sm:hidden">Stop</span>
-                           </>
-                         ) : (
-                           <>
-                             <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                             {isInspection ? (
-                               <span className="hidden sm:inline">Démarrer</span>
-                             ) : ["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle) ? (
-                               <span className="hidden sm:inline">
-                                 Démarrer
-                               </span>
-                             ) : (
-                               <span className="hidden sm:inline">
-                                 Inspection
-                               </span>
-                             )}
-                             <span className="sm:hidden">
-                               {isInspection ? "Start" : ["333bf", "444bf", "555bf", "333mbf"].includes(selectedPuzzle) ? "Start" : "Insp"}
-                             </span>
-                           </>
-                         )}
-                       </Button>
-                     </div>
+                    {/* Control Button - Responsive */}
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={handleSpacePress}
+                        disabled={isInspection}
+                        className="h-10 sm:h-12 px-4 sm:px-6 text-base sm:text-lg font-semibold min-h-[44px] flex-1 sm:flex-none"
+                        size="lg"
+                      >
+                        {isRunning ? (
+                          <>
+                            <Square className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                            <span className="hidden sm:inline">Arrêter</span>
+                            <span className="sm:hidden">Stop</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                            {isInspection ? (
+                              <span className="hidden sm:inline">Démarrer</span>
+                            ) : ["333bf", "444bf", "555bf", "333mbf"].includes(
+                                selectedPuzzle
+                              ) ? (
+                              <span className="hidden sm:inline">Démarrer</span>
+                            ) : (
+                              <span className="hidden sm:inline">
+                                Inspection
+                              </span>
+                            )}
+                            <span className="sm:hidden">
+                              {isInspection
+                                ? "Start"
+                                : [
+                                    "333bf",
+                                    "444bf",
+                                    "555bf",
+                                    "333mbf",
+                                  ].includes(selectedPuzzle)
+                                ? "Start"
+                                : "Insp"}
+                            </span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
 
                     {/* Quick Stats - Responsive */}
                     {puzzleStats && (
@@ -587,7 +638,9 @@ export function TimerCard() {
                   <div className="lg:col-span-2 flex flex-col">
                     {currentScramble &&
                       currentScramble.trim() !== "" &&
-                      selectedPuzzle !== "333mbf" && (
+                      !["333bf", "444bf", "555bf", "333mbf"].includes(
+                        selectedPuzzle
+                      ) && (
                         <div className="bg-muted/30 rounded-lg p-3 sm:p-4 lg:p-6 border border-border flex-1 flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]">
                           <div className="flex-1">
                             <CubeViewer

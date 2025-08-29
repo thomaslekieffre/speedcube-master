@@ -190,16 +190,36 @@ export function TimerCard() {
               className="w-full rounded-xl"
             >
               <div
-                className="select-none text-center font-mono text-6xl sm:text-7xl md:text-8xl py-6"
+                className="select-none text-center font-mono text-6xl sm:text-7xl md:text-8xl py-6 cursor-pointer touch-manipulation relative group"
                 onClick={() => (running ? stop() : start())}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    running ? stop() : start();
+                  }
+                }}
               >
                 {Number.isNaN(effectiveMs) ? "DNF" : formatTime(effectiveMs)}
+
+                {/* Indicateur mobile */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <div className="bg-black/20 backdrop-blur-sm rounded-lg px-4 py-2 text-sm font-medium text-white">
+                    {running ? "Appuie pour arrêter" : "Appuie pour démarrer"}
+                  </div>
+                </div>
               </div>
             </motion.div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={() => (running ? stop() : start())}>
-                {running ? "Stop" : "Start"} (Espace)
+              <Button
+                onClick={() => (running ? stop() : start())}
+                className="flex-1 sm:flex-none min-h-[44px]"
+                size="lg"
+              >
+                {running ? "Stop" : "Start"}
+                <span className="hidden sm:inline">(Espace)</span>
               </Button>
               <Button
                 variant="outline"

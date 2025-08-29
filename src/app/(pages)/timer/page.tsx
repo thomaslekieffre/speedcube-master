@@ -7,7 +7,8 @@ export default function TimerPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-4">Timer</h1>
           <p className="text-muted-foreground">
-            Appuie sur espace pour démarrer/arrêter
+            <span className="hidden sm:inline">Appuie sur espace pour démarrer/arrêter</span>
+            <span className="sm:hidden">Appuie sur le timer pour démarrer/arrêter</span>
           </p>
         </div>
 
