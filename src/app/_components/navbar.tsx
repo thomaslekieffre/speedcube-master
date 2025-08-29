@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  Upload,
 } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
@@ -26,6 +27,7 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { useModerationBadge } from "@/hooks/use-moderation-badge";
 import { useRevisionBadge } from "@/hooks/use-revision-badge";
 import { AlgorithmNotifications } from "@/components/algorithm-notifications";
+import { CSTimerImportDialog } from "@/components/cstimer-import-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +51,7 @@ export function Navbar() {
   const { pendingCount } = useModerationBadge();
   const { revisionCount, hasRevisions } = useRevisionBadge();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const NavLink = ({
     href,
@@ -204,7 +207,9 @@ export function Navbar() {
                   <div className="flex items-center gap-2 p-2">
                     {(profile?.custom_avatar_url || profile?.avatar_url) && (
                       <img
-                        src={profile.custom_avatar_url || profile.avatar_url || ""}
+                        src={
+                          profile.custom_avatar_url || profile.avatar_url || ""
+                        }
                         alt={profile.username || "Avatar"}
                         className="w-8 h-8 rounded-full object-cover border border-border"
                       />
@@ -231,6 +236,10 @@ export function Navbar() {
                       <Settings className="mr-2 h-4 w-4" />
                       Paramètres
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Importer cstimer
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <SignOutButton>
@@ -340,7 +349,9 @@ export function Navbar() {
                             profile?.avatar_url) && (
                             <img
                               src={
-                                profile.custom_avatar_url || profile.avatar_url || ""
+                                profile.custom_avatar_url ||
+                                profile.avatar_url ||
+                                ""
                               }
                               alt={profile.username || "Avatar"}
                               className="w-10 h-10 rounded-full object-cover border border-border"
@@ -388,6 +399,11 @@ export function Navbar() {
           </div>
         </div>
       </div>
+
+      <CSTimerImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+      />
     </header>
   );
 }
