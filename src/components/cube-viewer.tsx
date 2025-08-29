@@ -254,7 +254,26 @@ export function CubeViewer({
 
     const initViewer = async () => {
       try {
-        const { TwistyPlayer } = await import("cubing/twisty");
+        // Vérifier si c'est un puzzle blind - pas de visualisation
+        if (["333bf", "444bf", "555bf", "333mbf"].includes(puzzleType)) {
+          setHasError(false);
+          setIsReady(true);
+          return;
+        }
+
+        let TwistyPlayer;
+        try {
+          const module = await import("cubing/twisty");
+          TwistyPlayer = module.TwistyPlayer;
+        } catch (importError) {
+          console.error(
+            "Erreur lors du chargement de cubing/twisty:",
+            importError
+          );
+          setHasError(true);
+          setIsReady(true);
+          return;
+        }
 
         // Nettoyer l'ancien viewer proprement
         if (viewerRef.current) {
@@ -298,6 +317,16 @@ export function CubeViewer({
       } catch (error) {
         console.error("Erreur lors de l'initialisation du viewer:", error);
         setHasError(true);
+        setIsReady(true);
+
+        // Nettoyer en cas d'erreur
+        if (viewerRef.current) {
+          try {
+            viewerRef.current.dispose?.();
+            containerRef.current?.removeChild(viewerRef.current);
+          } catch {}
+          viewerRef.current = null;
+        }
         setIsReady(true);
       }
     };
