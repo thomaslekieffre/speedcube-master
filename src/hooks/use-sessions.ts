@@ -26,7 +26,7 @@ export function useSessions(puzzleType?: string) {
       setLoading(true);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("sessions")
@@ -85,7 +85,7 @@ export function useSessions(puzzleType?: string) {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Utiliser la fonction RPC pour créer la session
       const { data, error } = await supabase.rpc("create_session_with_auth", {
@@ -126,7 +126,7 @@ export function useSessions(puzzleType?: string) {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Utiliser la fonction RPC pour activer la session
       const { data, error } = await supabase.rpc("update_session_with_auth", {
@@ -172,7 +172,7 @@ export function useSessions(puzzleType?: string) {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase.rpc("update_session_with_auth", {
         p_session_id: sessionId,
@@ -213,7 +213,7 @@ export function useSessions(puzzleType?: string) {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase.rpc("delete_session_with_auth", {
         p_session_id: sessionId,

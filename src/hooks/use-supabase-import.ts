@@ -99,7 +99,7 @@ export function useSupabaseImport() {
           );
 
           // Utiliser le client Supabase avec l'ID utilisateur pour RLS
-          const supabaseWithUser = createSupabaseClientWithUser(user.id);
+          const supabaseWithUser = await createSupabaseClientWithUser(user.id);
 
           // Utiliser la fonction RPC pour créer la session
           const { data: newSessionData, error: createError } =

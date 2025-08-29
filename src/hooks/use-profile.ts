@@ -24,7 +24,7 @@ export function useProfile() {
       setLoading(true);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("profiles")
@@ -55,7 +55,7 @@ export function useProfile() {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const newProfile: InsertProfile = {
         id: user.id,
@@ -91,7 +91,7 @@ export function useProfile() {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("profiles")

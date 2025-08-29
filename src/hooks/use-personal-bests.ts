@@ -28,7 +28,7 @@ export function usePersonalBests(userId?: string) {
       setLoading(true);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(targetUserId);
+      const supabase = await createSupabaseClientWithUser(targetUserId);
 
       const { data, error } = await supabase
         .from("personal_bests")

@@ -21,7 +21,7 @@ export function useUsernameCheck() {
 
       setChecking(true);
       try {
-        const supabase = createSupabaseClientWithUser(user.id);
+        const supabase = await createSupabaseClientWithUser(user.id);
 
         const { data, error } = await supabase
           .from("profiles")

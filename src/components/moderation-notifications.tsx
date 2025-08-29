@@ -30,7 +30,7 @@ export function ModerationNotifications() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("moderation_notifications")

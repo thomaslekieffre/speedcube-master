@@ -41,7 +41,7 @@ export function useLearningSystem() {
     try {
       setLoading(true);
       const userId = getUserId();
-      const supabase = createSupabaseClientWithUser(userId);
+      const supabase = await createSupabaseClientWithUser(userId);
 
       // Charger les algorithmes en cours d'apprentissage avec les détails des algorithmes
       const { data: learningData, error: learningError } = await supabase
@@ -101,7 +101,7 @@ export function useLearningSystem() {
   const generateRecommendations = useCallback(
     async (userId: string, currentLearning: AlgorithmLearningWithDetails[]) => {
       try {
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
         const today = new Date().toISOString().split("T")[0];
         const recommendations: AlgorithmRecommendation[] = [];
 
@@ -152,7 +152,7 @@ export function useLearningSystem() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
         const today = new Date().toISOString();
 
         // Insérer l'algorithme dans la liste d'apprentissage
@@ -209,7 +209,7 @@ export function useLearningSystem() {
 
       try {
         const userId = getUserId();
-        const supabase = createSupabaseClientWithUser(userId);
+        const supabase = await createSupabaseClientWithUser(userId);
         const today = new Date().toISOString();
 
         // Trouver l'entrée d'apprentissage

@@ -25,7 +25,7 @@ export function useFavorites() {
       setLoading(true);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithm_favorites")
@@ -56,7 +56,7 @@ export function useFavorites() {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithm_favorites")
@@ -85,7 +85,7 @@ export function useFavorites() {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { error } = await supabase
         .from("algorithm_favorites")

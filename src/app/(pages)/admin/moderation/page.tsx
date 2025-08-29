@@ -72,7 +72,7 @@ export default function ModerationPage() {
     if (!user?.id) return [];
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("custom_methods")
@@ -95,7 +95,7 @@ export default function ModerationPage() {
     if (!user?.id) return [];
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")

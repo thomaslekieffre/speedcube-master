@@ -26,7 +26,7 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       setLoading(true);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(targetUserId);
+      const supabase = await createSupabaseClientWithUser(targetUserId);
 
       let query = supabase
         .from("solves")
@@ -67,7 +67,7 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Utiliser la fonction RPC pour créer le solve
       const { data, error } = await supabase.rpc("create_solve_with_auth", {
@@ -113,12 +113,12 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
   const updateSolve = async (id: string, updates: UpdateSolve) => {
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user?.id || '');
+      const supabase = await createSupabaseClientWithUser(user?.id || "");
 
       // Utiliser la fonction RPC pour mettre à jour le solve
       const { data, error } = await supabase.rpc("update_solve_with_auth", {
         p_solve_id: id,
-        p_user_id: user?.id || '',
+        p_user_id: user?.id || "",
         p_time_ms: updates.time,
         p_penalty: updates.penalty,
         p_scramble: updates.scramble,
@@ -155,12 +155,12 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
   const deleteSolve = async (id: string) => {
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user?.id || '');
+      const supabase = await createSupabaseClientWithUser(user?.id || "");
 
       // Utiliser la fonction RPC pour supprimer le solve
       const { data, error } = await supabase.rpc("delete_solve_with_auth", {
         p_solve_id: id,
-        p_user_id: user?.id || '',
+        p_user_id: user?.id || "",
       });
 
       if (error) {
@@ -190,7 +190,7 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { error } = await supabase
         .from("solves")
@@ -216,7 +216,7 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
   const moveSolve = async (solveId: string, targetSessionId: string) => {
     try {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user?.id || '');
+      const supabase = await createSupabaseClientWithUser(user?.id || "");
 
       const { data, error } = await supabase
         .from("solves")

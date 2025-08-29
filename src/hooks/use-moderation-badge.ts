@@ -21,7 +21,7 @@ export function useModerationBadge() {
 
     try {
       setLoading(true);
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Compter les méthodes en attente directement
       const { count: methodsCount, error: methodsError } = await supabase

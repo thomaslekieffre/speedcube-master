@@ -58,7 +58,7 @@ export function useAlgorithms() {
       setError(null);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("algorithms")
@@ -151,13 +151,23 @@ export function useAlgorithms() {
   const createAlgorithm = async (
     algorithmData: Omit<
       Algorithm,
-      "id" | "created_at" | "updated_at" | "status" | "created_by" | "modification_count" | "last_modified_at" | "last_modified_by" | "reviewed_by" | "reviewed_at" | "rejection_reason"
+      | "id"
+      | "created_at"
+      | "updated_at"
+      | "status"
+      | "created_by"
+      | "modification_count"
+      | "last_modified_at"
+      | "last_modified_by"
+      | "reviewed_by"
+      | "reviewed_at"
+      | "rejection_reason"
     >
   ) => {
     if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")
@@ -185,7 +195,7 @@ export function useAlgorithms() {
     if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")
@@ -211,7 +221,7 @@ export function useAlgorithms() {
     if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { error } = await supabase.from("algorithms").delete().eq("id", id);
 
@@ -229,7 +239,7 @@ export function useAlgorithms() {
     if (!user?.id) return null;
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // D'abord récupérer l'algorithme
       const { data: algorithm, error: algorithmError } = await supabase
@@ -283,7 +293,7 @@ export function useAlgorithms() {
     if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")
@@ -312,7 +322,7 @@ export function useAlgorithms() {
     if (!user?.id) throw new Error("Utilisateur non connecté");
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")
@@ -343,7 +353,7 @@ export function useAlgorithms() {
     if (!user?.id) return [];
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("algorithms")
@@ -367,7 +377,7 @@ export function useAlgorithms() {
     if (!user?.id) return 0;
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { count, error } = await supabase
         .from("algorithms")

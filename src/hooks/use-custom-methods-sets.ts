@@ -36,7 +36,7 @@ export function useCustomMethodsSets() {
     }
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("custom_methods")
@@ -83,7 +83,7 @@ export function useCustomMethodsSets() {
     }
 
     try {
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       let query = supabase
         .from("custom_sets")
@@ -129,7 +129,7 @@ export function useCustomMethodsSets() {
 
     try {
       console.log("Création méthode:", { name, puzzleType, userId: user.id });
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("custom_methods")
@@ -185,7 +185,7 @@ export function useCustomMethodsSets() {
         insertData,
       });
 
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       const { data, error } = await supabase
         .from("custom_sets")

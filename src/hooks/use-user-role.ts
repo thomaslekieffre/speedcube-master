@@ -21,7 +21,7 @@ export function useUserRole() {
       setLoading(true);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
-      const supabase = createSupabaseClientWithUser(user.id);
+      const supabase = await createSupabaseClientWithUser(user.id);
 
       // Vérifier d'abord dans la table user_roles
       const { data: roleData, error: roleError } = await supabase
