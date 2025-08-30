@@ -22,7 +22,7 @@ export const createSupabaseClientWithUser = async (userId: string) => {
 
   // Configurer l'ID utilisateur dans la session PostgreSQL pour les politiques RLS
   try {
-    await client.rpc("set_clerk_user_id", { user_id: userId });
+    await client.rpc("set_user_id", { user_id: userId });
   } catch (error) {
     console.warn("Impossible de configurer l'ID utilisateur pour RLS:", error);
   }

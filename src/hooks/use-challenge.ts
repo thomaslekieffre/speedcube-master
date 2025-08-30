@@ -54,6 +54,7 @@ export function useChallenge() {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
+      console.log("📊 Tentatives chargées:", data);
       setAttempts(data || []);
     } catch (error) {
       console.error("Erreur lors du chargement des tentatives:", error);
@@ -90,8 +91,10 @@ export function useChallenge() {
         .single();
 
       if (error) throw error;
+      console.log("💾 Tentative sauvegardée:", data);
 
-      setAttempts((prev) => [...prev, data]);
+      // Recharger les tentatives depuis la base de données
+      await loadUserAttempts();
 
       // Mettre à jour manuellement le classement
       await updateLeaderboard(challengeDate, username);
@@ -120,11 +123,8 @@ export function useChallenge() {
 
       if (error) throw error;
 
-      setAttempts((prev) =>
-        prev.map((attempt) =>
-          attempt.id === attemptId ? { ...attempt, penalty } : attempt
-        )
-      );
+      // Recharger les tentatives depuis la base de données
+      await loadUserAttempts();
 
       // Mettre à jour manuellement le classement
       const challengeDate = getChallengeDate();
