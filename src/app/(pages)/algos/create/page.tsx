@@ -221,7 +221,7 @@ export default function CreateAlgorithmPage() {
       toast.success(
         "Algorithme créé ! Il sera visible après approbation par un modérateur."
       );
-      router.push(`/algos/${data.id}`);
+      router.push("/algos");
     } catch (error) {
       console.error("Erreur lors de la création de l'algorithme:", error);
       toast.error("Erreur lors de la création de l'algorithme");

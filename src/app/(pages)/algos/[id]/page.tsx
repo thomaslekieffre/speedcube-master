@@ -31,6 +31,7 @@ export default function AlgorithmDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [algorithm, setAlgorithm] = useState<Algorithm | null>(null);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const cubeContainerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<any>(null);
@@ -57,8 +58,10 @@ export default function AlgorithmDetailPage() {
   useEffect(() => {
     const loadAlgorithm = async () => {
       if (params.id) {
+        setLoading(true);
         const algo = await getAlgorithmById(params.id as string);
         setAlgorithm(algo);
+        setLoading(false);
       }
     };
     loadAlgorithm();
@@ -155,6 +158,23 @@ export default function AlgorithmDetailPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pt-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-muted rounded w-1/3"></div>
+            <div className="h-4 bg-muted rounded w-1/2"></div>
+            <div className="space-y-4">
+              <div className="h-64 bg-muted rounded"></div>
+              <div className="h-32 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!algorithm) {
     return (
       <div className="min-h-screen bg-background pt-20">
@@ -162,10 +182,11 @@ export default function AlgorithmDetailPage() {
           <div className="text-center">
             <Zap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold mb-2">
-              Algorithme non trouvé
+              Algorithme non accessible
             </h2>
             <p className="text-muted-foreground mb-4">
-              L'algorithme que vous recherchez n'existe pas.
+              Cet algorithme n'est pas encore approuvé ou vous n'avez pas les
+              permissions pour y accéder.
             </p>
             <Button onClick={() => router.push("/algos")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -291,6 +312,16 @@ export default function AlgorithmDetailPage() {
               >
                 {getDifficultyText(algorithm.difficulty)}
               </Badge>
+              {algorithm.status === "pending" && (
+                <Badge variant="secondary" className="bg-yellow-500 text-white">
+                  En attente de validation
+                </Badge>
+              )}
+              {algorithm.status === "rejected" && (
+                <Badge variant="secondary" className="bg-red-500 text-white">
+                  Rejeté
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground text-lg">
               {algorithm.description}
