@@ -148,32 +148,32 @@ export function TimerCard() {
     }
   }, [selectedPuzzle]);
 
-  // Timer principal
+  // Timer principal avec performance.now() pour plus de précision
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
 
     if (isRunning && startTime) {
       // Commencer immédiatement
-      setTime(Date.now() - startTime);
+      setTime(performance.now() - startTime);
 
       interval = setInterval(() => {
-        setTime(Date.now() - startTime);
+        setTime(performance.now() - startTime);
       }, 10);
     }
 
     return () => clearInterval(interval);
   }, [isRunning, startTime]);
 
-  // Inspection timer avec règles WCA
+  // Inspection timer avec règles WCA et performance.now()
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
 
     if (isInspection && inspectionStartTime) {
       // Commencer immédiatement
-      setInspection(Date.now() - inspectionStartTime);
+      setInspection(performance.now() - inspectionStartTime);
 
       interval = setInterval(() => {
-        const currentInspection = Date.now() - inspectionStartTime;
+        const currentInspection = performance.now() - inspectionStartTime;
         setInspection(currentInspection);
 
         // Règles WCA : +2 si > 15s, DNF si > 17s
@@ -218,7 +218,7 @@ export function TimerCard() {
 
     if (isRunning) {
       // Arrêter le timer immédiatement
-      const finalTime = Date.now() - (startTime || 0);
+      const finalTime = performance.now() - (startTime || 0);
       setIsRunning(false);
       setTime(finalTime); // Fixer le temps affiché
 
@@ -226,7 +226,7 @@ export function TimerCard() {
       const penalty =
         inspection > 17000 ? "dnf" : inspection > 15000 ? "plus2" : "none";
       const solveData = {
-        time: penalty === "dnf" ? 0 : finalTime,
+        time: penalty === "dnf" ? 0 : Math.round(finalTime), // Arrondir à l'entier
         penalty: penalty as "none" | "plus2" | "dnf",
         puzzle_type: selectedPuzzle,
         scramble: currentScramble,
@@ -259,15 +259,15 @@ export function TimerCard() {
       setInspection(0);
       setInspectionStartTime(null);
       setIsRunning(true);
-      setStartTime(Date.now());
+      setStartTime(performance.now());
     } else if (!isBlindEvent) {
       // Commencer l'inspection (uniquement pour les events non-blind)
       setIsInspection(true);
-      setInspectionStartTime(Date.now());
+      setInspectionStartTime(performance.now());
     } else {
       // Pour les events blind : démarrer directement le timer
       setIsRunning(true);
-      setStartTime(Date.now());
+      setStartTime(performance.now());
     }
   }, [
     isRunning,
@@ -352,7 +352,7 @@ export function TimerCard() {
     ) => {
       try {
         const solveData = {
-          time: penalty === "dnf" ? 0 : time,
+          time: penalty === "dnf" ? 0 : Math.round(time), // Arrondir à l'entier
           penalty,
           puzzle_type: puzzleType,
           scramble: scramble || "",

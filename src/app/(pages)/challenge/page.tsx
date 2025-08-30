@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,37 +45,44 @@ export default function ChallengePage() {
     loadLeaderboard,
   } = useChallenge();
 
-  // Timer logic
+  // Timer logic avec performance.now() pour plus de précision
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let startTime: number;
 
     if (isRunning) {
+      startTime = performance.now();
       interval = setInterval(() => {
-        setCurrentTime((prev) => {
-          const newTime = prev + 10;
-          if (newTime % 1000 === 0) {
-            // Log chaque seconde
-            console.log("Timer en cours:", newTime);
-          }
-          return newTime;
-        });
+        const elapsed = performance.now() - startTime;
+        setCurrentTime(elapsed);
+
+        // Log chaque seconde pour debug
+        if (Math.floor(elapsed / 1000) !== Math.floor((elapsed - 10) / 1000)) {
+          console.log("Timer en cours:", Math.floor(elapsed / 1000), "s");
+        }
       }, 10);
     }
 
     if (isInspection) {
+      startTime = performance.now();
       interval = setInterval(() => {
-        setInspectionTime((prev) => {
-          if (prev <= 1) {
-            setIsInspection(false);
-            setIsRunning(true);
-            return 15;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+        const elapsed = performance.now() - startTime;
+        const remaining = Math.max(0, 15000 - elapsed);
+        const remainingSeconds = Math.ceil(remaining / 1000);
+
+        setInspectionTime(remainingSeconds);
+
+        if (remaining <= 0) {
+          setIsInspection(false);
+          setCurrentTime(0);
+          setIsRunning(true);
+        }
+      }, 100);
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isRunning, isInspection]);
 
   // Réinitialiser les tentatives quand la date change
@@ -98,30 +105,36 @@ export default function ChallengePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const startTimer = () => {
+  const startTimer = useCallback(() => {
     if (attempts.length >= 3) return;
     setCurrentTime(0); // Reset le timer avant de commencer
     setIsInspection(true);
     setInspectionTime(15);
-  };
+  }, [attempts.length]);
 
-  const stopTimer = async () => {
+  const stopTimer = useCallback(async () => {
     if (!isRunning) return;
     console.log("Arrêt du timer - currentTime:", currentTime); // Debug
     setIsRunning(false);
 
     // Sauvegarder le temps AVANT de le réinitialiser
-    const timeToSave = currentTime;
+    const timeToSave = Math.round(currentTime); // Arrondir à l'entier le plus proche
     console.log("Temps à sauvegarder:", timeToSave); // Debug
 
     try {
       await saveAttempt(timeToSave, "none");
       // Le classement est automatiquement mis à jour dans saveAttempt
+
+      // Réinitialiser le timer après la sauvegarde
+      setCurrentTime(0);
+
+      // Confirmer la sauvegarde
+      toast.success(`Temps sauvegardé : ${formatTime(timeToSave)}`);
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
-      // Optionnel : afficher un toast d'erreur
+      toast.error("Erreur lors de la sauvegarde du temps");
     }
-  };
+  }, [isRunning, currentTime, saveAttempt]);
 
   const handleApplyPenalty = async (
     attemptId: string,
@@ -147,7 +160,7 @@ export default function ChallengePage() {
     }
 
     try {
-      await saveAttempt(time, penalty);
+      await saveAttempt(Math.round(time), penalty); // Arrondir à l'entier
       // Le classement est automatiquement mis à jour dans saveAttempt
     } catch (error) {
       console.error("Erreur lors de l'ajout du temps manuel:", error);
@@ -189,14 +202,7 @@ export default function ChallengePage() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [
-    isRunning,
-    isInspection,
-    attempts.length,
-    currentTime,
-    startTimer,
-    stopTimer,
-  ]);
+  }, [isRunning, isInspection, attempts.length, startTimer, stopTimer]);
 
   return (
     <div className="min-h-screen bg-background pt-20">
