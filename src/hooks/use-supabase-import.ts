@@ -91,7 +91,12 @@ export function useSupabaseImport() {
               ? `Import cstimer - ${puzzleType}`
               : `Import cstimer - ${sessionKey}`;
 
-          const finalSessionName = `${displaySessionName} - ${new Date().toLocaleDateString()}`;
+          // Créer un nom plus court et lisible
+          let finalSessionName = displaySessionName;
+          if (finalSessionName.length > 50) {
+            finalSessionName = finalSessionName.substring(0, 47) + "...";
+          }
+
           const sessionName = displaySessionName;
 
           console.log(
@@ -204,11 +209,25 @@ export function useSupabaseImport() {
             }
 
             try {
-              const { data: insertData, error: insertError } =
-                await supabaseWithUser
-                  .from("solves")
-                  .insert(validBatch)
-                  .select("id");
+              // Utiliser la fonction RPC directe pour importer les solves
+              console.log(
+                `Tentative import batch ${currentBatch}/${totalBatches}:`,
+                {
+                  user_id: user.id,
+                  session_id: sessionId,
+                  puzzle_type: puzzleType,
+                  batch_size: validBatch.length,
+                  first_solve: validBatch[0],
+                }
+              );
+
+              const { data: insertedCount, error: insertError } =
+                await supabaseWithUser.rpc("import_solves_direct", {
+                  p_user_id: user.id,
+                  p_session_id: sessionId,
+                  p_puzzle_type: puzzleType,
+                  p_solves_data: validBatch,
+                });
 
               if (insertError) {
                 console.error(
@@ -228,10 +247,21 @@ export function useSupabaseImport() {
               }
 
               console.log(
-                `✅ Batch ${currentBatch}/${totalBatches} inséré avec succès: ${
-                  insertData?.length || 0
-                } solves`
+                `✅ Batch ${currentBatch}/${totalBatches} traité: ${
+                  insertedCount || 0
+                } solves insérés sur ${validBatch.length}`
               );
+
+              if (insertedCount !== validBatch.length) {
+                console.warn(
+                  `⚠️ ${
+                    validBatch.length - (insertedCount || 0)
+                  } solves non insérés dans ce batch`
+                );
+              }
+
+              // Déclencher l'événement de mise à jour des solves
+              window.dispatchEvent(new CustomEvent("solves-updated"));
             } catch (insertException) {
               console.error(
                 `Exception lors de l'insertion batch ${currentBatch}/${totalBatches}:`,
@@ -249,6 +279,9 @@ export function useSupabaseImport() {
           }
 
           stats.importedSolves += sessionSolves.length;
+
+          // Déclencher l'événement de mise à jour des sessions
+          window.dispatchEvent(new CustomEvent("sessions-updated"));
         } catch (error) {
           stats.errors.push(
             `Erreur traitement session: ${
@@ -265,6 +298,12 @@ export function useSupabaseImport() {
       );
     } finally {
       setIsImporting(false);
+
+      // Déclencher les événements de mise à jour finale immédiatement
+      console.log("🔄 Déclenchement immédiat des événements de mise à jour");
+      window.dispatchEvent(new CustomEvent("solves-updated"));
+      window.dispatchEvent(new CustomEvent("sessions-updated"));
+      window.dispatchEvent(new CustomEvent("stats-updated"));
     }
 
     return stats;

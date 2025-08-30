@@ -59,6 +59,27 @@ export function useSessionStats(puzzleType: string) {
     fetchSessionStats();
   }, [user?.id, puzzleType]);
 
+  // Écouter les événements de mise à jour
+  useEffect(() => {
+    const handleSolvesUpdated = () => {
+      console.log("📥 Événement solves-updated reçu dans useSessionStats");
+      fetchSessionStats();
+    };
+
+    const handleSessionsUpdated = () => {
+      console.log("📥 Événement sessions-updated reçu dans useSessionStats");
+      fetchSessionStats();
+    };
+
+    window.addEventListener("solves-updated", handleSolvesUpdated);
+    window.addEventListener("sessions-updated", handleSessionsUpdated);
+
+    return () => {
+      window.removeEventListener("solves-updated", handleSolvesUpdated);
+      window.removeEventListener("sessions-updated", handleSessionsUpdated);
+    };
+  }, [user?.id, puzzleType]);
+
   return {
     sessionStats,
     loading,

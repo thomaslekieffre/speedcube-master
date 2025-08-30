@@ -28,23 +28,40 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = await createSupabaseClientWithUser(targetUserId);
 
-      let query = supabase
-        .from("solves")
-        .select("*")
-        .eq("user_id", targetUserId)
-        .order("created_at", { ascending: false });
+      let data;
+      let error;
 
-      // Si une session est spécifiée, filtrer par session
+      // Utiliser les fonctions RPC pour contourner les limites Supabase
       if (sessionId) {
-        query = query.eq("session_id", sessionId);
+        // Récupérer les solves d'une session spécifique
+        console.log(`🔍 Récupération des solves pour session: ${sessionId}`);
+        const result = await supabase.rpc("get_session_solves", {
+          p_user_id: targetUserId,
+          p_session_id: sessionId,
+        });
+        data = result.data;
+        error = result.error;
+      } else {
+        // Récupérer tous les solves de l'utilisateur
+        console.log(
+          `🔍 Récupération de tous les solves pour user: ${targetUserId}`
+        );
+        const result = await supabase.rpc("get_all_solves_for_user", {
+          p_user_id: targetUserId,
+        });
+        data = result.data;
+        error = result.error;
       }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error("Erreur lors du chargement des solves:", error);
         setError(error.message);
       } else {
+        console.log(
+          `📊 Solves récupérés: ${data?.length || 0} solves (sessionId: ${
+            sessionId || "toutes"
+          })`
+        );
         setSolves(data || []);
       }
     } catch (err) {
@@ -57,6 +74,20 @@ export function useSupabaseSolves(userId?: string, sessionId?: string | null) {
 
   useEffect(() => {
     loadSolves();
+  }, [targetUserId, sessionId]);
+
+  // Écouter les événements de mise à jour des solves
+  useEffect(() => {
+    const handleSolvesUpdated = () => {
+      console.log("📥 Événement solves-updated reçu dans useSupabaseSolves");
+      loadSolves();
+    };
+
+    window.addEventListener("solves-updated", handleSolvesUpdated);
+
+    return () => {
+      window.removeEventListener("solves-updated", handleSolvesUpdated);
+    };
   }, [targetUserId, sessionId]);
 
   const addSolve = async (solve: Omit<InsertSolve, "user_id">) => {

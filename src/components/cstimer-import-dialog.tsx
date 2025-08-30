@@ -40,6 +40,15 @@ export function CSTimerImportDialog({
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importStats, setImportStats] = useState<ImportStats | null>(null);
+  const [importProgress, setImportProgress] = useState<{
+    currentSession: number;
+    totalSessions: number;
+    currentSessionName: string;
+    currentBatch: number;
+    totalBatches: number;
+    importedSolves: number;
+    totalSolves: number;
+  } | null>(null);
   const { user } = useUser();
   const { importSolves, isImporting: isSupabaseImporting } =
     useSupabaseImport();
@@ -120,9 +129,12 @@ export function CSTimerImportDialog({
       if (result.success && result.data) {
         const convertedSolves = convertToSpeedcubeFormat(result.data.sessions);
 
-        // Importer les solves dans Supabase
-        const stats = await importSolves(convertedSolves);
+        // Importer les solves dans Supabase avec callback de progression
+        const stats = await importSolves(convertedSolves, (progress) => {
+          setImportProgress(progress);
+        });
         setImportStats(stats);
+        setImportProgress(null); // Réinitialiser la progression
 
         // Si succès, fermer le dialog après un délai
         if (stats.importedSolves > 0) {
@@ -157,6 +169,7 @@ export function CSTimerImportDialog({
     setImportResult(null);
     setIsImporting(false);
     setDragActive(false);
+    setImportProgress(null);
   };
 
   return (
@@ -299,6 +312,78 @@ export function CSTimerImportDialog({
                   </>
                 )}
 
+                {/* Progression de l'import */}
+                {importProgress && (
+                  <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
+                        Import en cours...
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        {/* Progression générale */}
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>
+                              Session {importProgress.currentSession}/
+                              {importProgress.totalSessions}
+                            </span>
+                            <span>
+                              {importProgress.importedSolves}/
+                              {importProgress.totalSolves} solves
+                            </span>
+                          </div>
+                          <Progress
+                            value={
+                              (importProgress.importedSolves /
+                                importProgress.totalSolves) *
+                              100
+                            }
+                            className="h-2"
+                          />
+                        </div>
+
+                        {/* Progression du batch actuel */}
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>
+                              Batch {importProgress.currentBatch}/
+                              {importProgress.totalBatches}
+                            </span>
+                            <span>{importProgress.currentSessionName}</span>
+                          </div>
+                          <Progress
+                            value={
+                              (importProgress.currentBatch /
+                                importProgress.totalBatches) *
+                              100
+                            }
+                            className="h-2"
+                          />
+                        </div>
+
+                        {/* Détails */}
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <div>
+                            Session actuelle:{" "}
+                            {importProgress.currentSessionName}
+                          </div>
+                          <div>
+                            Batch: {importProgress.currentBatch}/
+                            {importProgress.totalBatches}
+                          </div>
+                          <div>
+                            Solves traités: {importProgress.importedSolves}/
+                            {importProgress.totalSolves}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Statistiques d'import */}
                 {importStats && (
                   <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
@@ -382,7 +467,7 @@ export function CSTimerImportDialog({
                   </Alert>
                 )}
 
-                {importResult.success && !importStats && (
+                {importResult.success && !importStats && !importProgress && (
                   <Button
                     onClick={handleImport}
                     disabled={isSupabaseImporting}

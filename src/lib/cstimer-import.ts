@@ -64,12 +64,36 @@ export function parseCSTimerFile(content: string): ImportResult {
             // Utiliser le scrType pour déterminer le puzzle (plus fiable)
             if (sessionData.opt?.scrType) {
               scrType = sessionData.opt.scrType;
+
+              // Vérifier si c'est un scrType non supporté
+              const unsupportedScrTypes = [
+                "pll",
+                "oll",
+                "ll",
+                "f2l",
+                "corners",
+                "edges",
+                "input",
+                "r234w",
+              ];
+              if (unsupportedScrTypes.includes(scrType.toLowerCase())) {
+                console.log(
+                  `Session ${sessionNumber}: scrType "${scrType}" -> non supporté (ignoré)`
+                );
+                continue; // Ignorer cette session complètement
+              }
+
               const mappedPuzzleFromScrType = mapCSTimerScrType(scrType);
               if (mappedPuzzleFromScrType) {
                 puzzleType = mappedPuzzleFromScrType;
                 console.log(
                   `Session ${sessionNumber}: scrType "${scrType}" -> puzzle "${puzzleType}"`
                 );
+              } else {
+                console.log(
+                  `Session ${sessionNumber}: scrType "${scrType}" -> puzzle non supporté (ignoré)`
+                );
+                continue; // Ignorer cette session si le scrType ne correspond à aucun puzzle supporté
               }
             } else {
               // Fallback sur le nom si pas de scrType
@@ -82,6 +106,31 @@ export function parseCSTimerFile(content: string): ImportResult {
               } else {
                 // Si le nom ne correspond pas, essayer de deviner basé sur le nom
                 const name = sessionData.name.toLowerCase();
+
+                // Vérifier d'abord si c'est un puzzle non supporté
+                if (
+                  name.includes("oll") ||
+                  name.includes("pll") ||
+                  name.includes("ll") ||
+                  name.includes("f2l") ||
+                  name.includes("cross") ||
+                  name.includes("relay") ||
+                  name.includes("challenge") ||
+                  name.includes("train") ||
+                  name.includes("exercise") ||
+                  name.includes("method") ||
+                  name.includes("practice") ||
+                  name.includes("drill") ||
+                  name.includes("magic") ||
+                  name.includes("other") ||
+                  name.includes("input")
+                ) {
+                  console.log(
+                    `Session ${sessionNumber}: nom "${sessionData.name}" -> puzzle non supporté (ignoré)`
+                  );
+                  continue; // Ignorer cette session complètement
+                }
+
                 if (name.includes("3x3") || name.includes("333")) {
                   puzzleType = "333";
                 } else if (name.includes("2x2") || name.includes("222")) {
@@ -108,7 +157,10 @@ export function parseCSTimerFile(content: string): ImportResult {
                 } else if (name.includes("megaminx") || name.includes("minx")) {
                   puzzleType = "minx";
                 } else {
-                  puzzleType = "333"; // défaut
+                  console.log(
+                    `Session ${sessionNumber}: nom "${sessionData.name}" -> puzzle inconnu (ignoré)`
+                  );
+                  continue; // Ignorer cette session si on ne peut pas identifier le puzzle
                 }
                 console.log(
                   `Session ${sessionNumber}: nom "${sessionData.name}" -> puzzle "${puzzleType}" (devine)`
@@ -143,6 +195,8 @@ export function parseCSTimerFile(content: string): ImportResult {
           console.log(
             `Session ${sessionKey}: puzzleType "${puzzleType}" -> non supporté (ignoré)`
           );
+          // Ignorer cette session complètement si le puzzle n'est pas supporté
+          continue;
         }
       }
 
@@ -200,8 +254,23 @@ export function parseCSTimerFile(content: string): ImportResult {
       }
 
       if (solves.length > 0) {
+        // Créer un nom de session plus court et lisible
+        let shortName = sessionKey;
+        if (sessionDisplayName !== sessionKey) {
+          // Extraire le nom personnalisé sans le suffixe (sessionX)
+          const customName = sessionDisplayName.replace(
+            /\s*\(session\d+\)$/,
+            ""
+          );
+          // Limiter la longueur du nom
+          shortName =
+            customName.length > 30
+              ? customName.substring(0, 27) + "..."
+              : customName;
+        }
+
         sessions.push({
-          name: `${displayName} (${sessionKey})`,
+          name: shortName,
           solves,
           options: {},
           scrType: scrType || undefined,
@@ -264,6 +333,8 @@ export function convertToSpeedcubeFormat(cstimerData: CSTimerSession[]) {
           puzzle: mappedPuzzle,
           sessionName: session.name, // Ajouter le nom de session cstimer complet
         });
+      } else {
+        console.log(`Solve ignoré: puzzle non supporté "${mappedPuzzle}"`);
       }
     }
   }

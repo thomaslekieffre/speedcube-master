@@ -69,8 +69,11 @@ export function TimerCard() {
     error: solvesError,
   } = useSupabaseSolves(undefined, activeSessionId);
 
-  // Stats en temps réel pour le puzzle sélectionné
-  const { stats: puzzleStats } = useSolvesStats(selectedPuzzle, null); // null = tous les solves
+  // Stats en temps réel pour la session active
+  const { stats: puzzleStats } = useSolvesStats(
+    selectedPuzzle,
+    activeSessionId
+  );
 
   const { isNewPersonalBest } = usePersonalBests();
 
@@ -79,6 +82,51 @@ export function TimerCard() {
     activeSession,
     loading: sessionsLoading,
   } = useSessions(selectedPuzzle);
+
+  // Mettre à jour la session active quand le puzzle change
+  useEffect(() => {
+    // Attendre que les sessions soient chargées
+    if (sessionsLoading) return;
+
+    // Si on a une session active pour ce puzzle, l'utiliser
+    if (activeSession && activeSession.puzzle_type === selectedPuzzle) {
+      setActiveSessionId(activeSession.id);
+    } else {
+      // Sinon, chercher la première session disponible pour ce puzzle
+      const firstSession = sessions.find(
+        (s) => s.puzzle_type === selectedPuzzle
+      );
+      if (firstSession) {
+        setActiveSessionId(firstSession.id);
+      } else {
+        setActiveSessionId(null);
+      }
+    }
+  }, [activeSession, sessions, selectedPuzzle, sessionsLoading]);
+
+  // Forcer le rafraîchissement des données au chargement
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log("🔄 Forçage du rafraîchissement des données");
+      window.dispatchEvent(new CustomEvent("solves-updated"));
+      window.dispatchEvent(new CustomEvent("sessions-updated"));
+      window.dispatchEvent(new CustomEvent("stats-updated"));
+    }, 2000); // Augmenter le délai pour laisser le temps aux données de se charger
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Forcer le rafraîchissement quand la session active change
+  useEffect(() => {
+    if (activeSessionId) {
+      console.log("🔄 Session active changée, rafraîchissement des données");
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("solves-updated"));
+        window.dispatchEvent(new CustomEvent("sessions-updated"));
+        window.dispatchEvent(new CustomEvent("stats-updated"));
+      }, 500);
+    }
+  }, [activeSessionId]);
 
   // Filtrer les sessions disponibles pour le déplacement (exclure la session actuelle)
   const availableSessions = sessions.filter(
@@ -235,8 +283,8 @@ export function TimerCard() {
   const handlePuzzleChange = useCallback((puzzleType: PuzzleType) => {
     setSelectedPuzzle(puzzleType);
     setCurrentScramble(generateScramble(puzzleType));
-    // Réinitialiser la session active quand on change de puzzle
-    setActiveSessionId(null);
+    // Ne pas réinitialiser la session active quand on change de puzzle
+    // setActiveSessionId(null);
   }, []);
 
   const handleResetCube = useCallback(() => {
@@ -779,6 +827,25 @@ export function TimerCard() {
                     </h3>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{puzzleSolves.length}</Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log("🔄 Rafraîchissement manuel des données");
+                          window.dispatchEvent(
+                            new CustomEvent("solves-updated")
+                          );
+                          window.dispatchEvent(
+                            new CustomEvent("sessions-updated")
+                          );
+                          window.dispatchEvent(
+                            new CustomEvent("stats-updated")
+                          );
+                        }}
+                        className="h-6 sm:h-7 px-2 sm:px-3"
+                      >
+                        🔄
+                      </Button>
                       {solves.length > 0 && (
                         <Button
                           variant="outline"
