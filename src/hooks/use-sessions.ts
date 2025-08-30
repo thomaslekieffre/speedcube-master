@@ -15,6 +15,13 @@ export function useSessions(puzzleType?: string) {
   const { user } = useUser();
 
   const loadSessions = async () => {
+    console.log(
+      "🔄 Chargement des sessions pour puzzle:",
+      puzzleType,
+      "user:",
+      user?.id
+    );
+
     if (!user?.id) {
       setSessions([]);
       setActiveSession(null);
@@ -44,6 +51,7 @@ export function useSessions(puzzleType?: string) {
         console.error("Erreur lors du chargement des sessions:", error);
         setError(error.message);
       } else {
+        console.log("📊 Sessions récupérées:", data?.length || 0, "sessions");
         setSessions(data || []);
 
         // Trouver la session active
@@ -71,10 +79,19 @@ export function useSessions(puzzleType?: string) {
       loadSessions();
     };
 
+    const handleSolvesUpdate = () => {
+      console.log(
+        "📥 Réception de l'événement solves-updated, rafraîchissement des sessions..."
+      );
+      loadSessions();
+    };
+
     window.addEventListener("sessions-updated", handleSessionsUpdate);
+    window.addEventListener("solves-updated", handleSolvesUpdate);
 
     return () => {
       window.removeEventListener("sessions-updated", handleSessionsUpdate);
+      window.removeEventListener("solves-updated", handleSolvesUpdate);
     };
   }, [user?.id, puzzleType]);
 

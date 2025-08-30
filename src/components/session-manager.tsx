@@ -130,8 +130,6 @@ export function SessionManager({
     setEditName("");
   };
 
-
-
   const getSessionStats = (sessionId: string) => {
     return sessionStats.find((stats) => stats.session_id === sessionId);
   };
@@ -201,45 +199,52 @@ export function SessionManager({
           )}
         </div>
 
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Plus className="h-3 w-3 mr-1" />
-              Nouvelle session
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Créer une nouvelle session</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Nom de la session</label>
-                <Input
-                  ref={createInputRef}
-                  value={newSessionName}
-                  onChange={(e) => setNewSessionName(e.target.value)}
-                  placeholder="Ex: Session matin, Compétition, etc."
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleCreateSession();
-                    }
-                  }}
-                />
+        <div className="flex items-center gap-2">
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="h-3 w-3 mr-1" />
+                Nouvelle session
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Créer une nouvelle session</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">
+                    Nom de la session
+                  </label>
+                  <Input
+                    ref={createInputRef}
+                    value={newSessionName}
+                    onChange={(e) => setNewSessionName(e.target.value)}
+                    placeholder="Ex: Session matin, Compétition, etc."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleCreateSession();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button onClick={handleCreateSession}>Créer</Button>
+                </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Annuler
-                </Button>
-                <Button onClick={handleCreateSession}>Créer</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Liste des sessions */}

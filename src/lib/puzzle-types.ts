@@ -11,6 +11,10 @@ export const SUPPORTED_PUZZLES = [
   "skewb",
   "sq1",
   "clock",
+  "333bf",
+  "444bf",
+  "555bf",
+  "333mbf",
 ] as const;
 
 export type SupportedPuzzle = (typeof SUPPORTED_PUZZLES)[number];
@@ -29,28 +33,29 @@ export const CSTIMER_PUZZLE_MAPPING: Record<string, SupportedPuzzle | null> = {
   sq1: "sq1",
   clock: "clock",
   minx: "minx",
-  // Puzzles non supportés (blind, feet, etc.)
-  "333bf": null, // 3x3-blindfolded
-  "444bf": null, // 4x4-blindfolded
-  "555bf": null, // 5x5-blindfolded
+  // Events blind supportés
+  "333bf": "333bf", // 3x3-blindfolded
+  "444bf": "444bf", // 4x4-blindfolded
+  "555bf": "555bf", // 5x5-blindfolded
+  "333mbf": "333mbf", // 3x3-multiple-blindfolded
+  // Puzzles non supportés (feet, etc.)
   "333fm": null, // 3x3-fewest-moves
   "333oh": null, // 3x3-one-handed
   "333ft": null, // 3x3-feet
-  "333mbf": null, // 3x3-multiple-blindfolded
 
   // Variantes et alias courants (non supportés)
   "3x3 OH": null, // 3x3-one-handed
   "3x3oh": null, // 3x3-one-handed
   "3x3-oh": null, // 3x3-one-handed
-  "3x3 BLD": null, // 3x3-blindfolded
-  "3x3bld": null, // 3x3-blindfolded
-  "3x3-bld": null, // 3x3-blindfolded
-  "4x4 BLD": null, // 4x4-blindfolded
-  "4x4bld": null, // 4x4-blindfolded
-  "4x4-bld": null, // 4x4-blindfolded
-  "5x5 BLD": null, // 5x5-blindfolded
-  "5x5bld": null, // 5x5-blindfolded
-  "5x5-bld": null, // 5x5-blindfolded
+  "3x3 BLD": "333bf", // 3x3-blindfolded
+  "3x3bld": "333bf", // 3x3-blindfolded
+  "3x3-bld": "333bf", // 3x3-blindfolded
+  "4x4 BLD": "444bf", // 4x4-blindfolded
+  "4x4bld": "444bf", // 4x4-blindfolded
+  "4x4-bld": "444bf", // 4x4-blindfolded
+  "5x5 BLD": "555bf", // 5x5-blindfolded
+  "5x5bld": "555bf", // 5x5-blindfolded
+  "5x5-bld": "555bf", // 5x5-blindfolded
   Pyraminx: "pyraminx",
 
   // Puzzles non supportés (exercices, méthodes, etc.)
@@ -58,9 +63,9 @@ export const CSTIMER_PUZZLE_MAPPING: Record<string, SupportedPuzzle | null> = {
   "333fmc": null, // Fewest moves challenge
   magic: null, // Magic (discontinued)
   mmagic: null, // Master magic (discontinued)
-  "333bld": null, // Alias pour 333bf
-  "444bld": null, // Alias pour 444bf
-  "555bld": null, // Alias pour 555bf
+  "333bld": "333bf", // Alias pour 333bf
+  "444bld": "444bf", // Alias pour 444bf
+  "555bld": "555bf", // Alias pour 555bf
   Challenge: null, // Exercice
   PLL: null, // Méthode
   Oll: null, // Méthode
@@ -97,14 +102,15 @@ export const CSTIMER_SCRTYPE_MAPPING: Record<string, SupportedPuzzle | null> = {
   sq1so: "sq1",
   clkwca: "clock",
   klmso: "minx",
-  // Puzzles non supportés (blind, feet, etc.)
-  "333ni": null, // 3x3-blindfolded
-  "444ni": null, // 4x4-blindfolded
-  "555ni": null, // 5x5-blindfolded
+  // Events blind supportés
+  "333ni": "333bf", // 3x3-blindfolded
+  "444ni": "444bf", // 4x4-blindfolded
+  "555ni": "555bf", // 5x5-blindfolded
+  "333mbf": "333mbf", // 3x3-multiple-blindfolded
+  // Puzzles non supportés (feet, etc.)
   "333fm": null, // 3x3-fewest-moves
   "333oh": null, // 3x3-one-handed
   "333ft": null, // 3x3-feet
-  "333mbf": null, // 3x3-multiple-blindfolded
 
   // Exercices et méthodes (non supportés)
   pll: null,

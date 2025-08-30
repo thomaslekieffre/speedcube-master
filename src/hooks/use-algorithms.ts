@@ -241,6 +241,13 @@ export function useAlgorithms() {
     try {
       const supabase = await createSupabaseClientWithUser(user.id);
 
+      // Vérifier le rôle de l'utilisateur
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .single();
+
       // D'abord récupérer l'algorithme
       const { data: algorithm, error: algorithmError } = await supabase
         .from("algorithms")
@@ -249,6 +256,17 @@ export function useAlgorithms() {
         .single();
 
       if (algorithmError) throw algorithmError;
+
+      // Vérifier les permissions d'accès
+      const isModerator =
+        roleData?.role === "moderator" || roleData?.role === "admin";
+      const isCreator = algorithm.created_by === user.id;
+      const isApproved = algorithm.status === "approved";
+
+      // Seuls les modérateurs, le créateur, ou les algorithmes approuvés sont accessibles
+      if (!isModerator && !isCreator && !isApproved) {
+        return null; // Algorithme non accessible
+      }
 
       // Ensuite récupérer le nom d'utilisateur depuis profiles
       let creatorUsername = "Utilisateur";

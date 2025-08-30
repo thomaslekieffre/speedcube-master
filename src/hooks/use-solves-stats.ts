@@ -28,7 +28,8 @@ export function useSolvesStats(puzzleType: string, sessionId?: string | null) {
   useEffect(() => {
     const handleSolvesUpdated = () => {
       console.log("📥 Événement solves-updated reçu dans useSolvesStats");
-      refresh();
+      // Délai court pour éviter les recalculs multiples
+      setTimeout(() => refresh(), 100);
     };
 
     window.addEventListener("solves-updated", handleSolvesUpdated);
@@ -48,6 +49,12 @@ export function useSolvesStats(puzzleType: string, sessionId?: string | null) {
 
   // Calculer les stats en temps réel
   const stats = useMemo((): SolveStats => {
+    console.log(
+      `📊 Calcul des stats pour ${
+        puzzleSolves.length
+      } solves (puzzle: ${puzzleType}, sessionId: ${sessionId || "toutes"})`
+    );
+
     const validSolves = puzzleSolves.filter((solve) => solve.penalty !== "dnf");
     const dnfSolves = puzzleSolves.filter((solve) => solve.penalty === "dnf");
     const plus2Solves = puzzleSolves.filter(
