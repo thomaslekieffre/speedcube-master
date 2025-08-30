@@ -22,6 +22,7 @@ export function useProfile() {
 
     try {
       setLoading(true);
+      console.log("🔄 Chargement du profil pour:", user.id);
 
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = await createSupabaseClientWithUser(user.id);
@@ -34,16 +35,18 @@ export function useProfile() {
 
       if (error && error.code !== "PGRST116") {
         // PGRST116 = no rows returned
-        console.error("Erreur lors du chargement du profil:", error);
+        console.error("❌ Erreur lors du chargement du profil:", error);
         setError(error.message);
       } else if (error && error.code === "PGRST116") {
         // Profil n'existe pas, le créer
+        console.log("📝 Profil non trouvé, création automatique...");
         await createProfile();
       } else {
+        console.log("✅ Profil chargé:", data);
         setProfile(data);
       }
     } catch (err) {
-      console.error("Erreur inattendue:", err);
+      console.error("❌ Erreur inattendue:", err);
       setError("Erreur inattendue lors du chargement");
     } finally {
       setLoading(false);
@@ -54,34 +57,39 @@ export function useProfile() {
     if (!user) return;
 
     try {
+      console.log("🔄 Création automatique du profil pour:", user.id);
+
       // Créer un client Supabase avec l'ID utilisateur dans les headers
       const supabase = await createSupabaseClientWithUser(user.id);
 
-      const newProfile: InsertProfile = {
-        id: user.id,
-        username:
-          user.username ||
-          user.emailAddresses[0]?.emailAddress?.split("@")[0] ||
-          `user_${user.id.slice(0, 8)}`,
-        avatar_url: user.imageUrl,
-        bio: "",
-      };
+      const username =
+        user.username ||
+        user.emailAddresses[0]?.emailAddress?.split("@")[0] ||
+        `user_${user.id.slice(0, 8)}`;
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .insert(newProfile)
-        .select()
-        .single();
+      console.log("📝 Création du profil avec username:", username);
+
+      // Utiliser la fonction RPC pour créer le profil
+      const { data, error } = await supabase.rpc("create_user_profile", {
+        p_user_id: user.id,
+        p_username: username,
+        p_avatar_url: user.imageUrl,
+        p_bio: "",
+        p_is_public: true,
+      });
 
       if (error) {
-        console.error("Erreur lors de la création du profil:", error);
+        console.error("❌ Erreur lors de la création du profil:", error);
+        setError(`Erreur lors de la création: ${error.message}`);
         throw error;
       }
 
+      console.log("✅ Profil créé avec succès:", data);
       setProfile(data);
       return data;
     } catch (err) {
-      console.error("Erreur lors de la création du profil:", err);
+      console.error("❌ Erreur lors de la création du profil:", err);
+      setError("Erreur lors de la création du profil");
       throw err;
     }
   };
